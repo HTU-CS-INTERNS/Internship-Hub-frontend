@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import PageHeader from '@/components/shared/page-header';
-import { User, Briefcase, FileText, AlertTriangle, Loader2, Activity, MessageSquare, CalendarPlus, Building, Clock, MapPin } from 'lucide-react';
+import { User, Briefcase, FileText, AlertTriangle, Loader2, Activity, MessageSquare, CalendarPlus, Building, Clock, MapPin, CheckCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -30,7 +30,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, FormProvider, FormField, FormItem } from 'react-hook-form'; // Added FormProvider, FormField, FormItem
 import * as z from 'zod';
 
 // Dummy data import - replace with actual data fetching for students
@@ -102,15 +102,16 @@ export default function LecturerStudentDetailPage() {
 
 
   React.useEffect(() => {
+    setIsLoading(true);
     const foundStudent = DUMMY_STUDENTS_DATA.find(s => s.id === studentId);
-    const foundAssignment = DUMMY_ASSIGNMENTS.find(a => a.id === studentId); // Student ID matches assignment ID here
+    const foundAssignment = DUMMY_ASSIGNMENTS.find(a => a.id === studentId); 
 
     if (foundStudent) {
       setStudent(foundStudent);
     }
     if (foundAssignment) {
       setAssignment(foundAssignment);
-      visitFormMethods.setValue("location", foundAssignment.companySupervisor ? `${foundAssignment.companyName || 'Student Company'} (Supervisor: ${foundAssignment.companySupervisor})` : 'Company Visit');
+      visitFormMethods.setValue("location", foundAssignment.companyName ? `${foundAssignment.companyName} (Supervisor: ${foundAssignment.companySupervisor || 'TBD'})` : 'Company Visit Location');
     }
     setIsLoading(false);
   }, [studentId, visitFormMethods]);
@@ -139,7 +140,7 @@ export default function LecturerStudentDetailPage() {
   };
 
 
-  if (isLoading && !student) { // Check student as well because assignment might not exist
+  if (isLoading && !student) { 
     return (
       <div className="flex items-center justify-center h-screen">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -157,7 +158,7 @@ export default function LecturerStudentDetailPage() {
         />
         <Card className="shadow-lg rounded-xl">
             <CardContent className="p-10 text-center">
-            <p className="text-xl font-semibold text-destructive-foreground">Could not find details for student ID: {studentId}</p>
+            <p className="text-xl font-semibold text-destructive">Could not find details for student ID: {studentId}</p>
             <Button asChild className="mt-6 rounded-lg">
                 <Link href="/assignments">Back to Assignments</Link>
             </Button>
@@ -167,7 +168,7 @@ export default function LecturerStudentDetailPage() {
     );
   }
 
-  const companyName = assignment?.status !== 'Pending Assignment' ? (DUMMY_ASSIGNMENTS.find(a => a.id === student.id)?.studentName.split(' ')[0] + "'s Company Placement") : "Not Assigned Yet";
+  const companyName = assignment?.companyName || "Not Assigned Yet";
 
 
   return (
@@ -195,74 +196,76 @@ export default function LecturerStudentDetailPage() {
                   Arrange a visit to the student's internship company. Notifications will be simulated.
                 </SheetDescription>
               </SheetHeader>
-              <form onSubmit={visitFormMethods.handleSubmit(handleScheduleVisitSubmit)} className="py-4 space-y-4">
-                <FormField
-                  control={visitFormMethods.control}
-                  name="visitDate"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <Label>Visit Date</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                            <Button
-                              variant={"outline"}
-                              className={cn("w-full justify-start text-left font-normal rounded-lg border-input", !field.value && "text-muted-foreground")}
-                            >
-                              <Calendar className="mr-2 h-4 w-4" />
-                              {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0 bg-card">
-                          <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus className="bg-card text-card-foreground" />
-                        </PopoverContent>
-                      </Popover>
-                      {visitFormMethods.formState.errors.visitDate && <p className="text-xs text-destructive mt-1">{visitFormMethods.formState.errors.visitDate.message}</p>}
-                    </FormItem>
-                  )}
-                />
-                 <FormField
-                  control={visitFormMethods.control}
-                  name="visitTime"
-                  render={({ field }) => (
-                    <FormItem>
-                      <Label htmlFor="visit-time">Visit Time</Label>
-                      <Input id="visit-time" type="time" {...field} className="mt-1 rounded-lg border-input"/>
-                       {visitFormMethods.formState.errors.visitTime && <p className="text-xs text-destructive mt-1">{visitFormMethods.formState.errors.visitTime.message}</p>}
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={visitFormMethods.control}
-                  name="location"
-                  render={({ field }) => (
-                    <FormItem>
-                      <Label htmlFor="visit-location">Location / Meeting Link</Label>
-                      <Input id="visit-location" placeholder="e.g., Company Address or Zoom Link" {...field} className="mt-1 rounded-lg border-input"/>
-                       {visitFormMethods.formState.errors.location && <p className="text-xs text-destructive mt-1">{visitFormMethods.formState.errors.location.message}</p>}
-                    </FormItem>
-                  )}
-                />
-                 <FormField
-                  control={visitFormMethods.control}
-                  name="purpose"
-                  render={({ field }) => (
-                    <FormItem>
-                      <Label htmlFor="visit-purpose">Purpose / Notes</Label>
-                      <Textarea id="visit-purpose" placeholder="e.g., Mid-term review, progress check..." {...field} className="mt-1 rounded-lg border-input" rows={3}/>
-                       {visitFormMethods.formState.errors.purpose && <p className="text-xs text-destructive mt-1">{visitFormMethods.formState.errors.purpose.message}</p>}
-                    </FormItem>
-                  )}
-                />
-                <SheetFooter className="mt-6">
-                  <SheetClose asChild>
-                    <Button type="button" variant="outline" className="rounded-lg border-input">Cancel</Button>
-                  </SheetClose>
-                  <Button type="submit" className="rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isLoading}>
-                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Schedule Visit
-                  </Button>
-                </SheetFooter>
-              </form>
+              <FormProvider {...visitFormMethods}>
+                <form onSubmit={visitFormMethods.handleSubmit(handleScheduleVisitSubmit)} className="py-4 space-y-4">
+                  <FormField
+                    control={visitFormMethods.control}
+                    name="visitDate"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <Label>Visit Date</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                              <Button
+                                variant={"outline"}
+                                className={cn("w-full justify-start text-left font-normal rounded-lg border-input", !field.value && "text-muted-foreground")}
+                              >
+                                <Calendar className="mr-2 h-4 w-4" />
+                                {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                              </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0 bg-card">
+                            <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus className="bg-card text-card-foreground" />
+                          </PopoverContent>
+                        </Popover>
+                        {visitFormMethods.formState.errors.visitDate && <p className="text-xs text-destructive mt-1">{visitFormMethods.formState.errors.visitDate.message}</p>}
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={visitFormMethods.control}
+                    name="visitTime"
+                    render={({ field }) => (
+                      <FormItem>
+                        <Label htmlFor="visit-time">Visit Time</Label>
+                        <Input id="visit-time" type="time" {...field} className="mt-1 rounded-lg border-input"/>
+                        {visitFormMethods.formState.errors.visitTime && <p className="text-xs text-destructive mt-1">{visitFormMethods.formState.errors.visitTime.message}</p>}
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={visitFormMethods.control}
+                    name="location"
+                    render={({ field }) => (
+                      <FormItem>
+                        <Label htmlFor="visit-location">Location / Meeting Link</Label>
+                        <Input id="visit-location" placeholder="e.g., Company Address or Zoom Link" {...field} className="mt-1 rounded-lg border-input"/>
+                        {visitFormMethods.formState.errors.location && <p className="text-xs text-destructive mt-1">{visitFormMethods.formState.errors.location.message}</p>}
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={visitFormMethods.control}
+                    name="purpose"
+                    render={({ field }) => (
+                      <FormItem>
+                        <Label htmlFor="visit-purpose">Purpose / Notes</Label>
+                        <Textarea id="visit-purpose" placeholder="e.g., Mid-term review, progress check..." {...field} className="mt-1 rounded-lg border-input" rows={3}/>
+                        {visitFormMethods.formState.errors.purpose && <p className="text-xs text-destructive mt-1">{visitFormMethods.formState.errors.purpose.message}</p>}
+                      </FormItem>
+                    )}
+                  />
+                  <SheetFooter className="mt-6">
+                    <SheetClose asChild>
+                      <Button type="button" variant="outline" className="rounded-lg border-input">Cancel</Button>
+                    </SheetClose>
+                    <Button type="submit" className="rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isLoading}>
+                      {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Schedule Visit
+                    </Button>
+                  </SheetFooter>
+                </form>
+              </FormProvider>
             </SheetContent>
           </Sheet>
         }
@@ -287,7 +290,7 @@ export default function LecturerStudentDetailPage() {
                         <>
                             <p><strong className="text-foreground">Company Supervisor:</strong> {assignment.companySupervisor}</p>
                             <Button variant="outline" size="sm" asChild className="w-full rounded-lg mt-2">
-                                <Link href={`/communication?contact=${assignment.companySupervisor.replace(/\s+/g, '_')}`}>
+                                <Link href={`/communication?contact=${encodeURIComponent(assignment.companySupervisor)}&company=${encodeURIComponent(assignment.companyName || '')}`}>
                                     <MessageSquare className="mr-2 h-4 w-4" /> Contact Supervisor
                                 </Link>
                             </Button>
@@ -366,4 +369,3 @@ export default function LecturerStudentDetailPage() {
     </div>
   );
 }
-
