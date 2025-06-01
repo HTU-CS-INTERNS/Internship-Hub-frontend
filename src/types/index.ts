@@ -1,3 +1,4 @@
+
 export type UserRole = 'STUDENT' | 'LECTURER' | 'SUPERVISOR' | 'HOD';
 
 export interface User {
@@ -21,13 +22,18 @@ export interface Department {
   facultyId: string;
 }
 
+export type InternshipStatus = 'NOT_SUBMITTED' | 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED';
+
 export interface InternshipDetails {
   companyName: string;
+  companyAddress?: string; // Made optional in form, ensure type matches
   supervisorName: string;
   supervisorEmail: string;
-  startDate: string;
-  endDate: string;
+  startDate: string; // Store as ISO string 'yyyy-MM-dd'
+  endDate: string;   // Store as ISO string 'yyyy-MM-dd'
   location: string;
+  status: InternshipStatus;
+  rejectionReason?: string; // Optional: for lecturer to provide feedback
 }
 
 export interface DailyTask {

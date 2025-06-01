@@ -22,7 +22,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-import type { InternshipDetails } from '@/types';
+import type { InternshipDetails, InternshipStatus } from '@/types';
 
 const internshipDetailsSchema = z.object({
   companyName: z.string().min(2, { message: 'Company name is required (min 2 chars).' }).max(100, { message: 'Company name too long (max 100).' }),
@@ -32,6 +32,8 @@ const internshipDetailsSchema = z.object({
   startDate: z.date({ required_error: 'Start date is required.' }),
   endDate: z.date({ required_error: 'End date is required.' }),
   location: z.string().min(2, { message: 'Location/Work Arrangement is required (min 2 chars).' }).max(100, { message: 'Location too long (max 100).' }),
+  status: z.custom<InternshipStatus>().optional(), // Status will be set on submit
+  rejectionReason: z.string().optional(),
 }).refine(data => data.endDate >= data.startDate, {
   message: "End date cannot be before start date.",
   path: ["endDate"],
@@ -40,23 +42,26 @@ const internshipDetailsSchema = z.object({
 export type InternshipDetailsFormValues = z.infer<typeof internshipDetailsSchema>;
 
 interface InternshipDetailsFormProps {
-  defaultValues?: Partial<InternshipDetails & { companyAddress?: string }>;
+  defaultValues?: Partial<InternshipDetails>;
   onSuccess?: (data: InternshipDetailsFormValues) => void;
+  isResubmitting?: boolean;
 }
 
-export default function InternshipDetailsForm({ defaultValues, onSuccess }: InternshipDetailsFormProps) {
+export default function InternshipDetailsForm({ defaultValues, onSuccess, isResubmitting }: InternshipDetailsFormProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = React.useState(false);
 
   const parseDate = (dateString?: string): Date | undefined => {
     if (!dateString) return undefined;
     try {
+      // Ensure we handle both Date objects and ISO strings correctly
+      if (dateString instanceof Date) return dateString;
       return parseISO(dateString);
     } catch (e) {
       return undefined;
     }
   };
-
+  
   const form = useForm<InternshipDetailsFormValues>({
     resolver: zodResolver(internshipDetailsSchema),
     defaultValues: {
@@ -66,7 +71,9 @@ export default function InternshipDetailsForm({ defaultValues, onSuccess }: Inte
       supervisorEmail: defaultValues?.supervisorEmail || '',
       startDate: parseDate(defaultValues?.startDate),
       endDate: parseDate(defaultValues?.endDate),
-      location: defaultValues?.location || '', 
+      location: defaultValues?.location || '',
+      status: defaultValues?.status || 'NOT_SUBMITTED',
+      rejectionReason: defaultValues?.rejectionReason || '',
     },
   });
   
@@ -79,18 +86,25 @@ export default function InternshipDetailsForm({ defaultValues, onSuccess }: Inte
       startDate: parseDate(defaultValues?.startDate),
       endDate: parseDate(defaultValues?.endDate),
       location: defaultValues?.location || '',
+      status: defaultValues?.status || 'NOT_SUBMITTED',
+      rejectionReason: defaultValues?.rejectionReason || '',
     });
-  }, [defaultValues, form, parseDate]);
+  }, [defaultValues, form]);
 
 
   async function onSubmit(values: InternshipDetailsFormValues) {
     setIsLoading(true);
     await new Promise(resolve => setTimeout(resolve, 1000)); 
     
+    const submissionData: InternshipDetailsFormValues = {
+        ...values,
+        status: 'PENDING_APPROVAL', // Set status on submission
+    };
+
     setIsLoading(false);
     toast({
-      title: 'Internship Details Updated!',
-      description: 'Your internship information has been saved.',
+      title: isResubmitting ? 'Internship Details Resubmitted!' : 'Internship Details Submitted!',
+      description: 'Your internship information has been sent for approval.',
       variant: "default",
     });
     toast({
@@ -98,7 +112,7 @@ export default function InternshipDetailsForm({ defaultValues, onSuccess }: Inte
       description: `An invitation email has been sent to ${values.supervisorEmail} to join InternshipTrack.`,
       duration: 5000,
     });
-    onSuccess?.(values);
+    onSuccess?.(submissionData);
   }
 
   return (
@@ -243,7 +257,7 @@ export default function InternshipDetailsForm({ defaultValues, onSuccess }: Inte
         <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <Button type="submit" className="w-full sm:w-auto rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isLoading}>
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            Save Internship Details
+            {isResubmitting ? 'Resubmit for Approval' : 'Submit for Approval'}
             </Button>
              <Button type="button" variant="outline" className="w-full sm:w-auto rounded-lg" onClick={() => onSuccess?.(form.getValues())} disabled={isLoading}>
                 Cancel
