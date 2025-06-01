@@ -18,20 +18,20 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Paperclip, UploadCloud, Image as ImageIcon, XCircle } from 'lucide-react';
+import { CalendarIcon, Paperclip, UploadCloud, Image as ImageIcon, XCircle, Loader2 } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import type { DailyReport } from '@/types';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
+import NextImage from 'next/image'; // Renamed to avoid conflict with Lucide's Image icon
 
 const dailyReportSchema = z.object({
   date: z.date({ required_error: 'Report date is required.' }),
   title: z.string().min(5, { message: 'Report title must be at least 5 characters.'}).max(100, { message: 'Title too long (max 100).' }),
   summary: z.string().min(20, { message: 'Summary must be at least 20 characters.' }).max(1000, {message: 'Summary too long (max 1000).'}),
-  challengesFaced: z.string().max(1000, {message: 'Challenges description too long (max 1000).' }).optional(),
+  challengesFaced: z.string().max(1000, {message: 'Challenges description too long (max 1000).' }).optional().or(z.literal('')),
   learnings: z.string().min(10, { message: 'Learnings must be at least 10 characters.' }).max(1000, {message: 'Learnings description too long (max 1000).' }),
   attachments: z.array(z.instanceof(File)).max(5, {message: 'Maximum 5 attachments allowed.'}).optional(),
   securePhoto: z.instanceof(File).optional(),
@@ -62,13 +62,14 @@ export default function DailyReportForm({ defaultValues, onSuccess }: DailyRepor
       challengesFaced: (defaultValues as any)?.challengesFaced || '',
       learnings: defaultValues?.learningObjectives || '',
       attachments: [],
+      securePhoto: undefined,
     },
   });
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
       const filesArray = Array.from(event.target.files);
-      const newFiles = [...selectedFiles, ...filesArray].slice(0, 5);
+      const newFiles = [...selectedFiles, ...filesArray].slice(0, 5); // Max 5 files
       setSelectedFiles(newFiles);
       form.setValue("attachments", newFiles, { shouldValidate: true });
     }
@@ -100,21 +101,24 @@ export default function DailyReportForm({ defaultValues, onSuccess }: DailyRepor
 
   async function onSubmit(values: DailyReportFormValues) {
     setIsLoading(true);
+    console.log("Submitting report:", values);
+    // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1500));
     
-    const newReportId = `report_${Date.now()}`;
+    const newReportId = `report_${Date.now()}`; // Simulated ID
     
     setIsLoading(false);
     toast({
       title: defaultValues ? 'Report Updated!' : 'Report Submitted!',
-      description: `Your work report for ${format(values.date, "PPP")} has been ${defaultValues ? 'updated' : 'submitted'}.`,
+      description: `Your work report for ${format(values.date, "PPP")} has been ${defaultValues ? 'updated' : 'submitted'}. Supervisor will be notified.`,
       variant: "default",
     });
     
     if (onSuccess) {
       onSuccess(newReportId);
     } else {
-      router.push('/reports');
+      // Navigate to the main reports page or the newly created report's detail page
+      router.push('/reports'); 
     }
   }
 
@@ -132,7 +136,7 @@ export default function DailyReportForm({ defaultValues, onSuccess }: DailyRepor
                   <FormControl>
                     <Button
                       variant={"outline"}
-                      className={cn("w-full justify-start text-left font-normal rounded-lg",!field.value && "text-muted-foreground")}
+                      className={cn("w-full justify-start text-left font-normal rounded-lg border-input hover:bg-muted",!field.value && "text-muted-foreground")}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
@@ -140,7 +144,7 @@ export default function DailyReportForm({ defaultValues, onSuccess }: DailyRepor
                   </FormControl>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0 bg-card border-border" align="start">
-                  <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus className="bg-card text-card-foreground"/>
+                  <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus disabled={(date) => date > new Date() || date < new Date("2000-01-01")} className="bg-card text-card-foreground"/>
                 </PopoverContent>
               </Popover>
               <FormMessage />
@@ -153,9 +157,9 @@ export default function DailyReportForm({ defaultValues, onSuccess }: DailyRepor
           name="title"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Report Title</FormLabel>
+              <FormLabel>Report Title / Main Objective for the Day</FormLabel>
               <FormControl>
-                <Input placeholder="e.g., Weekly Progress on Project X" {...field} className="rounded-lg" />
+                <Input placeholder="e.g., Finalized User Authentication Module" {...field} className="rounded-lg border-input" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -169,8 +173,9 @@ export default function DailyReportForm({ defaultValues, onSuccess }: DailyRepor
             <FormItem>
               <FormLabel>Summary of Work Done</FormLabel>
               <FormControl>
-                <Textarea placeholder="Provide a detailed summary of the work accomplished." {...field} rows={5} className="rounded-lg" />
+                <Textarea placeholder="Provide a detailed summary of activities, tasks completed, and progress made." {...field} rows={6} className="rounded-lg border-input" />
               </FormControl>
+              <FormDescription>This is the main content of your report.</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -183,7 +188,7 @@ export default function DailyReportForm({ defaultValues, onSuccess }: DailyRepor
             <FormItem>
               <FormLabel>Challenges Faced (Optional)</FormLabel>
               <FormControl>
-                <Textarea placeholder="Describe any challenges encountered and how they were addressed." {...field} rows={3} className="rounded-lg" />
+                <Textarea placeholder="Describe any challenges encountered and how you addressed them, or if they are still pending." {...field} rows={3} className="rounded-lg border-input" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -195,9 +200,9 @@ export default function DailyReportForm({ defaultValues, onSuccess }: DailyRepor
           name="learnings"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Key Learnings</FormLabel>
+              <FormLabel>Key Learnings / Skills Applied</FormLabel>
               <FormControl>
-                <Textarea placeholder="What new skills, knowledge, or insights did you gain?" {...field} rows={3} className="rounded-lg" />
+                <Textarea placeholder="What new skills, knowledge, or insights did you gain or apply today?" {...field} rows={4} className="rounded-lg border-input" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -212,7 +217,7 @@ export default function DailyReportForm({ defaultValues, onSuccess }: DailyRepor
                     <div className="flex flex-col items-center justify-center pt-5 pb-6">
                         <UploadCloud className="w-8 h-8 mb-2 text-muted-foreground" />
                         <p className="mb-1 text-sm text-muted-foreground"><span className="font-semibold">Click to upload</span> or drag and drop</p>
-                        <p className="text-xs text-muted-foreground">Images, PDFs, documents</p>
+                        <p className="text-xs text-muted-foreground">Images, PDFs, documents (max 5MB each)</p>
                     </div>
                     <input ref={fileInputRef} id="dropzone-file-report" type="file" className="hidden" multiple onChange={handleFileChange} accept="image/*,.pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx"/>
                 </label>
@@ -223,9 +228,9 @@ export default function DailyReportForm({ defaultValues, onSuccess }: DailyRepor
                 <p className="text-sm font-medium text-foreground">Selected files:</p>
                 <ul className="list-none space-y-1">
                 {selectedFiles.map((file, index) => (
-                    <li key={index} className="text-sm text-muted-foreground flex items-center justify-between bg-muted/50 p-2 rounded-md">
-                    <span className="flex items-center"><Paperclip className="inline mr-2 h-4 w-4 text-primary" />{file.name} ({(file.size / 1024).toFixed(1)} KB)</span>
-                    <Button type="button" variant="ghost" size="icon" onClick={() => removeFile(file.name)} className="text-destructive hover:text-destructive h-6 w-6">
+                    <li key={index} className="text-sm text-muted-foreground flex items-center justify-between bg-muted/50 p-2 rounded-md border border-input">
+                    <span className="flex items-center break-all"><Paperclip className="inline mr-2 h-4 w-4 text-primary flex-shrink-0" />{file.name} ({(file.size / 1024).toFixed(1)} KB)</span>
+                    <Button type="button" variant="ghost" size="icon" onClick={() => removeFile(file.name)} className="text-destructive hover:text-destructive h-6 w-6 ml-2 flex-shrink-0">
                         <XCircle className="h-4 w-4" />
                     </Button>
                     </li>
@@ -238,17 +243,17 @@ export default function DailyReportForm({ defaultValues, onSuccess }: DailyRepor
 
         <FormItem>
             <FormLabel>Secure Photo Capture (Optional)</FormLabel>
-             <FormDescription>As per trust model guidelines, upload a secure photo if required (e.g., photo at workplace).</FormDescription>
+             <FormDescription>As per trust model guidelines, upload a secure photo if relevant to your report (e.g., photo of completed work setup).</FormDescription>
             <FormControl>
             <div className="flex flex-col items-center justify-center w-full">
                 <label htmlFor="secure-photo-file" className="flex flex-col items-center justify-center w-full h-48 border-2 border-input border-dashed rounded-lg cursor-pointer bg-muted hover:bg-muted/80 relative overflow-hidden">
                     {securePhotoPreview ? (
-                        <Image src={securePhotoPreview} alt="Secure photo preview" layout="fill" objectFit="contain" data-ai-hint="workplace person"/>
+                        <NextImage src={securePhotoPreview} alt="Secure photo preview" layout="fill" objectFit="contain" data-ai-hint="workplace item person"/>
                     ) : (
-                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                        <div className="flex flex-col items-center justify-center">
                             <ImageIcon className="w-10 h-10 mb-2 text-muted-foreground" />
                             <p className="mb-1 text-sm text-muted-foreground"><span className="font-semibold">Upload Secure Photo</span></p>
-                            <p className="text-xs text-muted-foreground">E.g., photo at workplace</p>
+                            <p className="text-xs text-muted-foreground">E.g., photo of completed work, setup</p>
                         </div>
                     )}
                     <input ref={securePhotoInputRef} id="secure-photo-file" type="file" className="hidden" onChange={handleSecurePhotoChange} accept="image/*" capture="environment" />
@@ -259,16 +264,19 @@ export default function DailyReportForm({ defaultValues, onSuccess }: DailyRepor
                  <p className="text-sm text-muted-foreground mt-2">Photo selected: {form.getValues("securePhoto")?.name}</p>
             )}
              {securePhotoPreview && (
-                <Button type="button" variant="outline" size="sm" className="mt-2 rounded-lg" onClick={clearSecurePhoto}>Clear Photo</Button>
+                <Button type="button" variant="outline" size="sm" className="mt-2 rounded-lg border-destructive text-destructive hover:bg-destructive/5 hover:text-destructive" onClick={clearSecurePhoto}>
+                    <XCircle className="mr-2 h-4 w-4"/> Clear Photo
+                </Button>
              )}
             <FormMessage>{form.formState.errors.securePhoto?.message}</FormMessage>
         </FormItem>
 
-        <div className="flex flex-col sm:flex-row gap-3 pt-2">
-            <Button type="submit" className="w-full sm:w-auto rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isLoading}>
-            {isLoading ? (defaultValues ? 'Updating...' : 'Submitting...') : (defaultValues ? 'Update Report' : 'Submit Report')}
+        <div className="flex flex-col sm:flex-row gap-3 pt-4">
+            <Button type="submit" className="w-full sm:w-auto rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-base py-3" disabled={isLoading}>
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isLoading ? (defaultValues ? 'Updating Report...' : 'Submitting Report...') : (defaultValues ? 'Update Report' : 'Submit Report')}
             </Button>
-            <Button type="button" variant="outline" className="w-full sm:w-auto rounded-lg" onClick={() => router.back()} disabled={isLoading}>
+            <Button type="button" variant="outline" className="w-full sm:w-auto rounded-lg border-input hover:bg-muted text-base py-3" onClick={() => router.back()} disabled={isLoading}>
             Cancel
             </Button>
         </div>
