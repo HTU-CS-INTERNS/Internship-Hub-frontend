@@ -30,7 +30,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, Controller, FormProvider, FormField, FormItem } from 'react-hook-form'; // Added FormProvider, FormField, FormItem
+import { useForm, Controller, FormProvider } from 'react-hook-form';
+import { FormField, FormItem } from '@/components/ui/form';
 import * as z from 'zod';
 
 // Dummy data import - replace with actual data fetching for students
