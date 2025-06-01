@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile'; 
 import { useToast } from '@/hooks/use-toast';
 
-const DUMMY_REPORTS: DailyReport[] = [
+export const DUMMY_REPORTS: DailyReport[] = [
   { id: 'report1', date: '2024-07-26', description: 'Weekly summary of authentication module progress. Focused on JWT implementation and secure endpoint testing.', outcomes: 'Module 70% complete.', learningObjectives: 'Project management and reporting.', studentId: 'stu1', status: 'APPROVED' },
   { id: 'report2', date: '2024-07-27', description: 'Mid-internship review presentation preparation and content finalization for all key sections.', outcomes: 'Presentation draft ready.', learningObjectives: 'Presentation skills.', studentId: 'stu1', status: 'SUBMITTED' },
   { id: 'report3', date: '2024-07-25', description: 'Initial setup and planning for the new feature X, including requirement gathering and timeline estimation.', outcomes: 'Project plan created.', learningObjectives: 'Agile planning.', studentId: 'stu1', status: 'PENDING' },
@@ -186,3 +186,4 @@ export default function ReportsPage() {
     </div>
   );
 }
+
