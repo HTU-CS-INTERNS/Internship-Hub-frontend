@@ -74,8 +74,12 @@ export default function DepartmentOpsPage() {
             <p className="text-sm text-muted-foreground">
               View lecturer-student ratios and manage assignments.
             </p>
-            <Button variant="outline" className="mt-4 w-full rounded-lg" disabled>View Lecturer Assignments (Soon)</Button>
           </CardContent>
+           <CardFooter>
+            <Link href="/department-ops/lecturer-management" className="w-full">
+                <Button variant="outline" className="mt-2 w-full rounded-lg">Manage Lecturers</Button>
+            </Link>
+          </CardFooter>
         </Card>
 
         <Card className="shadow-lg rounded-xl">
@@ -89,8 +93,12 @@ export default function DepartmentOpsPage() {
             <p className="text-sm text-muted-foreground">
               Define specific guidelines or criteria unique to {hodDepartmentName}.
             </p>
-            <Button variant="outline" className="mt-4 w-full rounded-lg" disabled>Configure Settings (Soon)</Button>
           </CardContent>
+           <CardFooter>
+            <Link href="/department-ops/department-settings" className="w-full">
+                <Button variant="outline" className="mt-2 w-full rounded-lg">Configure Settings</Button>
+            </Link>
+          </CardFooter>
         </Card>
 
         <Card className="shadow-lg rounded-xl md:col-span-2 lg:col-span-1">
@@ -104,8 +112,12 @@ export default function DepartmentOpsPage() {
             <p className="text-sm text-muted-foreground">
               Address reported issues from students, lecturers, or supervisors.
             </p>
-            <Button variant="outline" className="mt-4 w-full rounded-lg" disabled>View Open Issues (Soon)</Button>
           </CardContent>
+           <CardFooter>
+            <Link href="/department-ops/issue-resolution" className="w-full">
+                <Button variant="outline" className="mt-2 w-full rounded-lg">View Open Issues</Button>
+            </Link>
+          </CardFooter>
         </Card>
       </div>
 
