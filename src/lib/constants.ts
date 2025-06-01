@@ -51,7 +51,7 @@ export const USER_ROLES: Record<UserRole, string> = {
 
 export const NAV_LINKS: NavItem[] = [
   // Main Section
-  { href: '/dashboard', label: 'Dashboard', icon: Home, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Main", mobile: true },
+  { href: '/dashboard', label: 'Dashboard', icon: Home, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD', 'ADMIN'], section: "Main", mobile: true },
   {
     href: '/tasks',
     label: 'Daily Tasks',
@@ -73,11 +73,11 @@ export const NAV_LINKS: NavItem[] = [
   // Tools Section
   { href: '/check-in', label: 'Check-in', icon: MapPin, roles: ['STUDENT'], section: "Tools", mobile: true },
   { href: '/schedule', label: 'My Schedule', icon: CalendarDays, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Tools", mobile: false },
-  { href: '/communication', label: 'Feedback Hub', icon: MessageSquare, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Tools", mobile: true },
+  { href: '/communication', label: 'Feedback Hub', icon: MessageSquare, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD', 'ADMIN'], section: "Tools", mobile: true },
 
   // Management for other roles
   {
-    href: '/interns',
+    href: '/supervisor/interns', // Updated path
     label: 'My Interns',
     icon: Briefcase,
     roles: ['SUPERVISOR'],
@@ -147,3 +147,4 @@ export const SCORING_METRICS: ScoringMetric[] = [
   { id: 'professionalism', label: 'Professionalism', description: 'Conduct, attitude, and adherence to workplace ethics.' },
   { id: 'timeliness_initiative', label: 'Timeliness & Initiative', description: 'Punctuality, meeting deadlines, and proactiveness.' },
 ];
+

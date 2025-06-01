@@ -502,9 +502,9 @@ const SupervisorDashboard: React.FC<{ userName: string }> = ({ userName }) => {
                 <p className="opacity-90 text-sm">Manage your assigned interns and their submissions.</p>
             </Card>
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <DashboardStatsCard title="Assigned Interns" value={supervisedInterns.length} icon={Users2} iconBgColor="bg-green-100 dark:bg-green-900" iconColor="text-green-500 dark:text-green-300" actionLink="/interns" actionLabel="View My Interns"/>
-                <DashboardStatsCard title="Pending Approvals" value="4" icon={CheckSquare} detail="3 Tasks, 1 Report" iconBgColor="bg-orange-100 dark:bg-orange-900" iconColor="text-orange-500 dark:text-orange-300" actionLink="/interns/approve-reports" actionLabel="Review Submissions" />
-                <DashboardStatsCard title="Intern Activity" value="High" icon={Activity} detail="Most interns active daily" iconBgColor="bg-purple-100 dark:bg-purple-900" iconColor="text-purple-500 dark:text-purple-300" actionLink="/interns" actionLabel="Monitor Activity" />
+                <DashboardStatsCard title="Assigned Interns" value={supervisedInterns.length} icon={Users2} iconBgColor="bg-green-100 dark:bg-green-900" iconColor="text-green-500 dark:text-green-300" actionLink="/supervisor/interns" actionLabel="View My Interns"/>
+                <DashboardStatsCard title="Pending Approvals" value="4" icon={CheckSquare} detail="3 Tasks, 1 Report" iconBgColor="bg-orange-100 dark:bg-orange-900" iconColor="text-orange-500 dark:text-orange-300" actionLink="/supervisor/interns/approve-reports" actionLabel="Review Submissions" />
+                <DashboardStatsCard title="Intern Activity" value="High" icon={Activity} detail="Most interns active daily" iconBgColor="bg-purple-100 dark:bg-purple-900" iconColor="text-purple-500 dark:text-purple-300" actionLink="/supervisor/interns" actionLabel="Monitor Activity" />
             </div>
             <Card className="shadow-lg rounded-xl mt-6">
                 <CardHeader>
@@ -540,7 +540,7 @@ const SupervisorDashboard: React.FC<{ userName: string }> = ({ userName }) => {
                                     <TableCell className="text-center"><Badge variant={intern.pendingTasks > 0 ? "destructive" : "secondary"}>{intern.pendingTasks}</Badge></TableCell>
                                     <TableCell className="text-center"><Badge variant={intern.pendingReports > 0 ? "destructive" : "secondary"}>{intern.pendingReports}</Badge></TableCell>
                                     <TableCell className="text-right">
-                                        <Link href={`/interns/details/${intern.id}`} passHref>
+                                        <Link href={`/supervisor/interns/details/${intern.id}`} passHref>
                                             <Button variant="ghost" size="sm">View Profile</Button>
                                         </Link>
                                     </TableCell>
@@ -550,7 +550,7 @@ const SupervisorDashboard: React.FC<{ userName: string }> = ({ userName }) => {
                     </Table>
                 </CardContent>
                  <CardFooter className="justify-end p-4 border-t">
-                    <Button variant="outline" size="sm" asChild><Link href="/interns">View All Interns</Link></Button>
+                    <Button variant="outline" size="sm" asChild><Link href="/supervisor/interns">View All Interns</Link></Button>
                 </CardFooter>
             </Card>
         </>
