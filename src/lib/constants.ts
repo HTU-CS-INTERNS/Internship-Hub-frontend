@@ -10,10 +10,16 @@ import {
   Building, 
   BarChart3, 
   Settings, 
-  LogOut,
-  GraduationCap, // Added import
-  CheckSquare,   // Added import
-  FileCheck      // Added import
+  GraduationCap,
+  CheckSquare,
+  FileCheck,
+  Home,
+  ListChecks,
+  MapPin,
+  CalendarDays,
+  UserCog,
+  Bell, // Added for header
+  Mail // Added for header
 } from 'lucide-react';
 import type { UserRole } from '@/types';
 
@@ -23,6 +29,7 @@ export interface NavItem {
   icon: LucideIcon;
   roles: UserRole[];
   children?: NavItem[];
+  section?: string; // For grouping in sidebar
 }
 
 export const USER_ROLES: Record<UserRole, string> = {
@@ -32,68 +39,65 @@ export const USER_ROLES: Record<UserRole, string> = {
   HOD: 'Head of Department',
 };
 
+// Adapted to match mockup structure and icons, using Lucide
 export const NAV_LINKS: NavItem[] = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'] },
-  { href: '/profile', label: 'Profile', icon: User, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'] },
+  // Main Section
+  { href: '/dashboard', label: 'Dashboard', icon: Home, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Main" },
   { 
     href: '/tasks', 
     label: 'Daily Tasks', 
-    icon: ClipboardList, 
+    icon: ListChecks, // fas fa-tasks
     roles: ['STUDENT'],
-    children: [
-      { href: '/tasks/new', label: 'Declare Task', icon: ClipboardList, roles: ['STUDENT'] },
-      { href: '/tasks/history', label: 'Task History', icon: ClipboardList, roles: ['STUDENT'] },
-    ]
+    section: "Main"
+    // children: [
+    //   { href: '/tasks/new', label: 'Declare Task', icon: PlusCircle, roles: ['STUDENT'] },
+    // ]
   },
   { 
     href: '/reports', 
-    label: 'Work Reports', 
-    icon: FileText, 
+    label: 'Reports', 
+    icon: FileText, // fas fa-file-alt
     roles: ['STUDENT'],
-    children: [
-      { href: '/reports/new', label: 'Submit Report', icon: FileText, roles: ['STUDENT'] },
-      { href: '/reports/history', label: 'Report History', icon: FileText, roles: ['STUDENT'] },
-    ]
+    section: "Main"
+    // children: [
+    //   { href: '/reports/new', label: 'Submit Report', icon: PlusCircle, roles: ['STUDENT'] },
+    // ]
   },
-  { href: '/communication', label: 'Messages', icon: MessageSquare, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'] },
+  { href: '/company', label: 'Company', icon: Building, roles: ['STUDENT'], section: "Main" }, // Placeholder, as Company page might not exist yet for student
+
+  // Tools Section
+  { href: '/check-in', label: 'Check-in', icon: MapPin, roles: ['STUDENT'], section: "Tools" }, // Placeholder
+  { href: '/schedule', label: 'Schedule', icon: CalendarDays, roles: ['STUDENT', 'LECTURER'], section: "Tools" }, // Placeholder
+  { href: '/communication', label: 'Feedback', icon: MessageSquare, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Tools" }, // Renamed from 'Messages' to 'Feedback' per mockup
+
+  // Management for other roles (simplified for now, can be expanded)
   { 
     href: '/assignments', 
     label: 'Assignments', 
     icon: Users, 
     roles: ['LECTURER', 'HOD'],
-    children: [
-      { href: '/assignments/manage', label: 'Manage Assignments', icon: Users, roles: ['LECTURER', 'HOD'] },
-      { href: '/assignments/students', label: 'My Students', icon: GraduationCap, roles: ['LECTURER'] },
-    ]
+    section: "Management"
   },
   { 
     href: '/interns', 
     label: 'Interns', 
     icon: Briefcase, 
     roles: ['SUPERVISOR'],
-    children: [
-      { href: '/interns/manage', label: 'Manage Interns', icon: Briefcase, roles: ['SUPERVISOR'] },
-      { href: '/interns/approve-tasks', label: 'Approve Tasks', icon: CheckSquare, roles: ['SUPERVISOR'] },
-      { href: '/interns/approve-reports', label: 'Approve Reports', icon: FileCheck, roles: ['SUPERVISOR'] },
-    ]
+    section: "Management"
   },
   { 
     href: '/department', 
-    label: 'Department', 
+    label: 'Department Ops', // More descriptive for HOD
     icon: Building, 
     roles: ['HOD'],
-    children: [
-      { href: '/department/overview', label: 'Overview', icon: Building, roles: ['HOD'] },
-      { href: '/department/lecturers', label: 'Manage Lecturers', icon: Users, roles: ['HOD'] },
-    ]
+    section: "Management"
   },
-  { href: '/analytics', label: 'Analytics', icon: BarChart3, roles: ['LECTURER', 'SUPERVISOR', 'HOD'] },
+  { href: '/analytics', label: 'Analytics', icon: BarChart3, roles: ['LECTURER', 'SUPERVISOR', 'HOD'], section: "Management" },
 ];
 
 export const BOTTOM_NAV_LINKS: NavItem[] = [
-    { href: '/settings', label: 'Settings', icon: Settings, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'] },
-    // Logout is typically handled by a button, not a nav link, but included for structure
-    // { href: '/logout', label: 'Logout', icon: LogOut, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'] },
+    { href: '/profile', label: 'Profile', icon: UserCog, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Settings" },
+    { href: '/settings', label: 'Settings', icon: Settings, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Settings" },
 ];
 
 export const FACULTIES = [

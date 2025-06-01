@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -5,22 +6,29 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   Sidebar,
-  SidebarHeader,
   SidebarContent,
   SidebarFooter,
+  SidebarHeader,
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
   SidebarSeparator,
+  SidebarTrigger, // Import SidebarTrigger
+  useSidebar,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { NAV_LINKS, BOTTOM_NAV_LINKS, USER_ROLES } from '@/lib/constants';
 import type { NavItem, UserRole } from '@/types';
-import { GraduationCap, LogOut } from 'lucide-react';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { GraduationCap, LogOut, UserCircle, PanelLeft } from 'lucide-react'; // Added UserCircle & PanelLeft
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+
+// Dummy user data - replace with actual user data from context/auth
+const DUMMY_USER = {
+  name: 'John Doe', // From mockup
+  roleSuffix: 'Student', // From mockup
+  avatarUrl: 'https://placehold.co/100x100.png', // Placeholder
+};
+const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
 
 
 interface AppSidebarProps {
@@ -30,100 +38,102 @@ interface AppSidebarProps {
 export default function AppSidebar({ userRole }: AppSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const [openAccordionItems, setOpenAccordionItems] = React.useState<string[]>([]);
+  const { toggleSidebar, state: sidebarState } = useSidebar(); // Get sidebar state
 
   const handleLogout = () => {
     if (typeof window !== "undefined") {
       localStorage.removeItem('userRole');
+      localStorage.removeItem('theme'); // Also clear theme on logout
     }
+    document.documentElement.classList.remove('dark');
     router.push('/login');
   };
 
-  const filteredNavLinks = NAV_LINKS.filter(link => link.roles.includes(userRole));
-  const filteredBottomNavLinks = BOTTOM_NAV_LINKS.filter(link => link.roles.includes(userRole));
+  const navSections = ["Main", "Tools", "Management", "Settings"]; // Define order
 
-  const renderNavItem = (item: NavItem, isSubItem: boolean = false) => {
-    const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
-    
-    if (item.children && item.children.length > 0) {
-      const filteredChildren = item.children.filter(child => child.roles.includes(userRole));
-      if (filteredChildren.length === 0) return null;
-
-      return (
-        <AccordionItem value={item.label} key={item.label} className="border-none">
-          <AccordionTrigger 
-            className={`w-full justify-start hover:bg-sidebar-accent hover:text-sidebar-accent-foreground rounded-md px-2 py-2 text-sm font-medium ${isActive ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'text-sidebar-foreground'} [&[data-state=open]>svg]:text-primary`}
-            onClick={() => {
-              setOpenAccordionItems(prev => 
-                prev.includes(item.label) ? prev.filter(i => i !== item.label) : [...prev, item.label]
-              );
-            }}
-          >
-            <item.icon className={`mr-2 h-5 w-5 ${isActive ? 'text-primary' : ''}`} />
-            <span className="truncate">{item.label}</span>
-          </AccordionTrigger>
-          <AccordionContent className="pt-1 pb-0 pl-4">
-            <SidebarMenuSub>
-              {filteredChildren.map(child => (
-                <SidebarMenuSubItem key={child.href}>
-                  <Link href={child.href} passHref legacyBehavior>
-                    <SidebarMenuSubButton
-                      isActive={pathname === child.href || pathname.startsWith(child.href)}
-                      className="w-full"
-                    >
-                      {child.icon && <child.icon className={`mr-2 h-4 w-4 ${pathname.startsWith(child.href) ? 'text-primary' : ''}`} />}
-                      <span className="truncate">{child.label}</span>
-                    </SidebarMenuSubButton>
-                  </Link>
-                </SidebarMenuSubItem>
-              ))}
-            </SidebarMenuSub>
-          </AccordionContent>
-        </AccordionItem>
-      );
-    }
-
-    const ButtonComponent = isSubItem ? SidebarMenuSubButton : SidebarMenuButton;
+  const renderNavItemsForSection = (section: string, links: NavItem[]) => {
+    const sectionLinks = links.filter(link => link.section === section && link.roles.includes(userRole));
+    if (sectionLinks.length === 0) return null;
 
     return (
-      <SidebarMenuItem key={item.href}>
-        <Link href={item.href} passHref legacyBehavior>
-          <ButtonComponent 
-            isActive={isActive}
-            className="w-full"
-            tooltip={{ children: item.label, side: 'right', className: 'font-body' }}
-          >
-            <item.icon className={`mr-2 h-5 w-5 ${isActive ? 'text-primary' : ''}`} />
-            <span className="truncate">{item.label}</span>
-          </ButtonComponent>
-        </Link>
-      </SidebarMenuItem>
+      <React.Fragment key={section}>
+        <div className="px-4 mt-4 mb-2">
+          <span className="text-xs font-semibold text-sidebar-foreground/70 uppercase tracking-wider group-data-[collapsible=icon]:hidden">
+            {section}
+          </span>
+        </div>
+        <SidebarMenu>
+          {sectionLinks.map(item => {
+            const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+            return (
+              <SidebarMenuItem key={item.href}>
+                <Link href={item.href} passHref legacyBehavior>
+                  <SidebarMenuButton
+                    isActive={isActive}
+                    className="w-full group-data-[collapsible=icon]:justify-center"
+                    tooltip={{ children: item.label, side: 'right', className: 'font-body bg-card text-card-foreground border-border' }}
+                  >
+                    <item.icon className={`h-5 w-5 ${isActive ? 'text-sidebar-primary' : ''} group-data-[collapsible=icon]:mx-auto`} />
+                    <span className="truncate group-data-[collapsible=icon]:hidden">{item.label}</span>
+                  </SidebarMenuButton>
+                </Link>
+              </SidebarMenuItem>
+            );
+          })}
+        </SidebarMenu>
+      </React.Fragment>
     );
   };
+  
+  const allLinks = [...NAV_LINKS, ...BOTTOM_NAV_LINKS];
 
   return (
-    <Sidebar collapsible="icon" variant="sidebar" className="shadow-md">
-      <SidebarHeader className="p-4 border-b border-sidebar-border">
+    <Sidebar 
+      collapsible="icon" 
+      variant="sidebar" 
+      className="shadow-lg bg-sidebar text-sidebar-foreground border-r border-sidebar-border"
+    >
+      <SidebarHeader className="p-4 border-b border-sidebar-border flex items-center justify-between group-data-[collapsible=icon]:justify-center">
         <Link href="/dashboard" className="flex items-center gap-2 group">
-          <GraduationCap className="h-8 w-8 text-primary transition-transform group-hover:scale-110" />
-          <span className="font-headline text-xl font-bold text-primary group-hover:text-primary/80 transition-colors group-data-[collapsible=icon]:hidden">
+          <div className="w-10 h-10 rounded-full bg-sidebar-accent flex items-center justify-center">
+            <GraduationCap className="h-6 w-6 text-sidebar-primary" />
+          </div>
+          <span className="font-headline text-xl font-bold text-sidebar-primary group-hover:text-sidebar-primary/80 transition-colors group-data-[collapsible=icon]:hidden">
             InternshipTrack
           </span>
         </Link>
+        {/* Sidebar toggle button for desktop, hidden when collapsed icon only */}
+        <Button variant="ghost" size="icon" onClick={toggleSidebar} className="text-sidebar-foreground/70 hover:text-sidebar-foreground group-data-[collapsible=icon]:hidden md:flex hidden">
+           <PanelLeft className="h-5 w-5" />
+        </Button>
       </SidebarHeader>
-      <SidebarContent className="p-2">
-        <Accordion type="multiple" value={openAccordionItems} onValueChange={setOpenAccordionItems} className="w-full space-y-1">
-          {filteredNavLinks.map(item => renderNavItem(item))}
-        </Accordion>
+      
+      <SidebarContent className="p-2 flex-1 overflow-y-auto">
+        {/* User Info Section */}
+        <div className="p-2 mb-2 group-data-[collapsible=icon]:hidden">
+            <div className="flex items-center">
+                <Avatar className="h-10 w-10">
+                    <AvatarImage src={DUMMY_USER.avatarUrl} alt={DUMMY_USER.name} data-ai-hint="person portrait"/>
+                    <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground">{getInitials(DUMMY_USER.name)}</AvatarFallback>
+                </Avatar>
+                <div className="ml-3">
+                    <div className="text-sm font-medium text-sidebar-foreground">{DUMMY_USER.name}</div>
+                    <div className="text-xs text-sidebar-foreground/70">{USER_ROLES[userRole]}</div>
+                </div>
+            </div>
+        </div>
+        <SidebarSeparator className="group-data-[collapsible=icon]:hidden" />
+
+        {navSections.map(section => renderNavItemsForSection(section, allLinks))}
       </SidebarContent>
+      
       <SidebarSeparator />
-      <SidebarFooter className="p-2 space-y-1">
+      <SidebarFooter className="p-2">
         <SidebarMenu>
-            {filteredBottomNavLinks.map(item => renderNavItem(item))}
             <SidebarMenuItem>
                 <Button
                     variant="ghost"
-                    className="w-full justify-start text-sidebar-foreground hover:bg-destructive/10 hover:text-destructive group-data-[collapsible=icon]:justify-center"
+                    className="w-full justify-start text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:justify-center"
                     onClick={handleLogout}
                     title="Logout"
                 >

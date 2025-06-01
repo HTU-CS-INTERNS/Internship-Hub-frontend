@@ -1,7 +1,8 @@
+
 'use client';
 
 import * as React from 'react';
-import { useSidebar, SidebarTrigger } from '@/components/ui/sidebar';
+import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar'; // SidebarTrigger for mobile
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -12,24 +13,25 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Bell, Search, Settings, User, LogOut, Sun, Moon } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { Bell, Mail, Settings, User, LogOut, Sun, Moon, PanelLeft } from 'lucide-react'; // Added Mail
 import { USER_ROLES } from '@/lib/constants';
 import type { UserRole } from '@/types';
-import { useRouter } from 'next/navigation'; // Corrected import
+import { useRouter }_ from 'next/navigation';
+import Link from 'next/link'; // Added Link for profile navigation
 
 // Dummy user data - replace with actual user data from context/auth
 const DUMMY_USER = {
-  name: 'Alex Johnson',
-  email: 'alex.johnson@example.com',
-  avatarUrl: 'https://placehold.co/100x100.png',
+  name: 'John Doe', // From mockup
+  email: 'john.doe@example.com',
+  avatarUrl: 'https://placehold.co/100x100.png?text=JD', // Placeholder with initials
 };
 
 export default function AppHeader() {
-  const { toggleSidebar, isMobile } = useSidebar();
+  const { isMobile, toggleSidebar } = useSidebar(); // useSidebar hook
   const [userRole, setUserRole] = React.useState<UserRole | null>(null);
   const [theme, setTheme] = React.useState<'light' | 'dark'>('light');
   const router = useRouter();
+  const [pageTitle, setPageTitle] = React.useState('Dashboard'); // Placeholder for dynamic title
 
   React.useEffect(() => {
     const storedRole = typeof window !== "undefined" ? localStorage.getItem('userRole') as UserRole : null;
@@ -37,8 +39,10 @@ export default function AppHeader() {
       setUserRole(storedRole);
     }
     const localTheme = typeof window !== "undefined" ? localStorage.getItem('theme') as 'light' | 'dark' : 'light';
-    setTheme(localTheme);
-    document.documentElement.classList.toggle('dark', localTheme === 'dark');
+    if (localTheme) {
+      setTheme(localTheme);
+      document.documentElement.classList.toggle('dark', localTheme === 'dark');
+    }
   }, []);
 
   const handleLogout = () => {
@@ -61,55 +65,81 @@ export default function AppHeader() {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
 
+  // Simulate dynamic page title update (in a real app, this might come from context or route)
+  React.useEffect(() => {
+    if(typeof window !== "undefined") {
+      const currentPath = window.location.pathname.split('/').pop();
+      if (currentPath) {
+        setPageTitle(currentPath.charAt(0).toUpperCase() + currentPath.slice(1) || 'Dashboard');
+      }
+    }
+  }, [typeof window !== "undefined" ? window.location.pathname : null]);
+
+
   return (
-    <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-card px-4 md:px-6 shadow-sm">
-      {isMobile && <SidebarTrigger />}
-      {!isMobile && <div className="w-8 h-8" /> /* Placeholder for non-mobile trigger alignment */}
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-card px-4 md:px-6 shadow-sm">
+      {/* Mobile Sidebar Trigger */}
+      {isMobile && (
+         <Button variant="ghost" size="icon" onClick={toggleSidebar} className="md:hidden">
+          <PanelLeft className="h-5 w-5" />
+          <span className="sr-only">Toggle Sidebar</span>
+        </Button>
+      )}
       
-      <div className="flex-1 relative hidden md:block">
-        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-        <Input
-          type="search"
-          placeholder="Search tasks, reports, students..."
-          className="pl-8 sm:w-[300px] md:w-[200px] lg:w-[300px] bg-background"
-        />
+      {/* Page Title */}
+      <div className="flex-1">
+        <h1 className="text-xl font-semibold text-foreground">{pageTitle}</h1>
       </div>
 
-      <div className="flex items-center gap-3 md:gap-4 ml-auto">
+      <div className="flex items-center gap-2 md:gap-4 ml-auto">
         <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-full">
           {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
           <span className="sr-only">Toggle theme</span>
         </Button>
+
+        {/* Notifications Icon - from mockup */}
         <Button variant="ghost" size="icon" className="rounded-full relative">
           <Bell className="h-5 w-5" />
-          <span className="absolute top-0 right-0 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-red-100 transform translate-x-1/2 -translate-y-1/2 bg-destructive rounded-full">
-            3
-          </span>
+          <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full border-2 border-card"></span>
           <span className="sr-only">Notifications</span>
         </Button>
+
+        {/* Messages Icon - from mockup */}
+        <Button variant="ghost" size="icon" className="rounded-full relative">
+          <Mail className="h-5 w-5" />
+           <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full border-2 border-card"></span>
+          <span className="sr-only">Messages</span>
+        </Button>
+        
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-              <Avatar className="h-9 w-9">
-                <AvatarImage src={DUMMY_USER.avatarUrl} alt={DUMMY_USER.name} data-ai-hint="person portrait" />
-                <AvatarFallback>{getInitials(DUMMY_USER.name)}</AvatarFallback>
+            <Button variant="ghost" className="relative h-10 rounded-full p-0 md:px-2 md:w-auto">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={DUMMY_USER.avatarUrl} alt={DUMMY_USER.name} data-ai-hint="person portrait"/>
+                <AvatarFallback className="bg-primary text-primary-foreground">{getInitials(DUMMY_USER.name)}</AvatarFallback>
               </Avatar>
+              <span className="ml-2 text-foreground hidden md:inline">{DUMMY_USER.name}</span>
+              <ChevronDown className="ml-1 text-muted-foreground hidden md:inline h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-64 font-body">
+          <DropdownMenuContent align="end" className="w-60 font-body">
             <DropdownMenuLabel className="font-medium">
               <p>{DUMMY_USER.name}</p>
               <p className="text-xs text-muted-foreground font-normal">{DUMMY_USER.email}</p>
               {userRole && <p className="text-xs text-primary font-normal">{USER_ROLES[userRole]}</p>}
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="cursor-pointer">
-              <User className="mr-2 h-4 w-4" />
-              <span>Profile</span>
+            <DropdownMenuItem asChild className="cursor-pointer">
+              <Link href="/profile">
+                <User className="mr-2 h-4 w-4" />
+                <span>Profile</span>
+              </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer">
-              <Settings className="mr-2 h-4 w-4" />
-              <span>Settings</span>
+            <DropdownMenuItem asChild className="cursor-pointer">
+               <Link href="/settings">
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Settings</span>
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive focus:bg-destructive/10 focus:text-destructive">
