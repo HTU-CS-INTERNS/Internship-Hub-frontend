@@ -208,7 +208,6 @@ const StudentDashboard: React.FC<{ userName: string }> = ({ userName }) => {
         setReportSummary('');
     };
     
-    // Placeholder data for supervisor and lecturer
     const companySupervisor = { name: 'Mr. John Smith', avatarUrl: 'https://placehold.co/100x100.png', role: 'Company Supervisor' };
     const facultyLecturer = { name: 'Dr. Elara Vance', avatarUrl: 'https://placehold.co/100x100.png', role: 'Faculty Lecturer' };
 

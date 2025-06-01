@@ -19,14 +19,14 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { FACULTIES, DEPARTMENTS } from '@/lib/constants';
-import type { Department, Faculty } from '@/types';
+import type { Department, Faculty, UserRole } from '@/types';
 import { Loader2 } from 'lucide-react';
 
 const profileSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }).max(100, { message: 'Name too long (max 100).' }),
   email: z.string().email({ message: 'Please enter a valid email address.' }),
-  facultyId: z.string().min(1, { message: 'Please select a faculty.' }),
-  departmentId: z.string().min(1, { message: 'Please select a department.' }),
+  facultyId: z.string().optional().or(z.literal('')),
+  departmentId: z.string().optional().or(z.literal('')),
   contactNumber: z.string().regex(/^(\+\d{1,3}[- ]?)?\d{10,15}$/, { message: "Invalid contact number format."}).optional().or(z.literal('')),
 });
 
@@ -34,10 +34,11 @@ export type ProfileFormValues = z.infer<typeof profileSchema>;
 
 interface ProfileSetupFormProps {
   defaultValues?: Partial<ProfileFormValues>;
-  onSuccess?: (data: ProfileFormValues) => void; // Pass data back on success
+  onSuccess?: (data: ProfileFormValues) => void; 
+  userRole: UserRole | null; // Added userRole prop
 }
 
-export default function ProfileSetupForm({ defaultValues, onSuccess }: ProfileSetupFormProps) {
+export default function ProfileSetupForm({ defaultValues, onSuccess, userRole }: ProfileSetupFormProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = React.useState(false);
   const [availableDepartments, setAvailableDepartments] = React.useState<Department[]>(DEPARTMENTS);
@@ -56,42 +57,61 @@ export default function ProfileSetupForm({ defaultValues, onSuccess }: ProfileSe
   const selectedFacultyId = form.watch('facultyId');
 
   React.useEffect(() => {
-    if (selectedFacultyId) {
+    if (userRole === 'STUDENT' && selectedFacultyId) {
       const depts = DEPARTMENTS.filter(d => d.facultyId === selectedFacultyId);
       setAvailableDepartments(depts);
-      // Reset department if current selection is not in the new list
       if (!depts.find(d => d.id === form.getValues('departmentId'))) {
         form.setValue('departmentId', ''); 
       }
+    } else if (userRole !== 'STUDENT') {
+      setAvailableDepartments([]); // Supervisors/others don't use this
+      form.setValue('facultyId', '');
+      form.setValue('departmentId', '');
     } else {
-      setAvailableDepartments(DEPARTMENTS); 
+        setAvailableDepartments(DEPARTMENTS);
     }
-  }, [selectedFacultyId, form]);
+  }, [selectedFacultyId, form, userRole]);
 
   React.useEffect(() => {
-    if (defaultValues?.facultyId) {
-      setAvailableDepartments(DEPARTMENTS.filter(d => d.facultyId === defaultValues.facultyId));
-       // Ensure default department is valid for the default faculty
-      if (defaultValues.departmentId && !DEPARTMENTS.find(d => d.id === defaultValues.departmentId && d.facultyId === defaultValues.facultyId)) {
-        form.setValue('departmentId', '');
+    const currentFacultyId = defaultValues?.facultyId || '';
+    let currentDepartmentId = defaultValues?.departmentId || '';
+
+    if (userRole === 'STUDENT') {
+      if (currentFacultyId) {
+        const depts = DEPARTMENTS.filter(d => d.facultyId === currentFacultyId);
+        setAvailableDepartments(depts);
+        if (currentDepartmentId && !depts.find(d => d.id === currentDepartmentId)) {
+          currentDepartmentId = ''; // Reset if not valid for the faculty
+        }
       } else {
-        form.setValue('departmentId', defaultValues.departmentId || '');
+        setAvailableDepartments(DEPARTMENTS);
       }
+    } else {
+      // For non-students, faculty and department are not applicable
+      currentFacultyId = '';
+      currentDepartmentId = '';
+      setAvailableDepartments([]);
     }
-     // Reset form with potentially new defaultValues when component re-renders with them
+    
     form.reset({
       name: defaultValues?.name || '',
       email: defaultValues?.email || '',
-      facultyId: defaultValues?.facultyId || '',
-      departmentId: (defaultValues?.facultyId && DEPARTMENTS.find(d => d.id === defaultValues.departmentId && d.facultyId === defaultValues.facultyId)) ? defaultValues.departmentId : '',
+      facultyId: currentFacultyId,
+      departmentId: currentDepartmentId,
       contactNumber: defaultValues?.contactNumber || '',
     });
-  }, [defaultValues, form]);
+  }, [defaultValues, form, userRole]);
 
 
   async function onSubmit(values: ProfileFormValues) {
     setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+    const submissionValues = { ...values };
+    if (userRole !== 'STUDENT') {
+      delete submissionValues.facultyId;
+      delete submissionValues.departmentId;
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 1000)); 
     setIsLoading(false);
 
     toast({
@@ -99,7 +119,7 @@ export default function ProfileSetupForm({ defaultValues, onSuccess }: ProfileSe
       description: 'Your profile information has been successfully saved.',
       variant: "default",
     });
-    onSuccess?.(values); 
+    onSuccess?.(submissionValues); 
   }
 
   return (
@@ -145,56 +165,60 @@ export default function ProfileSetupForm({ defaultValues, onSuccess }: ProfileSe
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="facultyId"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Faculty</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger className="rounded-lg">
-                    <SelectValue placeholder="Select your faculty" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {FACULTIES.map((faculty: Faculty) => (
-                    <SelectItem key={faculty.id} value={faculty.id}>
-                      {faculty.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="departmentId"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Department</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value} disabled={!selectedFacultyId && availableDepartments.length === DEPARTMENTS.length}>
-                <FormControl>
-                  <SelectTrigger className="rounded-lg">
-                    <SelectValue placeholder="Select your department" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {availableDepartments.map((dept: Department) => (
-                    <SelectItem key={dept.id} value={dept.id}>
-                      {dept.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {!selectedFacultyId && <FormDescription className="text-xs">Please select a faculty first.</FormDescription>}
-               {selectedFacultyId && availableDepartments.length === 0 && <FormDescription className="text-xs text-destructive">No departments found for selected faculty.</FormDescription>}
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {userRole === 'STUDENT' && (
+          <>
+            <FormField
+              control={form.control}
+              name="facultyId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Faculty</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value || ''} defaultValue={field.value || ''}>
+                    <FormControl>
+                      <SelectTrigger className="rounded-lg">
+                        <SelectValue placeholder="Select your faculty" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {FACULTIES.map((faculty: Faculty) => (
+                        <SelectItem key={faculty.id} value={faculty.id}>
+                          {faculty.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="departmentId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Department</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value || ''} defaultValue={field.value || ''} disabled={!selectedFacultyId && availableDepartments.length === DEPARTMENTS.length && userRole === 'STUDENT'}>
+                    <FormControl>
+                      <SelectTrigger className="rounded-lg">
+                        <SelectValue placeholder="Select your department" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {availableDepartments.map((dept: Department) => (
+                        <SelectItem key={dept.id} value={dept.id}>
+                          {dept.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {userRole === 'STUDENT' && !selectedFacultyId && <FormDescription className="text-xs">Please select a faculty first.</FormDescription>}
+                  {userRole === 'STUDENT' && selectedFacultyId && availableDepartments.length === 0 && <FormDescription className="text-xs text-destructive">No departments found for selected faculty.</FormDescription>}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </>
+        )}
         <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <Button type="submit" className="w-full sm:w-auto rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isLoading}>
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}

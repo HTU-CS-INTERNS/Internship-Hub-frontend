@@ -12,19 +12,19 @@ import {
   BarChart3, 
   Settings, 
   GraduationCap,
-  CheckSquare,
-  FileCheck,
+  CheckSquare, // Used for Supervisor: Approve Tasks
+  FileCheck,   // Used for Supervisor: Approve Reports
   Home,
-  ListChecks, // Used for Daily Tasks in mockup
-  MapPin, // Used for Check-in in mockup
-  CalendarDays, // Used for Schedule in mockup
-  UserCog, // Used for Profile (desktop)
-  UserCircle, // For mobile profile & general user
+  ListChecks, 
+  MapPin, 
+  CalendarDays, 
+  UserCog, 
+  UserCircle, 
   Bell, 
   Mail,
-  Palette, // For Appearance settings
-  ShieldCheck, // For Privacy & Security settings
-  BookOpen // For My Company page
+  Palette, 
+  ShieldCheck, 
+  BookOpen 
 } from 'lucide-react';
 import type { UserRole } from '@/types';
 
@@ -35,7 +35,7 @@ export interface NavItem {
   roles: UserRole[];
   children?: NavItem[];
   section?: string; 
-  mobile?: boolean; // To show on mobile bottom nav (first 4-5 items)
+  mobile?: boolean; 
 }
 
 export const USER_ROLES: Record<UserRole, string> = {
@@ -45,7 +45,6 @@ export const USER_ROLES: Record<UserRole, string> = {
   HOD: 'Head of Department',
 };
 
-// Sidebar Navigation Structure (Desktop)
 export const NAV_LINKS: NavItem[] = [
   // Main Section
   { href: '/dashboard', label: 'Dashboard', icon: Home, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Main", mobile: true },
@@ -61,16 +60,24 @@ export const NAV_LINKS: NavItem[] = [
     href: '/reports', 
     label: 'Reports', 
     icon: FileText, 
-    roles: ['STUDENT'], // Also for SUPERVISOR/LECTURER to view
+    roles: ['STUDENT'],
     section: "Main",
-    mobile: true // Student might want quick access
+    mobile: true 
   },
   { href: '/company', label: 'My Company', icon: Building, roles: ['STUDENT'], section: "Main", mobile: false }, 
+  { 
+    href: '/interns', 
+    label: 'My Interns', 
+    icon: Briefcase, 
+    roles: ['SUPERVISOR'],
+    section: "Management", // Supervisor's main management page
+    mobile: true // Key page for supervisors
+  },
 
   // Tools Section
   { href: '/check-in', label: 'Check-in', icon: MapPin, roles: ['STUDENT'], section: "Tools", mobile: true }, 
   { href: '/schedule', label: 'My Schedule', icon: CalendarDays, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Tools", mobile: false }, 
-  { href: '/communication', label: 'Feedback Hub', icon: MessageSquare, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Tools" }, 
+  { href: '/communication', label: 'Feedback Hub', icon: MessageSquare, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Tools", mobile: true }, // Important for mobile
 
   // Management for other roles
   { 
@@ -81,16 +88,9 @@ export const NAV_LINKS: NavItem[] = [
     section: "Management"
   },
   { 
-    href: '/interns', 
-    label: 'My Interns', 
-    icon: Briefcase, 
-    roles: ['SUPERVISOR'], // Renamed from 'Interns' for clarity in sidebar
-    section: "Management"
-  },
-  { 
-    href: '/department-ops', // Example, actual link TBD
+    href: '/department-ops', 
     label: 'Department Ops', 
-    icon: GraduationCap, // Changed from Building to avoid conflict with Company
+    icon: GraduationCap, 
     roles: ['HOD'],
     section: "Management"
   },
@@ -98,7 +98,7 @@ export const NAV_LINKS: NavItem[] = [
 ];
 
 export const BOTTOM_NAV_LINKS: NavItem[] = [
-    { href: '/profile', label: 'Profile', icon: UserCog, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Settings", mobile: true },
+    { href: '/profile', label: 'Profile', icon: UserCog, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Settings", mobile: true }, // Profile is often key on mobile
     { href: '/settings', label: 'Settings', icon: Settings, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Settings" },
 ];
 

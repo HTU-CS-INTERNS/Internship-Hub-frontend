@@ -43,13 +43,12 @@ export function LoginForm() {
     defaultValues: {
       email: '',
       password: '',
-      role: 'STUDENT', // Default role
+      role: 'STUDENT', 
     },
   });
 
   async function onSubmit(values: LoginFormValues) {
     setIsLoading(true);
-    // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1500));
     setIsLoading(false);
 
@@ -61,21 +60,18 @@ export function LoginForm() {
     
     if (typeof window !== "undefined") {
       localStorage.setItem('userRole', values.role);
-      localStorage.setItem('userEmail', values.email); // Store the email
+      localStorage.setItem('userEmail', values.email);
 
-      // Set a userName if not already present or if it's a placeholder like "New User"
       let currentUserName = localStorage.getItem('userName');
-      if (!currentUserName || currentUserName === 'New User' || currentUserName === 'User') {
-        // For students, the name should ideally be set during registration.
-        // If a student logs in directly without full registration (not ideal),
-        // this provides a basic name. Profile page handles full name update.
+      const defaultNameForRole = values.role === 'STUDENT' ? 'New Student' 
+                                : values.role === 'SUPERVISOR' ? 'New Supervisor' 
+                                : USER_ROLES[values.role as UserRole];
+
+      if (!currentUserName || currentUserName === 'New User' || currentUserName === 'User' || currentUserName === 'New Supervisor' || currentUserName === 'New Student') {
         const nameFromEmail = values.email.split('@')[0];
         const capitalizedName = nameFromEmail.charAt(0).toUpperCase() + nameFromEmail.slice(1);
-        localStorage.setItem('userName', capitalizedName);
+        localStorage.setItem('userName', capitalizedName || defaultNameForRole);
       }
-      // Note: The 'onboardingComplete' flag is NOT touched here.
-      // The registration flow manages it to guide new students through profile/internship setup.
-      // Logged-in users go to dashboard; profile page handles missing info if 'onboardingComplete' is not 'true'.
     }
     
     router.push('/dashboard');

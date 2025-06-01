@@ -9,6 +9,7 @@ export interface User {
   avatarUrl?: string;
   faculty?: Faculty;
   department?: Department;
+  // Supervisor specific fields can be added here if needed later e.g. companyId
 }
 
 export interface Faculty {
@@ -26,14 +27,14 @@ export type InternshipStatus = 'NOT_SUBMITTED' | 'PENDING_APPROVAL' | 'APPROVED'
 
 export interface InternshipDetails {
   companyName: string;
-  companyAddress?: string; // Made optional in form, ensure type matches
+  companyAddress?: string; 
   supervisorName: string;
   supervisorEmail: string;
-  startDate: string; // Store as ISO string 'yyyy-MM-dd'
-  endDate: string;   // Store as ISO string 'yyyy-MM-dd'
+  startDate: string; 
+  endDate: string;   
   location: string;
   status: InternshipStatus;
-  rejectionReason?: string; // Optional: for lecturer to provide feedback
+  rejectionReason?: string; 
 }
 
 export interface DailyTask {
@@ -43,9 +44,9 @@ export interface DailyTask {
   outcomes: string;
   learningObjectives: string;
   studentId: string;
-  departmentOutcomeLink?: string; // Link to departmental outcomes
+  departmentOutcomeLink?: string; 
   status: 'PENDING' | 'SUBMITTED' | 'APPROVED' | 'REJECTED';
-  attachments?: string[]; // URLs to multimedia attachments
+  attachments?: string[]; 
   supervisorComments?: string;
 }
 
@@ -68,3 +69,4 @@ export interface Assignment {
   lecturerId: string;
   companySupervisorId?: string;
 }
+
