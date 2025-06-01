@@ -2,13 +2,14 @@
 'use client';
 import * as React from 'react';
 import PageHeader from '@/components/shared/page-header';
-import { BarChart3, Users, ClipboardList, FileText } from 'lucide-react'; // Removed Filter as it's not used directly in this simplified version
+import { BarChart3, Users, ClipboardList, FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell } from "recharts"
 import type { UserRole } from '@/types';
 import { USER_ROLES, FACULTIES, DEPARTMENTS } from '@/lib/constants';
+import { cn } from '@/lib/utils';
 
 const DUMMY_CHART_DATA_TASKS = [
   { month: "Jan", pending: 10, submitted: 20, approved: 15 },
@@ -19,32 +20,26 @@ const DUMMY_CHART_DATA_TASKS = [
 ];
 
 const DUMMY_CHART_DATA_REPORTS_STATUS = [
-  { name: 'Approved', value: 75, fill: 'var(--color-approved)' }, // Assuming --color-approved is defined or maps to a chart color
-  { name: 'Pending', value: 15, fill: 'var(--color-pending)' },   // Assuming --color-pending is defined
-  { name: 'Rejected', value: 5, fill: 'var(--color-rejected)' },  // Assuming --color-rejected is defined
-  { name: 'Submitted', value: 25, fill: 'var(--color-submitted)' }, // Assuming --color-submitted is defined
+  { name: 'Approved', value: 75, fill: 'var(--color-approved)' },
+  { name: 'Pending', value: 15, fill: 'var(--color-pending)' },
+  { name: 'Rejected', value: 5, fill: 'var(--color-rejected)' },
+  { name: 'Submitted', value: 25, fill: 'var(--color-submitted)' },
 ];
 
-// Define these CSS variables in globals.css or map them to existing chart colors
-// For example, in globals.css:
-// :root {
-//   --color-approved: hsl(var(--chart-3)); /* Green */
-//   --color-pending: hsl(var(--chart-4));  /* Yellow/Orange - using chart-4 as an example, adjust if needed */
-//   --color-rejected: hsl(var(--chart-5)); /* Red - using chart-5 as an example, adjust if needed */
-//   --color-submitted: hsl(var(--chart-2));/* Blue/Accent - using chart-2 as an example */
-// }
-
 const chartConfigTasks = {
-  pending: { label: "Pending", color: "hsl(var(--chart-4))" }, // Mapped to a chart variable
+  pending: { label: "Pending", color: "hsl(var(--chart-4))" },
   submitted: { label: "Submitted", color: "hsl(var(--chart-2))" },
   approved: { label: "Approved", color: "hsl(var(--chart-3))" },
 };
 const chartConfigReportsStatus = {
   approved: { label: "Approved", color: "hsl(var(--chart-3))" },
   pending: { label: "Pending", color: "hsl(var(--chart-4))" },
-  rejected: { label: "Rejected", color: "hsl(var(--destructive))" }, // Using destructive for rejected
+  rejected: { label: "Rejected", color: "hsl(var(--destructive))" },
   submitted: { label: "Submitted", color: "hsl(var(--chart-2))" },
-}
+};
+
+const ALL_FACULTIES_ITEM_VALUE = "__ALL_FACULTIES__";
+const ALL_DEPARTMENTS_ITEM_VALUE = "__ALL_DEPARTMENTS__";
 
 export default function AnalyticsPage() {
   const [userRole, setUserRole] = React.useState<UserRole | null>(null);
@@ -68,21 +63,28 @@ export default function AnalyticsPage() {
         actions={
           userRole === 'HOD' && (
             <div className="flex flex-col sm:flex-row gap-2">
-              <Select value={selectedFaculty} onValueChange={setSelectedFaculty}>
-                <SelectTrigger className="w-full sm:w-[180px]">
+              <Select 
+                value={selectedFaculty} 
+                onValueChange={(value) => setSelectedFaculty(value === ALL_FACULTIES_ITEM_VALUE ? "" : value)}
+              >
+                <SelectTrigger className="w-full sm:w-[180px] rounded-lg">
                   <SelectValue placeholder="Filter by Faculty" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Faculties</SelectItem>
+                  <SelectItem value={ALL_FACULTIES_ITEM_VALUE}>All Faculties</SelectItem>
                   {FACULTIES.map(f => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}
                 </SelectContent>
               </Select>
-              <Select value={selectedDepartment} onValueChange={setSelectedDepartment} disabled={!selectedFaculty && availableDepartments.length === DEPARTMENTS.length}>
-                <SelectTrigger className="w-full sm:w-[180px]">
+              <Select 
+                value={selectedDepartment} 
+                onValueChange={(value) => setSelectedDepartment(value === ALL_DEPARTMENTS_ITEM_VALUE ? "" : value)} 
+                disabled={!selectedFaculty && availableDepartments.length === DEPARTMENTS.length}
+              >
+                <SelectTrigger className="w-full sm:w-[180px] rounded-lg">
                   <SelectValue placeholder="Filter by Department" />
                 </SelectTrigger>
                 <SelectContent>
-                   <SelectItem value="">All Departments</SelectItem>
+                   <SelectItem value={ALL_DEPARTMENTS_ITEM_VALUE}>All Departments</SelectItem>
                   {availableDepartments.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
                 </SelectContent>
               </Select>
