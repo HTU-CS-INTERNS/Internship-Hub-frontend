@@ -21,14 +21,15 @@ interface StudentAssignment {
   department: string;
   assignedLecturer?: string;
   companySupervisor?: string;
+  companyName?: string; // Added for context
   status: 'Assigned' | 'Pending Assignment' | 'In Progress';
 }
 
-const DUMMY_ASSIGNMENTS: StudentAssignment[] = [
-  { id: 'std1', studentName: 'Alice Wonderland', studentAvatar: 'https://placehold.co/100x100.png', studentEmail: 'alice@example.com', department: 'Software Engineering', assignedLecturer: 'Dr. Elara Vance', companySupervisor: 'Bob The Builder', status: 'In Progress' },
-  { id: 'std2', studentName: 'Bob The Intern', studentAvatar: 'https://placehold.co/100x100.png', studentEmail: 'bob@example.com', department: 'Mechanical Engineering', assignedLecturer: 'Dr. Elara Vance', companySupervisor: 'Alice Wonderland', status: 'Assigned' },
-  { id: 'std3', studentName: 'Charlie Brown', studentAvatar: 'https://placehold.co/100x100.png', studentEmail: 'charlie@example.com', department: 'Marketing', status: 'Pending Assignment', assignedLecturer: 'Dr. Ian Malcolm' },
-  { id: 'std4', studentName: 'Diana Prince', studentAvatar: 'https://placehold.co/100x100.png', studentEmail: 'diana@example.com', department: 'Software Engineering', assignedLecturer: 'Dr. Ian Malcolm', companySupervisor: 'Carol Danvers', status: 'In Progress' },
+export const DUMMY_ASSIGNMENTS: StudentAssignment[] = [
+  { id: 'std1', studentName: 'Alice Wonderland', studentAvatar: 'https://placehold.co/100x100.png', studentEmail: 'alice@example.com', department: 'Software Engineering', assignedLecturer: 'Dr. Elara Vance', companySupervisor: 'Bob The Builder', companyName: 'Acme Innovations', status: 'In Progress' },
+  { id: 'std2', studentName: 'Bob The Intern', studentAvatar: 'https://placehold.co/100x100.png', studentEmail: 'bob@example.com', department: 'Mechanical Engineering', assignedLecturer: 'Dr. Elara Vance', companySupervisor: 'Alice Wonderland', companyName: 'ConstructCo', status: 'Assigned' },
+  { id: 'std3', studentName: 'Charlie Brown', studentAvatar: 'https://placehold.co/100x100.png', studentEmail: 'charlie@example.com', department: 'Marketing', status: 'Pending Assignment', assignedLecturer: 'Dr. Ian Malcolm', companyName: 'MarketGurus' },
+  { id: 'std4', studentName: 'Diana Prince', studentAvatar: 'https://placehold.co/100x100.png', studentEmail: 'diana@example.com', department: 'Software Engineering', assignedLecturer: 'Dr. Ian Malcolm', companySupervisor: 'Carol Danvers', companyName: 'Stark Industries', status: 'In Progress' },
 ];
 
 // Simulated current lecturer ID - In a real app, this would come from auth context
@@ -86,7 +87,7 @@ export default function AssignmentsPage() {
           <div className="flex gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="bg-card hover:bg-accent hover:text-accent-foreground">
+                <Button variant="outline" className="bg-card hover:bg-accent hover:text-accent-foreground rounded-lg">
                   <ListFilter className="mr-2 h-4 w-4" /> Filter Status
                 </Button>
               </DropdownMenuTrigger>
@@ -152,7 +153,7 @@ export default function AssignmentsPage() {
                   </TableCell>
                   <TableCell className="text-right">
                     <Link href={`/assignments/student/${item.id}`} passHref>
-                        <Button variant="ghost" size="sm">View Details</Button>
+                        <Button variant="ghost" size="sm" className="rounded-md">View Details</Button>
                     </Link>
                   </TableCell>
                 </TableRow>
