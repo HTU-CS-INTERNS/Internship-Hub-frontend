@@ -9,8 +9,7 @@ export interface User {
   avatarUrl?: string;
   faculty?: Faculty;
   department?: Department;
-  // Supervisor specific company details
-  companyName?: string; 
+  companyName?: string;
   companyAddress?: string;
 }
 
@@ -29,14 +28,14 @@ export type InternshipStatus = 'NOT_SUBMITTED' | 'PENDING_APPROVAL' | 'APPROVED'
 
 export interface InternshipDetails {
   companyName: string;
-  companyAddress?: string; 
+  companyAddress?: string;
   supervisorName: string;
   supervisorEmail: string;
-  startDate: string; 
-  endDate: string;   
+  startDate: string;
+  endDate: string;
   location: string;
   status: InternshipStatus;
-  rejectionReason?: string; 
+  rejectionReason?: string;
 }
 
 export interface DailyTask {
@@ -46,19 +45,19 @@ export interface DailyTask {
   outcomes: string;
   learningObjectives: string;
   studentId: string;
-  departmentOutcomeLink?: string; 
+  departmentOutcomeLink?: string;
   status: 'PENDING' | 'SUBMITTED' | 'APPROVED' | 'REJECTED';
-  attachments?: string[]; 
+  attachments?: string[];
   supervisorComments?: string;
+  lecturerComments?: string; // Added for lecturer feedback
 }
 
 export interface DailyReport extends DailyTask {
-  // Daily reports might have more fields or be a superset of tasks
-  // For now, keeping it similar to DailyTask for simplicity
   title?: string;
   challengesFaced?: string;
-  learnings?: string; // Alias for learningObjectives if needed
+  learnings?: string; 
   securePhotoUrl?: string;
+  // lecturerComments is inherited from DailyTask
 }
 
 export interface CommunicationMessage {
@@ -83,24 +82,22 @@ export interface ScoringMetric {
 }
 
 export interface InternEvaluation {
-  scores: Record<string, number | undefined>; // metricId: score (e.g., 1-5)
+  scores: Record<string, number | undefined>; 
   overallComments: string;
   evaluationDate?: string;
 }
 
-// For profile form values that might include supervisor-specific company details
 export interface ProfileFormValuesExtended extends ProfileFormValues {
     supervisorCompanyName?: string;
     supervisorCompanyAddress?: string;
 }
 
-// From profile-setup-form.tsx, made more generic for reuse if needed
 export interface ProfileFormValues {
   name: string;
   email: string;
   facultyId?: string;
   departmentId?: string;
   contactNumber?: string;
-  supervisorCompanyName?: string; // Added for supervisor
-  supervisorCompanyAddress?: string; // Added for supervisor
+  supervisorCompanyName?: string;
+  supervisorCompanyAddress?: string;
 }

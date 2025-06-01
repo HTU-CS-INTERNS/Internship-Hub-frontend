@@ -1,33 +1,33 @@
 
 import type { LucideIcon } from 'lucide-react';
-import { 
-  LayoutDashboard, 
-  User, 
-  ClipboardList, 
-  FileText, 
-  MessageSquare, 
-  Users, 
-  Briefcase, 
-  Building, 
-  BarChart3, 
-  Settings, 
+import {
+  LayoutDashboard,
+  User,
+  ClipboardList,
+  FileText,
+  MessageSquare,
+  Users,
+  Briefcase,
+  Building,
+  BarChart3,
+  Settings,
   GraduationCap,
-  CheckSquare, 
-  FileCheck,   
+  CheckSquare,
+  FileCheck,
   Home,
-  ListChecks, 
-  MapPin, 
-  CalendarDays, 
-  UserCog, 
-  UserCircle, 
-  Bell, 
+  ListChecks,
+  MapPin,
+  CalendarDays,
+  UserCog,
+  UserCircle,
+  Bell,
   Mail,
-  Palette, 
-  ShieldCheck, 
+  Palette,
+  ShieldCheck,
   BookOpen,
-  TrendingUp // For scoring/evaluation
+  TrendingUp
 } from 'lucide-react';
-import type { UserRole, ScoringMetric } from '@/types';
+import type { UserRole, ScoringMetric, Faculty as AppFaculty, Department as AppDepartment } from '@/types'; // Renamed to avoid conflict
 
 export interface NavItem {
   href: string;
@@ -35,8 +35,8 @@ export interface NavItem {
   icon: LucideIcon;
   roles: UserRole[];
   children?: NavItem[];
-  section?: string; 
-  mobile?: boolean; 
+  section?: string;
+  mobile?: boolean;
 }
 
 export const USER_ROLES: Record<UserRole, string> = {
@@ -49,63 +49,62 @@ export const USER_ROLES: Record<UserRole, string> = {
 export const NAV_LINKS: NavItem[] = [
   // Main Section
   { href: '/dashboard', label: 'Dashboard', icon: Home, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Main", mobile: true },
-  { 
-    href: '/tasks', 
-    label: 'Daily Tasks', 
-    icon: ListChecks, 
+  {
+    href: '/tasks',
+    label: 'Daily Tasks',
+    icon: ListChecks,
     roles: ['STUDENT'],
     section: "Main",
     mobile: true
   },
-  { 
-    href: '/reports', 
-    label: 'Reports', 
-    icon: FileText, 
+  {
+    href: '/reports',
+    label: 'Reports',
+    icon: FileText,
     roles: ['STUDENT'],
     section: "Main",
-    mobile: true 
+    mobile: true
   },
-  { href: '/company', label: 'My Company', icon: Building, roles: ['STUDENT'], section: "Main", mobile: false }, 
-  
+  { href: '/company', label: 'My Company', icon: Building, roles: ['STUDENT'], section: "Main", mobile: false },
+
   // Tools Section
-  { href: '/check-in', label: 'Check-in', icon: MapPin, roles: ['STUDENT'], section: "Tools", mobile: true }, 
-  { href: '/schedule', label: 'My Schedule', icon: CalendarDays, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Tools", mobile: false }, 
-  { href: '/communication', label: 'Feedback Hub', icon: MessageSquare, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Tools", mobile: true }, 
+  { href: '/check-in', label: 'Check-in', icon: MapPin, roles: ['STUDENT'], section: "Tools", mobile: true },
+  { href: '/schedule', label: 'My Schedule', icon: CalendarDays, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Tools", mobile: false },
+  { href: '/communication', label: 'Feedback Hub', icon: MessageSquare, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Tools", mobile: true },
 
   // Management for other roles
-  { 
-    href: '/interns', 
-    label: 'My Interns', 
-    icon: Briefcase, 
+  {
+    href: '/interns',
+    label: 'My Interns',
+    icon: Briefcase,
     roles: ['SUPERVISOR'],
-    section: "Management", 
-    mobile: true 
+    section: "Management",
+    mobile: true
   },
-  { 
-    href: '/assignments', 
-    label: 'Student Assignments', 
-    icon: Users, 
+  {
+    href: '/assignments',
+    label: 'Student Assignments',
+    icon: Users,
     roles: ['LECTURER', 'HOD'],
     section: "Management",
-    mobile: true // Important for Lecturers/HODs on mobile
+    mobile: true
   },
-  { 
-    href: '/department-ops', 
-    label: 'Department Ops', 
-    icon: GraduationCap, 
-    roles: ['HOD'], // HOD specific
+  {
+    href: '/department-ops',
+    label: 'Department Ops',
+    icon: GraduationCap,
+    roles: ['HOD'],
     section: "Management"
   },
   { href: '/analytics', label: 'Analytics', icon: BarChart3, roles: ['LECTURER', 'SUPERVISOR', 'HOD'], section: "Management" },
 ];
 
 export const BOTTOM_NAV_LINKS: NavItem[] = [
-    { href: '/profile', label: 'Profile', icon: UserCog, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Settings", mobile: true }, 
+    { href: '/profile', label: 'Profile', icon: UserCog, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Settings", mobile: true },
     { href: '/settings', label: 'Settings', icon: Settings, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Settings" },
 ];
 
-
-export const FACULTIES = [
+export const FACULTIES: AppFaculty[] = [
   { id: 'F001', name: 'Faculty of Engineering' },
   { id: 'F002', name: 'Faculty of Business and Management' },
   { id: 'F003', name: 'Faculty of Information Technology' },
@@ -113,7 +112,7 @@ export const FACULTIES = [
   { id: 'F_MOCK', name: 'Faculty of Mock Data'},
 ];
 
-export const DEPARTMENTS = [
+export const DEPARTMENTS: AppDepartment[] = [
   { id: 'D001', name: 'Mechanical Engineering', facultyId: 'F001' },
   { id: 'D002', name: 'Civil Engineering', facultyId: 'F001' },
   { id: 'D003', name: 'Marketing', facultyId: 'F002' },
@@ -125,6 +124,13 @@ export const DEPARTMENTS = [
   { id: 'D_MOCK', name: 'Department of Mock Data', facultyId: 'F_MOCK' },
 ];
 
+export const DUMMY_STUDENTS_DATA = [
+  { id: 'std1', name: 'Alice Wonderland', email: 'alice@example.com', department: 'Software Engineering', faculty: 'Faculty of Engineering', avatarUrl: 'https://placehold.co/150x150.png' },
+  { id: 'std2', name: 'Bob The Intern', email: 'bob@example.com', department: 'Mechanical Engineering', faculty: 'Faculty of Engineering', avatarUrl: 'https://placehold.co/150x150.png' },
+  { id: 'std3', name: 'Charlie Brown', email: 'charlie@example.com', department: 'Marketing', faculty: 'Faculty of Business', avatarUrl: 'https://placehold.co/150x150.png' },
+  { id: 'std4', name: 'Diana Prince', email: 'diana@example.com', department: 'Software Engineering', faculty: 'Faculty of Engineering', avatarUrl: 'https://placehold.co/150x150.png' },
+];
+
 export const SCORING_METRICS: ScoringMetric[] = [
   { id: 'technical_skills', label: 'Technical Skills', description: 'Proficiency in relevant tools and technologies.' },
   { id: 'communication', label: 'Communication', description: 'Clarity and effectiveness in verbal and written communication.' },
@@ -132,4 +138,3 @@ export const SCORING_METRICS: ScoringMetric[] = [
   { id: 'professionalism', label: 'Professionalism', description: 'Conduct, attitude, and adherence to workplace ethics.' },
   { id: 'timeliness_initiative', label: 'Timeliness & Initiative', description: 'Punctuality, meeting deadlines, and proactiveness.' },
 ];
-
