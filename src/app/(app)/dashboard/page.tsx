@@ -4,10 +4,10 @@
 import * as React from 'react';
 import PageHeader from '@/components/shared/page-header';
 import { 
-    LayoutDashboard, User, Briefcase, Building, CalendarCheck, FileText as FileTextLucide, MapPinIcon, StarIcon, ClockIcon, AlertOctagonIcon, UsersIcon, SchoolIcon, CheckCircle2, CircleDot, PlusCircle, CalendarDays, UploadCloud, Edit, MessageSquarePlus
+    LayoutDashboard, User, Briefcase, Building, CalendarCheck, FileText as FileTextLucide, MapPinIcon, StarIcon, ClockIcon, AlertOctagonIcon, UsersIcon, SchoolIcon, CheckCircle2, CircleDot, PlusCircle, CalendarDays, UploadCloud, Edit, MessageSquarePlus, BarChart3, SettingsIcon, UserCheck, FileUp, Users2, Activity
 } from 'lucide-react';
 import type { UserRole } from '@/types';
-import { USER_ROLES } from '@/lib/constants';
+import { USER_ROLES, FACULTIES, DEPARTMENTS } from '@/lib/constants';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -21,44 +21,54 @@ import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { PieChart, Pie, Cell } from "recharts";
-import { useToast } from '@/hooks/use-toast'; // Added for quick report submit
+import { useToast } from '@/hooks/use-toast';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const getInitials = (name: string) => {
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
 };
 
-const DashboardStatsCard: React.FC<{ title: string; value: string; icon: React.ElementType; progress?: number; progressLabel?: string; detail?: React.ReactNode; iconBgColor?: string; iconColor?: string }> = ({ title, value, icon: Icon, progress, progressLabel, detail, iconBgColor = "bg-primary/10", iconColor = "text-primary" }) => (
-  <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-xl dashboard-card">
+const DashboardStatsCard: React.FC<{ title: string; value: string | number; icon: React.ElementType; progress?: number; progressLabel?: string; detail?: React.ReactNode; iconBgColor?: string; iconColor?: string, actionLink?: string, actionLabel?: string }> = ({ title, value, icon: Icon, progress, progressLabel, detail, iconBgColor = "bg-primary/10", iconColor = "text-primary", actionLink, actionLabel }) => (
+  <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-xl dashboard-card flex flex-col">
     <CardHeader className="pb-2">
       <div className="flex items-center justify-between">
         <div>
           <CardDescription className="text-sm">{title}</CardDescription>
           <CardTitle className="text-2xl font-bold mt-1">{value}</CardTitle>
         </div>
-        <div className={`w-12 h-12 rounded-full ${iconBgColor} flex items-center justify-center ${iconColor}`}>
+        <div className={`w-12 h-12 rounded-full ${iconBgColor} flex items-center justify-center ${iconColor} shrink-0`}>
           <Icon className="w-6 h-6" />
         </div>
       </div>
     </CardHeader>
-    <CardContent>
+    <CardContent className="flex-grow">
       {progress !== undefined && (
         <div className="mt-2">
           <div className="flex items-center justify-between text-xs mb-1">
             <span className="text-muted-foreground">{progressLabel}</span>
             <span className="font-medium">{progress}%</span>
           </div>
-          <Progress value={progress} className="h-2 bg-muted" indicatorClassName="bg-primary"/>
+          <Progress value={progress} className="h-2 bg-muted" />
         </div>
       )}
       {detail && (
         <div className="text-xs text-muted-foreground mt-2">{detail}</div>
       )}
     </CardContent>
+    {actionLink && actionLabel && (
+        <CardFooter className="pt-0">
+            <Link href={actionLink} passHref className="w-full">
+                <Button variant="outline" className="w-full rounded-lg text-xs">{actionLabel}</Button>
+            </Link>
+        </CardFooter>
+    )}
   </Card>
 );
 
-const TaskItem: React.FC<{ title: string; description: string; status: 'Completed' | 'Pending' | 'Overdue'; dueDate: string, statusIcon?: React.ElementType }> = ({ title, description, status, dueDate }) => {
+// Student Dashboard Components
+const StudentTaskItem: React.FC<{ title: string; description: string; status: 'Completed' | 'Pending' | 'Overdue'; dueDate: string, statusIcon?: React.ElementType }> = ({ title, description, status, dueDate }) => {
   const statusStyles = {
     Completed: { icon: CheckCircle2, color: 'text-green-500 dark:text-green-400', badge: 'bg-green-100 text-green-700 border-green-500/30 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700/50' },
     Pending: { icon: CircleDot, color: 'text-yellow-500 dark:text-yellow-400', badge: 'bg-yellow-100 text-yellow-700 border-yellow-500/30 dark:bg-yellow-900/50 dark:text-yellow-300 dark:border-yellow-700/50' },
@@ -90,7 +100,7 @@ const TaskItem: React.FC<{ title: string; description: string; status: 'Complete
   );
 };
 
-const DeadlineItem: React.FC<{title: string; dueText: string; date: string; icon: React.ElementType; iconBg: string; iconColor: string}> = ({ title, dueText, date, icon: Icon, iconBg, iconColor}) => (
+const StudentDeadlineItem: React.FC<{title: string; dueText: string; date: string; icon: React.ElementType; iconBg: string; iconColor: string}> = ({ title, dueText, date, icon: Icon, iconBg, iconColor}) => (
     <div className="p-3 hover:bg-muted/30 transition-colors">
         <div className="flex items-start">
             <div className={`flex-shrink-0 mt-1 w-8 h-8 rounded-full ${iconBg} flex items-center justify-center ${iconColor}`}>
@@ -108,7 +118,7 @@ const DeadlineItem: React.FC<{title: string; dueText: string; date: string; icon
     </div>
 );
 
-const FeedbackItem: React.FC<{name: string; role: string; comment: string; time: string; avatarUrl?: string; avatarFallback: string; icon: React.ElementType; status?: 'Approved' | 'Pending' | 'Rejected'}> = ({name, role, comment, time, avatarUrl, avatarFallback, icon: Icon, status}) => {
+const StudentFeedbackItem: React.FC<{name: string; role: string; comment: string; time: string; avatarUrl?: string; avatarFallback: string; icon: React.ElementType; status?: 'Approved' | 'Pending' | 'Rejected'}> = ({name, role, comment, time, avatarUrl, avatarFallback, icon: Icon, status}) => {
     const statusColors: Record<string, string> = {
         Approved: 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300',
         Pending: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-300',
@@ -141,35 +151,433 @@ const FeedbackItem: React.FC<{name: string; role: string; comment: string; time:
     </div>
 )};
 
+const studentCheckInChartData = [{ name: 'Checked In', value: 92, fill: 'hsl(var(--primary))' }, { name: 'Remaining', value: 8, fill: 'hsl(var(--muted))' }];
+const studentCheckInChartConfig = { "Checked In": { label: "Checked In" }, "Remaining": { label: "Remaining" } };
 
-const checkInChartData = [{ name: 'Checked In', value: 92, fill: 'hsl(var(--primary))' }, { name: 'Remaining', value: 8, fill: 'hsl(var(--muted))' }];
-const checkInChartConfig = { "Checked In": { label: "Checked In" }, "Remaining": { label: "Remaining" } };
+const StudentDashboard: React.FC<{ userName: string }> = ({ userName }) => {
+    const [reportDate, setReportDate] = React.useState<Date | undefined>(new Date());
+    const [reportSummary, setReportSummary] = React.useState('');
+    const { toast } = useToast();
+
+    const handleQuickReportSubmit = () => {
+        if (!reportSummary.trim()) {
+            toast({ title: "Error", description: "Work summary cannot be empty.", variant: "destructive"});
+            return;
+        }
+        toast({ title: "Quick Report Submitted!", description: `Summary for ${format(reportDate!, "PPP")} recorded.`});
+        setReportSummary('');
+    };
+
+    return (
+        <>
+            <Card className="bg-gradient-to-r from-primary to-accent rounded-xl p-6 text-primary-foreground shadow-lg">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+                <div>
+                    <h2 className="text-2xl font-bold mb-1">Welcome back, {userName.split(' ')[0]}!</h2>
+                    <p className="opacity-90 text-sm">You have 2 pending tasks and 1 report to submit today.</p>
+                </div>
+                <Link href="/tasks" passHref>
+                    <Button className="mt-3 md:mt-0 bg-primary-foreground text-primary hover:bg-primary-foreground/90 font-medium transition shrink-0 rounded-lg">
+                    View Tasks
+                    </Button>
+                </Link>
+                </div>
+            </Card>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <DashboardStatsCard title="Days Completed" value="14" icon={CalendarCheck} progress={15.5} progressLabel="Total Days: 90" iconBgColor="bg-indigo-100 dark:bg-indigo-900/70" iconColor="text-indigo-600 dark:text-indigo-300" />
+                <DashboardStatsCard title="Reports Submitted" value="12" icon={FileTextLucide} detail={<span>Approved: 10 <span className="text-green-600">(83.3%)</span></span>} iconBgColor="bg-green-100 dark:bg-green-900/70" iconColor="text-green-600 dark:text-green-300" />
+                <DashboardStatsCard title="Check-in Rate" value="92%" icon={MapPinIcon} detail={<span>Last Check-in: Today <span className="text-blue-600">(On Time)</span></span>} iconBgColor="bg-blue-100 dark:bg-blue-900/70" iconColor="text-blue-600 dark:text-blue-300" />
+                <DashboardStatsCard title="Supervisor Rating" value="4.8" icon={StarIcon} detail={
+                <div className="flex items-center text-xs">
+                    <div className="flex text-yellow-400"> <StarIcon fill="currentColor" className="w-3 h-3"/> <StarIcon fill="currentColor" className="w-3 h-3"/> <StarIcon fill="currentColor" className="w-3 h-3"/> <StarIcon fill="currentColor" className="w-3 h-3"/> <StarIcon fill="currentColor" stroke="currentColor" strokeWidth={1} className="w-3 h-3 text-yellow-400/80"/></div>
+                    <span className="ml-1 text-muted-foreground">(12 reviews)</span>
+                </div>
+                } iconBgColor="bg-yellow-100 dark:bg-yellow-900/70" iconColor="text-yellow-600 dark:text-yellow-300" />
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 space-y-6">
+                <Card className="shadow-lg rounded-xl overflow-hidden bg-card text-card-foreground">
+                    <CardHeader className="border-b border-border flex flex-row justify-between items-center">
+                    <CardTitle className="font-headline text-lg">Today&apos;s Tasks</CardTitle>
+                    <Link href="/tasks" passHref>
+                        <Button variant="link" className="text-primary hover:text-primary/80 font-medium">View All</Button>
+                    </Link>
+                    </CardHeader>
+                    <CardContent className="p-0 divide-y divide-border">
+                    <StudentTaskItem title="Complete project documentation" description="Submit final version to supervisor" status="Completed" dueDate="Today 5:00 PM" />
+                    <StudentTaskItem title="Attend team meeting" description="Discuss project milestones" status="Pending" dueDate="Today 2:00 PM" />
+                    <StudentTaskItem title="Submit daily report" description="Include all completed tasks" status="Overdue" dueDate="Today 12:00 PM" />
+                    </CardContent>
+                    <CardFooter className="bg-muted/30 p-4 border-t border-border">
+                        <Link href="/tasks/new" className="w-full">
+                            <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground rounded-lg">
+                                <PlusCircle className="mr-2 h-4 w-4"/> Add New Task
+                            </Button>
+                        </Link>
+                    </CardFooter>
+                </Card>
+
+                <Card className="shadow-lg rounded-xl bg-card text-card-foreground">
+                    <CardHeader className="border-b border-border">
+                    <CardTitle className="font-headline text-lg">Log Work / Quick Report</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4 space-y-4">
+                        <div className="flex flex-col sm:flex-row gap-4">
+                            <div className="flex-1">
+                                <label htmlFor="report-date" className="block text-sm font-medium text-foreground mb-1">Date</label>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                    <Button
+                                        variant={"outline"}
+                                        className="w-full justify-start text-left font-normal border-input text-foreground rounded-lg"
+                                    >
+                                        <CalendarDays className="mr-2 h-4 w-4" />
+                                        {reportDate ? format(reportDate, "PPP") : <span>Pick a date</span>}
+                                    </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0 bg-popover border-border">
+                                    <Calendar
+                                        mode="single"
+                                        selected={reportDate}
+                                        onSelect={setReportDate}
+                                        initialFocus
+                                        className="bg-popover text-popover-foreground"
+                                    />
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+                            <div className="flex-1">
+                                <label htmlFor="attachment-file" className="block text-sm font-medium text-foreground mb-1">Attachment (Optional)</label>
+                                <Input id="attachment-file" type="file" className="text-xs border-input text-foreground file:text-foreground rounded-lg"/>
+                            </div>
+                        </div>
+                        <div>
+                            <label htmlFor="work-summary" className="block text-sm font-medium text-foreground mb-1">Work Summary</label>
+                            <Textarea id="work-summary" value={reportSummary} onChange={(e) => setReportSummary(e.target.value)} placeholder="Briefly describe what you accomplished..." rows={3} className="border-input text-foreground rounded-lg" />
+                        </div>
+                        <div className="flex justify-end space-x-2">
+                            <Button variant="outline" className="border-input text-foreground hover:bg-muted hover:text-muted-foreground rounded-lg" onClick={() => toast({title: "Draft Saved!", description: "Your quick report draft has been saved."})}>Save Draft</Button>
+                            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg" onClick={handleQuickReportSubmit}>
+                                Submit Quick Report
+                            </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground text-center">For a detailed submission, go to <Link href="/reports/new" className="text-primary hover:underline">Full Report Page</Link>.</p>
+                    </CardContent>
+                </Card>
+                </div>
+                
+                <div className="space-y-6">
+                <Card className="shadow-lg rounded-xl overflow-hidden bg-card text-card-foreground">
+                    <CardHeader className="border-b border-border">
+                    <CardTitle className="font-headline text-lg">Check-in Status</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4">
+                    <div className="flex flex-col items-center">
+                        <ChartContainer config={studentCheckInChartConfig} className="mx-auto aspect-square h-[120px]">
+                        <PieChart accessibilityLayer>
+                            <ChartTooltip content={<ChartTooltipContent hideLabel className="text-xs bg-popover text-popover-foreground border-border" />} />
+                            <Pie data={studentCheckInChartData} dataKey="value" nameKey="name" innerRadius={35} outerRadius={50} strokeWidth={2}>
+                            <Cell fill="hsl(var(--primary))" radius={8}/>
+                            <Cell fill="hsl(var(--muted))" radius={8}/>
+                            </Pie>
+                            <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle" className="fill-primary text-lg font-bold">
+                                92%
+                            </text>
+                        </PieChart>
+                        </ChartContainer>
+                        <div className="text-center mt-2">
+                        <h4 className="font-medium text-base text-foreground">On-site Attendance</h4>
+                        <p className="text-muted-foreground text-xs mt-0.5">12 of 14 days checked in</p>
+                        </div>
+                        <Link href="/check-in" className="w-full">
+                            <Button className="mt-4 w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg">Check-in Now</Button>
+                        </Link>
+                    </div>
+                    </CardContent>
+                </Card>
+                
+                <Card className="shadow-lg rounded-xl overflow-hidden bg-card text-card-foreground">
+                    <CardHeader className="border-b border-border">
+                    <CardTitle className="font-headline text-lg">Upcoming Deadlines</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0 divide-y divide-border">
+                        <StudentDeadlineItem title="Final Project Submission" dueText="Due in 3 days" date="July 15, 2024" icon={AlertOctagonIcon} iconBg="bg-red-100 dark:bg-red-900/70" iconColor="text-red-600 dark:text-red-300" />
+                        <StudentDeadlineItem title="Mid-term Evaluation" dueText="Due in 7 days" date="July 19, 2024" icon={FileTextLucide} iconBg="bg-yellow-100 dark:bg-yellow-900/70" iconColor="text-yellow-600 dark:text-yellow-300" />
+                        <StudentDeadlineItem title="Team Presentation" dueText="Due in 10 days" date="July 22, 2024" icon={UsersIcon} iconBg="bg-blue-100 dark:bg-blue-900/70" iconColor="text-blue-600 dark:text-blue-300" />
+                    </CardContent>
+                </Card>
+                
+                <Card className="shadow-lg rounded-xl overflow-hidden bg-card text-card-foreground">
+                    <CardHeader className="border-b border-border">
+                    <CardTitle className="font-headline text-lg">Recent Feedback</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0 divide-y divide-border">
+                        <StudentFeedbackItem name="Mr. Smith" role="Company Supervisor" comment="Great progress on the documentation. Just a few minor corrections needed on section 3.2." time="2 hours ago" avatarUrl="https://placehold.co/100x100.png" data-ai-hint="person portrait" avatarFallback="MS" icon={Briefcase} status="Approved"/>
+                        <StudentFeedbackItem name="Prof. Johnson" role="Faculty Lecturer" comment="Please provide more details about team collaboration in your next report." time="1 day ago" avatarUrl="https://placehold.co/100x100.png" data-ai-hint="person portrait" avatarFallback="PJ" icon={SchoolIcon} status="Pending"/>
+                    </CardContent>
+                </Card>
+                </div>
+            </div>
+        </>
+    );
+}
+
+const LecturerDashboard: React.FC<{ userName: string }> = ({ userName }) => {
+    const assignedStudents = [
+        { id: 'stu1', name: 'Alice Wonderland', department: 'Software Engineering', avatar: 'https://placehold.co/100x100.png', dataAiHint: 'person portrait', overdueTasks: 1, pendingReports: 0 },
+        { id: 'stu2', name: 'Bob The Intern', department: 'Mechanical Engineering', avatar: 'https://placehold.co/100x100.png', dataAiHint: 'person portrait', overdueTasks: 0, pendingReports: 1 },
+        { id: 'stu3', name: 'Charlie Brown', department: 'Marketing', avatar: 'https://placehold.co/100x100.png', dataAiHint: 'person portrait', overdueTasks: 2, pendingReports: 2 },
+    ];
+    return (
+        <>
+            <Card className="bg-gradient-to-r from-primary to-accent rounded-xl p-6 text-primary-foreground shadow-lg">
+                <h2 className="text-2xl font-bold mb-1">Welcome, {userName.split(' ')[0]}!</h2>
+                <p className="opacity-90 text-sm">Oversee your assigned students and their progress.</p>
+            </Card>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <DashboardStatsCard title="Assigned Students" value={assignedStudents.length} icon={UsersIcon} iconBgColor="bg-blue-100 dark:bg-blue-900" iconColor="text-blue-500 dark:text-blue-300" actionLink="/assignments" actionLabel="Manage Assignments"/>
+                <DashboardStatsCard title="Pending Reviews" value="3" icon={FileUp} detail="2 Reports, 1 Task" iconBgColor="bg-yellow-100 dark:bg-yellow-900" iconColor="text-yellow-500 dark:text-yellow-300" actionLink="/assignments" actionLabel="View Pending Items" />
+                <DashboardStatsCard title="Overdue Items" value="2" icon={AlertOctagonIcon} detail="Students with late submissions" iconBgColor="bg-red-100 dark:bg-red-900" iconColor="text-red-500 dark:text-red-300" actionLink="/analytics" actionLabel="View Compliance"/>
+            </div>
+            <Card className="shadow-lg rounded-xl mt-6">
+                <CardHeader>
+                    <CardTitle>My Students</CardTitle>
+                    <CardDescription>Quick overview of students you are supervising.</CardDescription>
+                </CardHeader>
+                <CardContent className="p-0">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Student</TableHead>
+                                <TableHead>Department</TableHead>
+                                <TableHead className="text-center">Overdue Tasks</TableHead>
+                                <TableHead className="text-center">Pending Reports</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {assignedStudents.map(student => (
+                                <TableRow key={student.id}>
+                                    <TableCell>
+                                        <div className="flex items-center gap-3">
+                                            <Avatar className="h-9 w-9">
+                                                <AvatarImage src={student.avatar} alt={student.name} data-ai-hint={student.dataAiHint} />
+                                                <AvatarFallback>{getInitials(student.name)}</AvatarFallback>
+                                            </Avatar>
+                                            <div>
+                                                <p className="font-medium">{student.name}</p>
+                                            </div>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>{student.department}</TableCell>
+                                    <TableCell className="text-center"><Badge variant={student.overdueTasks > 0 ? "destructive" : "secondary"}>{student.overdueTasks}</Badge></TableCell>
+                                    <TableCell className="text-center"><Badge variant={student.pendingReports > 0 ? "destructive" : "secondary"}>{student.pendingReports}</Badge></TableCell>
+                                    <TableCell className="text-right">
+                                        <Link href={`/assignments/student/${student.id}`} passHref>
+                                            <Button variant="ghost" size="sm">View Details</Button>
+                                        </Link>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+                 <CardFooter className="justify-end p-4 border-t">
+                    <Button variant="outline" size="sm" asChild><Link href="/assignments">View All Students</Link></Button>
+                </CardFooter>
+            </Card>
+        </>
+    );
+}
+
+const SupervisorDashboard: React.FC<{ userName: string }> = ({ userName }) => {
+     const supervisedInterns = [
+        { id: 'intern1', name: 'Samuel Green', university: 'State University - CompSci', avatar: 'https://placehold.co/100x100.png', dataAiHint: 'person portrait', pendingTasks: 2, pendingReports: 1 },
+        { id: 'intern2', name: 'Olivia Blue', university: 'Tech Institute - Design', avatar: 'https://placehold.co/100x100.png', dataAiHint: 'person portrait', pendingTasks: 0, pendingReports: 0 },
+    ];
+    return (
+        <>
+            <Card className="bg-gradient-to-r from-primary to-accent rounded-xl p-6 text-primary-foreground shadow-lg">
+                <h2 className="text-2xl font-bold mb-1">Welcome, {userName.split(' ')[0]}!</h2>
+                <p className="opacity-90 text-sm">Manage your assigned interns and their submissions.</p>
+            </Card>
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <DashboardStatsCard title="Assigned Interns" value={supervisedInterns.length} icon={Users2} iconBgColor="bg-green-100 dark:bg-green-900" iconColor="text-green-500 dark:text-green-300" actionLink="/interns" actionLabel="View My Interns"/>
+                <DashboardStatsCard title="Pending Approvals" value="4" icon={CheckSquare} detail="3 Tasks, 1 Report" iconBgColor="bg-orange-100 dark:bg-orange-900" iconColor="text-orange-500 dark:text-orange-300" actionLink="/interns/approve-tasks" actionLabel="Review Submissions" />
+                <DashboardStatsCard title="Intern Activity" value="High" icon={Activity} detail="Most interns active daily" iconBgColor="bg-purple-100 dark:bg-purple-900" iconColor="text-purple-500 dark:text-purple-300" actionLink="/interns" actionLabel="Monitor Activity" />
+            </div>
+            <Card className="shadow-lg rounded-xl mt-6">
+                <CardHeader>
+                    <CardTitle>My Interns</CardTitle>
+                    <CardDescription>Quick overview of interns you are supervising.</CardDescription>
+                </CardHeader>
+                <CardContent className="p-0">
+                     <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Intern</TableHead>
+                                <TableHead>University/Program</TableHead>
+                                <TableHead className="text-center">Pending Tasks</TableHead>
+                                <TableHead className="text-center">Pending Reports</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {supervisedInterns.map(intern => (
+                                <TableRow key={intern.id}>
+                                    <TableCell>
+                                        <div className="flex items-center gap-3">
+                                            <Avatar className="h-9 w-9">
+                                                <AvatarImage src={intern.avatar} alt={intern.name} data-ai-hint={intern.dataAiHint} />
+                                                <AvatarFallback>{getInitials(intern.name)}</AvatarFallback>
+                                            </Avatar>
+                                            <div>
+                                                <p className="font-medium">{intern.name}</p>
+                                            </div>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>{intern.university}</TableCell>
+                                    <TableCell className="text-center"><Badge variant={intern.pendingTasks > 0 ? "destructive" : "secondary"}>{intern.pendingTasks}</Badge></TableCell>
+                                    <TableCell className="text-center"><Badge variant={intern.pendingReports > 0 ? "destructive" : "secondary"}>{intern.pendingReports}</Badge></TableCell>
+                                    <TableCell className="text-right">
+                                        <Link href={`/interns/details/${intern.id}`} passHref>
+                                            <Button variant="ghost" size="sm">View Profile</Button>
+                                        </Link>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+                 <CardFooter className="justify-end p-4 border-t">
+                    <Button variant="outline" size="sm" asChild><Link href="/interns">View All Interns</Link></Button>
+                </CardFooter>
+            </Card>
+        </>
+    );
+}
+
+const HODDashboard: React.FC<{ userName: string }> = ({ userName }) => {
+    const [selectedFaculty, setSelectedFaculty] = React.useState<string>('');
+    const [selectedDepartment, setSelectedDepartment] = React.useState<string>('');
+    
+    // Simulate HOD is linked to one faculty and their specific department. This would come from user data.
+    const hodFacultyId = FACULTIES[0]?.id || ''; // Example: First faculty
+    const hodDepartmentId = DEPARTMENTS.find(d => d.facultyId === hodFacultyId)?.id || ''; // Example: First department in that faculty
+
+    React.useEffect(() => {
+        setSelectedFaculty(hodFacultyId);
+        setSelectedDepartment(hodDepartmentId);
+    }, [hodFacultyId, hodDepartmentId]);
+    
+    const departmentStudents = [ // Filtered by HOD's department
+        { id: 'stu1', name: 'Alice Wonderland', faculty: FACULTIES[0]?.name, department: DEPARTMENTS[0]?.name, avatar: 'https://placehold.co/100x100.png', dataAiHint: 'person portrait', compliance: '95%', issues: 0 },
+        { id: 'stu4', name: 'Diana Prince', faculty: FACULTIES[0]?.name, department: DEPARTMENTS[0]?.name, avatar: 'https://placehold.co/100x100.png', dataAiHint: 'person portrait', compliance: '80%', issues: 2 },
+    ];
+
+    return (
+        <>
+            <Card className="bg-gradient-to-r from-primary to-accent rounded-xl p-6 text-primary-foreground shadow-lg">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+                    <div>
+                        <h2 className="text-2xl font-bold mb-1">Welcome, {userName.split(' ')[0]}!</h2>
+                        <p className="opacity-90 text-sm">Departmental Internship Overview: {DEPARTMENTS.find(d=>d.id === hodDepartmentId)?.name || 'N/A'}</p>
+                    </div>
+                    <Link href="/analytics" passHref>
+                        <Button className="mt-3 md:mt-0 bg-primary-foreground text-primary hover:bg-primary-foreground/90 font-medium transition shrink-0 rounded-lg">
+                            View Full Analytics
+                        </Button>
+                    </Link>
+                </div>
+            </Card>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <DashboardStatsCard title="Total Interns (Dept.)" value={departmentStudents.length} icon={UsersIcon} iconBgColor="bg-indigo-100 dark:bg-indigo-900" iconColor="text-indigo-500 dark:text-indigo-300" actionLink="/analytics" actionLabel="View Student List"/>
+                <DashboardStatsCard title="Compliance Rate (Dept.)" value="88%" icon={CheckCircle2} detail="Avg. report & check-in" iconBgColor="bg-teal-100 dark:bg-teal-900" iconColor="text-teal-500 dark:text-teal-300" actionLink="/analytics" actionLabel="Detailed Compliance Report"/>
+                <DashboardStatsCard title="Students with Issues" value="1" icon={AlertOctagonIcon} detail="Needs attention" iconBgColor="bg-amber-100 dark:bg-amber-900" iconColor="text-amber-500 dark:text-amber-300" actionLink="/analytics" actionLabel="View Issue Log"/>
+            </div>
+            
+            <Card className="shadow-lg rounded-xl mt-6">
+                <CardHeader>
+                    <CardTitle>{DEPARTMENTS.find(d=>d.id === hodDepartmentId)?.name || 'Department'} Student Overview</CardTitle>
+                    <CardDescription>Summary of student progress within your department.</CardDescription>
+                </CardHeader>
+                <CardContent className="p-0">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Student</TableHead>
+                                <TableHead>Faculty</TableHead>
+                                <TableHead>Compliance</TableHead>
+                                <TableHead className="text-center">Open Issues</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {departmentStudents.map(student => (
+                                <TableRow key={student.id}>
+                                    <TableCell>
+                                        <div className="flex items-center gap-3">
+                                            <Avatar className="h-9 w-9">
+                                                <AvatarImage src={student.avatar} alt={student.name} data-ai-hint={student.dataAiHint} />
+                                                <AvatarFallback>{getInitials(student.name)}</AvatarFallback>
+                                            </Avatar>
+                                            <p className="font-medium">{student.name}</p>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>{student.faculty}</TableCell>
+                                    <TableCell><Progress value={parseInt(student.compliance)} className="h-2" /> <span className="text-xs">{student.compliance}</span></TableCell>
+                                    <TableCell className="text-center"><Badge variant={student.issues > 0 ? "destructive" : "default"}>{student.issues}</Badge></TableCell>
+                                    <TableCell className="text-right">
+                                        <Link href={`/analytics?studentId=${student.id}`} passHref> {/* Example link */}
+                                            <Button variant="ghost" size="sm">View Details</Button>
+                                        </Link>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+                <CardFooter className="p-4 border-t">
+                     <Link href="/analytics" className="w-full sm:w-auto">
+                        <Button className="w-full sm:w-auto bg-accent hover:bg-accent/90 text-accent-foreground rounded-lg">
+                            <BarChart3 className="mr-2 h-4 w-4"/> Go to Department Analytics
+                        </Button>
+                    </Link>
+                </CardFooter>
+            </Card>
+        </>
+    );
+}
 
 
 export default function DashboardPage() {
   const [userRole, setUserRole] = React.useState<UserRole | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
-  const [reportDate, setReportDate] = React.useState<Date | undefined>(new Date());
-  const [reportSummary, setReportSummary] = React.useState('');
   const [userName, setUserName] = React.useState('User');
-  const { toast } = useToast();
 
   React.useEffect(() => {
     const storedRole = typeof window !== "undefined" ? localStorage.getItem('userRole') as UserRole : null;
     const storedName = typeof window !== "undefined" ? localStorage.getItem('userName') : 'User';
     setUserRole(storedRole || 'STUDENT'); 
-    setUserName(storedName || 'User!');
+    setUserName(storedName || 'User');
     setIsLoading(false);
   }, []);
   
-  const handleQuickReportSubmit = () => {
-    if (!reportSummary.trim()) {
-        toast({ title: "Error", description: "Work summary cannot be empty.", variant: "destructive"});
-        return;
+  const renderDashboardContent = () => {
+    switch (userRole) {
+      case 'STUDENT':
+        return <StudentDashboard userName={userName} />;
+      case 'LECTURER':
+        return <LecturerDashboard userName={userName} />;
+      case 'SUPERVISOR':
+        return <SupervisorDashboard userName={userName} />;
+      case 'HOD':
+        return <HODDashboard userName={userName} />;
+      default:
+        return <div className="text-center p-8"><p>No dashboard available for this role or role not identified.</p></div>;
     }
-    // Simulate submission
-    toast({ title: "Quick Report Submitted!", description: `Summary for ${format(reportDate!, "PPP")} recorded.`});
-    setReportSummary(''); // Clear summary
   };
 
   if (isLoading) {
@@ -178,158 +586,12 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6 p-4 md:p-6 bg-background text-foreground">
-      <Card className="bg-gradient-to-r from-primary to-accent rounded-xl p-6 text-primary-foreground shadow-lg">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
-          <div>
-            <h2 className="text-2xl font-bold mb-1">Welcome back, {userName.split(' ')[0]}!</h2>
-            <p className="opacity-90 text-sm">You have 2 pending tasks and 1 report to submit today.</p>
-          </div>
-          <Link href="/tasks" passHref>
-            <Button className="mt-3 md:mt-0 bg-primary-foreground text-primary hover:bg-primary-foreground/90 font-medium transition shrink-0 rounded-lg">
-              View Tasks
-            </Button>
-          </Link>
-        </div>
-      </Card>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <DashboardStatsCard title="Days Completed" value="14" icon={CalendarCheck} progress={15.5} progressLabel="Total Days: 90" iconBgColor="bg-indigo-100 dark:bg-indigo-900/70" iconColor="text-indigo-600 dark:text-indigo-300" />
-        <DashboardStatsCard title="Reports Submitted" value="12" icon={FileTextLucide} detail={<span>Approved: 10 <span className="text-green-600">(83.3%)</span></span>} iconBgColor="bg-green-100 dark:bg-green-900/70" iconColor="text-green-600 dark:text-green-300" />
-        <DashboardStatsCard title="Check-in Rate" value="92%" icon={MapPinIcon} detail={<span>Last Check-in: Today <span className="text-blue-600">(On Time)</span></span>} iconBgColor="bg-blue-100 dark:bg-blue-900/70" iconColor="text-blue-600 dark:text-blue-300" />
-        <DashboardStatsCard title="Supervisor Rating" value="4.8" icon={StarIcon} detail={
-          <div className="flex items-center text-xs">
-            <div className="flex text-yellow-400"> <StarIcon fill="currentColor" className="w-3 h-3"/> <StarIcon fill="currentColor" className="w-3 h-3"/> <StarIcon fill="currentColor" className="w-3 h-3"/> <StarIcon fill="currentColor" className="w-3 h-3"/> <StarIcon fill="currentColor" stroke="currentColor" strokeWidth={1} className="w-3 h-3 text-yellow-400/80"/></div> {/* Half star representation */}
-            <span className="ml-1 text-muted-foreground">(12 reviews)</span>
-          </div>
-        } iconBgColor="bg-yellow-100 dark:bg-yellow-900/70" iconColor="text-yellow-600 dark:text-yellow-300" />
-      </div>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          <Card className="shadow-lg rounded-xl overflow-hidden bg-card text-card-foreground">
-            <CardHeader className="border-b border-border flex flex-row justify-between items-center">
-              <CardTitle className="font-headline text-lg">Today&apos;s Tasks</CardTitle>
-              <Link href="/tasks" passHref>
-                <Button variant="link" className="text-primary hover:text-primary/80 font-medium">View All</Button>
-              </Link>
-            </CardHeader>
-            <CardContent className="p-0 divide-y divide-border">
-              <TaskItem title="Complete project documentation" description="Submit final version to supervisor" status="Completed" dueDate="Today 5:00 PM" />
-              <TaskItem title="Attend team meeting" description="Discuss project milestones" status="Pending" dueDate="Today 2:00 PM" />
-              <TaskItem title="Submit daily report" description="Include all completed tasks" status="Overdue" dueDate="Today 12:00 PM" />
-            </CardContent>
-            <CardFooter className="bg-muted/30 p-4 border-t border-border">
-                <Link href="/tasks/new" className="w-full">
-                    <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground rounded-lg">
-                        <PlusCircle className="mr-2 h-4 w-4"/> Add New Task
-                    </Button>
-                </Link>
-            </CardFooter>
-          </Card>
-
-          <Card className="shadow-lg rounded-xl bg-card text-card-foreground">
-            <CardHeader className="border-b border-border">
-              <CardTitle className="font-headline text-lg">Log Work / Quick Report</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 space-y-4">
-                <div className="flex flex-col sm:flex-row gap-4">
-                    <div className="flex-1">
-                        <label htmlFor="report-date" className="block text-sm font-medium text-foreground mb-1">Date</label>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                            <Button
-                                variant={"outline"}
-                                className="w-full justify-start text-left font-normal border-input text-foreground rounded-lg"
-                            >
-                                <CalendarDays className="mr-2 h-4 w-4" />
-                                {reportDate ? format(reportDate, "PPP") : <span>Pick a date</span>}
-                            </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0 bg-popover border-border">
-                            <Calendar
-                                mode="single"
-                                selected={reportDate}
-                                onSelect={setReportDate}
-                                initialFocus
-                                className="bg-popover text-popover-foreground"
-                            />
-                            </PopoverContent>
-                        </Popover>
-                    </div>
-                     <div className="flex-1">
-                        <label htmlFor="attachment-file" className="block text-sm font-medium text-foreground mb-1">Attachment (Optional)</label>
-                        <Input id="attachment-file" type="file" className="text-xs border-input text-foreground file:text-foreground rounded-lg"/>
-                    </div>
-                </div>
-                <div>
-                    <label htmlFor="work-summary" className="block text-sm font-medium text-foreground mb-1">Work Summary</label>
-                    <Textarea id="work-summary" value={reportSummary} onChange={(e) => setReportSummary(e.target.value)} placeholder="Briefly describe what you accomplished..." rows={3} className="border-input text-foreground rounded-lg" />
-                </div>
-                <div className="flex justify-end space-x-2">
-                    <Button variant="outline" className="border-input text-foreground hover:bg-muted hover:text-muted-foreground rounded-lg" onClick={() => toast({title: "Draft Saved!", description: "Your quick report draft has been saved."})}>Save Draft</Button>
-                    <Button className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg" onClick={handleQuickReportSubmit}>
-                        Submit Quick Report
-                    </Button>
-                </div>
-                 <p className="text-xs text-muted-foreground text-center">For a detailed submission, go to <Link href="/reports/new" className="text-primary hover:underline">Full Report Page</Link>.</p>
-            </CardContent>
-          </Card>
-        </div>
-        
-        <div className="space-y-6">
-          <Card className="shadow-lg rounded-xl overflow-hidden bg-card text-card-foreground">
-            <CardHeader className="border-b border-border">
-              <CardTitle className="font-headline text-lg">Check-in Status</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4">
-              <div className="flex flex-col items-center">
-                <ChartContainer config={checkInChartConfig} className="mx-auto aspect-square h-[120px]">
-                  <PieChart accessibilityLayer>
-                    <ChartTooltip content={<ChartTooltipContent hideLabel className="text-xs bg-popover text-popover-foreground border-border" />} />
-                    <Pie data={checkInChartData} dataKey="value" nameKey="name" innerRadius={35} outerRadius={50} strokeWidth={2}>
-                      <Cell fill="hsl(var(--primary))" radius={8}/>
-                      <Cell fill="hsl(var(--muted))" radius={8}/>
-                    </Pie>
-                     <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle" className="fill-primary text-lg font-bold">
-                        92%
-                     </text>
-                  </PieChart>
-                </ChartContainer>
-                <div className="text-center mt-2">
-                  <h4 className="font-medium text-base text-foreground">On-site Attendance</h4>
-                  <p className="text-muted-foreground text-xs mt-0.5">12 of 14 days checked in</p>
-                </div>
-                <Link href="/check-in" className="w-full">
-                    <Button className="mt-4 w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg">Check-in Now</Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="shadow-lg rounded-xl overflow-hidden bg-card text-card-foreground">
-            <CardHeader className="border-b border-border">
-              <CardTitle className="font-headline text-lg">Upcoming Deadlines</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0 divide-y divide-border">
-                <DeadlineItem title="Final Project Submission" dueText="Due in 3 days" date="July 15, 2024" icon={AlertOctagonIcon} iconBg="bg-red-100 dark:bg-red-900/70" iconColor="text-red-600 dark:text-red-300" />
-                <DeadlineItem title="Mid-term Evaluation" dueText="Due in 7 days" date="July 19, 2024" icon={FileTextLucide} iconBg="bg-yellow-100 dark:bg-yellow-900/70" iconColor="text-yellow-600 dark:text-yellow-300" />
-                <DeadlineItem title="Team Presentation" dueText="Due in 10 days" date="July 22, 2024" icon={UsersIcon} iconBg="bg-blue-100 dark:bg-blue-900/70" iconColor="text-blue-600 dark:text-blue-300" />
-            </CardContent>
-          </Card>
-          
-          <Card className="shadow-lg rounded-xl overflow-hidden bg-card text-card-foreground">
-            <CardHeader className="border-b border-border">
-              <CardTitle className="font-headline text-lg">Recent Feedback</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0 divide-y divide-border">
-                <FeedbackItem name="Mr. Smith" role="Company Supervisor" comment="Great progress on the documentation. Just a few minor corrections needed on section 3.2." time="2 hours ago" avatarUrl="https://placehold.co/100x100.png" avatarFallback="MS" icon={Briefcase} status="Approved"/>
-                <FeedbackItem name="Prof. Johnson" role="Faculty Lecturer" comment="Please provide more details about team collaboration in your next report." time="1 day ago" avatarUrl="https://placehold.co/100x100.png" avatarFallback="PJ" icon={SchoolIcon} status="Pending"/>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+        <PageHeader
+            title={`${USER_ROLES[userRole!] || 'User'} Dashboard`}
+            description={`Welcome to your InternshipTrack ${USER_ROLES[userRole!]?.toLowerCase()} dashboard.`}
+            icon={LayoutDashboard}
+        />
+        {renderDashboardContent()}
     </div>
   );
 }
-
-    
