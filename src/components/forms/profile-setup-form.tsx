@@ -35,7 +35,7 @@ export type ProfileFormValues = z.infer<typeof profileSchema>;
 interface ProfileSetupFormProps {
   defaultValues?: Partial<ProfileFormValues>;
   onSuccess?: (data: ProfileFormValues) => void; 
-  userRole: UserRole | null; // Added userRole prop
+  userRole: UserRole | null; 
 }
 
 export default function ProfileSetupForm({ defaultValues, onSuccess, userRole }: ProfileSetupFormProps) {
@@ -64,7 +64,7 @@ export default function ProfileSetupForm({ defaultValues, onSuccess, userRole }:
         form.setValue('departmentId', ''); 
       }
     } else if (userRole !== 'STUDENT') {
-      setAvailableDepartments([]); // Supervisors/others don't use this
+      setAvailableDepartments([]); 
       form.setValue('facultyId', '');
       form.setValue('departmentId', '');
     } else {
@@ -73,7 +73,7 @@ export default function ProfileSetupForm({ defaultValues, onSuccess, userRole }:
   }, [selectedFacultyId, form, userRole]);
 
   React.useEffect(() => {
-    const currentFacultyId = defaultValues?.facultyId || '';
+    let currentFacultyId = defaultValues?.facultyId || '';
     let currentDepartmentId = defaultValues?.departmentId || '';
 
     if (userRole === 'STUDENT') {
@@ -81,13 +81,13 @@ export default function ProfileSetupForm({ defaultValues, onSuccess, userRole }:
         const depts = DEPARTMENTS.filter(d => d.facultyId === currentFacultyId);
         setAvailableDepartments(depts);
         if (currentDepartmentId && !depts.find(d => d.id === currentDepartmentId)) {
-          currentDepartmentId = ''; // Reset if not valid for the faculty
+          currentDepartmentId = ''; 
         }
       } else {
         setAvailableDepartments(DEPARTMENTS);
       }
     } else {
-      // For non-students, faculty and department are not applicable
+      
       currentFacultyId = '';
       currentDepartmentId = '';
       setAvailableDepartments([]);
