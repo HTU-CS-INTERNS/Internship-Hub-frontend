@@ -1,3 +1,4 @@
+
 import type { LucideIcon } from 'lucide-react';
 import { 
   LayoutDashboard, 
@@ -13,13 +14,14 @@ import {
   GraduationCap,
   CheckSquare,
   FileCheck,
-  Home,
-  ListChecks,
-  MapPin,
-  CalendarDays,
-  UserCog,
-  Bell, // Added for header
-  Mail // Added for header
+  Home, // Used for Dashboard in mockup
+  ListChecks, // Used for Daily Tasks
+  MapPin, // Used for Check-in
+  CalendarDays, // Used for Schedule
+  UserCog, // Used for Profile
+  UserCircle, // For mobile profile
+  Bell, 
+  Mail 
 } from 'lucide-react';
 import type { UserRole } from '@/types';
 
@@ -30,6 +32,7 @@ export interface NavItem {
   roles: UserRole[];
   children?: NavItem[];
   section?: string; // For grouping in sidebar
+  mobile?: boolean; // Whether to show on mobile bottom nav
 }
 
 export const USER_ROLES: Record<UserRole, string> = {
@@ -39,38 +42,33 @@ export const USER_ROLES: Record<UserRole, string> = {
   HOD: 'Head of Department',
 };
 
-// Adapted to match mockup structure and icons, using Lucide
 export const NAV_LINKS: NavItem[] = [
   // Main Section
-  { href: '/dashboard', label: 'Dashboard', icon: Home, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Main" },
+  { href: '/dashboard', label: 'Dashboard', icon: Home, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Main", mobile: true },
   { 
     href: '/tasks', 
     label: 'Daily Tasks', 
-    icon: ListChecks, // fas fa-tasks
+    icon: ListChecks, 
     roles: ['STUDENT'],
-    section: "Main"
-    // children: [
-    //   { href: '/tasks/new', label: 'Declare Task', icon: PlusCircle, roles: ['STUDENT'] },
-    // ]
+    section: "Main",
+    mobile: true
   },
   { 
     href: '/reports', 
     label: 'Reports', 
-    icon: FileText, // fas fa-file-alt
+    icon: FileText, 
     roles: ['STUDENT'],
     section: "Main"
-    // children: [
-    //   { href: '/reports/new', label: 'Submit Report', icon: PlusCircle, roles: ['STUDENT'] },
-    // ]
+    // mobile: true // Potentially add if space or combine under tasks
   },
-  { href: '/company', label: 'Company', icon: Building, roles: ['STUDENT'], section: "Main" }, // Placeholder, as Company page might not exist yet for student
+  { href: '/company', label: 'Company', icon: Building, roles: ['STUDENT'], section: "Main" }, 
 
   // Tools Section
-  { href: '/check-in', label: 'Check-in', icon: MapPin, roles: ['STUDENT'], section: "Tools" }, // Placeholder
-  { href: '/schedule', label: 'Schedule', icon: CalendarDays, roles: ['STUDENT', 'LECTURER'], section: "Tools" }, // Placeholder
-  { href: '/communication', label: 'Feedback', icon: MessageSquare, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Tools" }, // Renamed from 'Messages' to 'Feedback' per mockup
+  { href: '/check-in', label: 'Check-in', icon: MapPin, roles: ['STUDENT'], section: "Tools", mobile: true }, 
+  { href: '/schedule', label: 'Schedule', icon: CalendarDays, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Tools", mobile: true }, 
+  { href: '/communication', label: 'Feedback', icon: MessageSquare, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Tools" }, 
 
-  // Management for other roles (simplified for now, can be expanded)
+  // Management for other roles
   { 
     href: '/assignments', 
     label: 'Assignments', 
@@ -87,7 +85,7 @@ export const NAV_LINKS: NavItem[] = [
   },
   { 
     href: '/department', 
-    label: 'Department Ops', // More descriptive for HOD
+    label: 'Department Ops', 
     icon: Building, 
     roles: ['HOD'],
     section: "Management"
@@ -96,7 +94,7 @@ export const NAV_LINKS: NavItem[] = [
 ];
 
 export const BOTTOM_NAV_LINKS: NavItem[] = [
-    { href: '/profile', label: 'Profile', icon: UserCog, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Settings" },
+    { href: '/profile', label: 'Profile', icon: UserCog, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Settings", mobile: true }, // UserCog for desktop, UserCircle for mobile
     { href: '/settings', label: 'Settings', icon: Settings, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Settings" },
 ];
 
