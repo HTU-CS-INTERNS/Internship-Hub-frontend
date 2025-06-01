@@ -24,6 +24,7 @@ import {
   Mail,
   Palette, // For Appearance settings
   ShieldCheck, // For Privacy & Security settings
+  BookOpen // For My Company page
 } from 'lucide-react';
 import type { UserRole } from '@/types';
 
@@ -64,12 +65,12 @@ export const NAV_LINKS: NavItem[] = [
     section: "Main",
     mobile: true // Student might want quick access
   },
-  { href: '/company', label: 'Company', icon: Building, roles: ['STUDENT'], section: "Main" }, 
+  { href: '/company', label: 'My Company', icon: Building, roles: ['STUDENT'], section: "Main", mobile: false }, 
 
   // Tools Section
   { href: '/check-in', label: 'Check-in', icon: MapPin, roles: ['STUDENT'], section: "Tools", mobile: true }, 
-  { href: '/schedule', label: 'Schedule', icon: CalendarDays, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Tools" }, 
-  { href: '/communication', label: 'Feedback', icon: MessageSquare, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Tools" }, 
+  { href: '/schedule', label: 'My Schedule', icon: CalendarDays, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Tools", mobile: false }, 
+  { href: '/communication', label: 'Feedback Hub', icon: MessageSquare, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Tools" }, 
 
   // Management for other roles
   { 
@@ -119,7 +120,5 @@ export const DEPARTMENTS = [
   { id: 'D006', name: 'Cybersecurity', facultyId: 'F003' },
   { id: 'D007', name: 'Psychology', facultyId: 'F004' },
   { id: 'D008', name: 'Sociology', facultyId: 'F004' },
-  { id: 'D_MOCK', name: 'Department of Examples', facultyId: 'F_MOCK'},
+  { id: 'D_MOCK', name: 'Department of Mock Data', facultyId: 'F_MOCK' },
 ];
-
-    
