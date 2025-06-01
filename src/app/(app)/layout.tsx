@@ -2,7 +2,7 @@
 'use client'; 
 
 import * as React from 'react';
-import { SidebarProvider, useSidebar } from '@/components/ui/sidebar';
+import { SidebarProvider } from '@/components/ui/sidebar'; // Removed useSidebar as it's used in AppHeader/AppSidebar
 import AppSidebar from '@/components/layout/app-sidebar';
 import AppHeader from '@/components/layout/app-header';
 import MobileHeader from '@/components/layout/mobile-header';
@@ -10,38 +10,44 @@ import MobileBottomNav from '@/components/layout/mobile-bottom-nav';
 import type { UserRole } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useIsMobile } from '@/hooks/use-mobile';
+import AppLoadingScreen from '@/components/shared/app-loading-screen'; // Import the new loading screen
 
 function AppLayoutContent({ children }: { children: React.ReactNode }) {
   const [userRole, setUserRole] = React.useState<UserRole | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const router = useRouter();
-  const isMobileView = useIsMobile(); // Use the hook here
+  const isMobileView = useIsMobile();
 
   React.useEffect(() => {
     const storedRole = typeof window !== "undefined" ? localStorage.getItem('userRole') as UserRole : null;
     if (storedRole) {
       setUserRole(storedRole);
+      setIsLoading(false); // Set loading to false once role is determined
     } else {
+      // If no role, still set loading to false before redirecting to avoid infinite load screen
+      setIsLoading(false); 
       router.push('/login');
     }
-    setIsLoading(false);
+    // Removed setIsLoading(false) from here as it's handled above
   }, [router]);
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <div className="p-4 rounded-md text-foreground">Loading application...</div>
-      </div>
-    );
+    return <AppLoadingScreen />; // Show the new loading screen
   }
   
-  if (!userRole) {
+  if (!userRole && !isLoading) { // Ensure we don't show redirect message if still loading
      return (
       <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="p-4 rounded-md text-foreground">Redirecting to login...</div>
       </div>
      );
   }
+
+  // Ensure userRole is not null before rendering main content
+  if (!userRole) {
+    return null; // Or a more specific redirect/error state
+  }
+
 
   if (isMobileView) {
     return (
