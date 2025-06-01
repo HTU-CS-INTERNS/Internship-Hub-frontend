@@ -2,7 +2,7 @@
 'use client';
 import * as React from 'react';
 import PageHeader from '@/components/shared/page-header';
-import { Building, User, Mail, Phone, MapPinIcon } from 'lucide-react';
+import { Building, User, Mail, Phone, MapPinIcon, MessageSquare } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -27,7 +27,10 @@ const DUMMY_SUPERVISOR_DATA = {
   avatarUrl: "https://placehold.co/100x100.png",
 };
 
-const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
+const getInitials = (name: string) => {
+  if (!name) return '';
+  return name.split(' ').map(n => n[0]).join('').toUpperCase();
+};
 
 export default function CompanyPage() {
   // In a real app, this data would be fetched based on the student's internship details
@@ -133,3 +136,11 @@ export default function CompanyPage() {
                     <Button className="w-full rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground">
                         <MessageSquare className="mr-2 h-4 w-4"/> Contact Supervisor
                     </Button>
+                </Link>
+            </CardFooter>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
