@@ -2,7 +2,7 @@
 'use client';
 import * as React from 'react';
 import PageHeader from '@/components/shared/page-header';
-import { Briefcase, User, CheckSquare, FileCheck } from 'lucide-react'; // Removed ListFilter as not used
+import { Briefcase, User, CheckSquare, FileCheck, Eye } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -21,7 +21,9 @@ interface InternUnderSupervision {
   lastActivity: string;
 }
 
-const DUMMY_INTERNS: InternUnderSupervision[] = [
+// Ensure DUMMY_INTERNS is exported if it needs to be accessed by other new pages, or duplicate/manage state appropriately.
+// For now, keeping it local. If [internId] needs it, it will need to be passed or fetched.
+export const DUMMY_INTERNS: InternUnderSupervision[] = [
   { id: 'intern1', name: 'Samuel Green', avatar: 'https://placehold.co/100x100.png', email: 'samuel@example.com', university: 'State University - CompSci', pendingTasks: 2, pendingReports: 1, lastActivity: 'Submitted task 2h ago' },
   { id: 'intern2', name: 'Olivia Blue', avatar: 'https://placehold.co/100x100.png', email: 'olivia@example.com', university: 'Tech Institute - Design', pendingTasks: 0, pendingReports: 0, lastActivity: 'Report approved yesterday' },
   { id: 'intern3', name: 'Ethan Red', avatar: 'https://placehold.co/100x100.png', email: 'ethan@example.com', university: 'City College - Engineering', pendingTasks: 5, pendingReports: 2, lastActivity: 'Declared task 30m ago' },
@@ -30,7 +32,7 @@ const DUMMY_INTERNS: InternUnderSupervision[] = [
 const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
 
 export default function InternsPage() {
-  const [interns] = React.useState<InternUnderSupervision[]>(DUMMY_INTERNS); // Removed setInterns as it's not used
+  const [interns] = React.useState<InternUnderSupervision[]>(DUMMY_INTERNS);
 
   const totalPendingTasks = interns.reduce((sum, i) => sum + i.pendingTasks, 0);
   const totalPendingReports = interns.reduce((sum, i) => sum + i.pendingReports, 0);
@@ -104,7 +106,7 @@ export default function InternsPage() {
                   <TableCell className="text-xs text-muted-foreground">{intern.lastActivity}</TableCell>
                   <TableCell className="text-right">
                      <Link href={`/interns/details/${intern.id}`} passHref>
-                        <Button variant="ghost" size="sm">View Profile</Button>
+                        <Button variant="ghost" size="sm"><Eye className="mr-1 h-4 w-4" />View Profile</Button>
                     </Link>
                   </TableCell>
                 </TableRow>
