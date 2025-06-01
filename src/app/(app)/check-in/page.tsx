@@ -30,7 +30,7 @@ export default function CheckInPage() {
 
   const getTodayDateString = () => format(new Date(), 'yyyy-MM-dd');
 
-  React.useEffect(() => {
+  const loadCheckinFromStorage = React.useCallback(() => {
     const todayDateStr = getTodayDateString();
     const storedCheckinRaw = localStorage.getItem('internshipTrack_checkin');
     if (storedCheckinRaw) {
@@ -41,8 +41,8 @@ export default function CheckInPage() {
           setCheckinLocation(storedCheckin.location);
           setSecurePhotoPreview(storedCheckin.photoPreview || null);
           setStep('success');
+          return true; // Found valid check-in for today
         } else {
-          // Clear old checkin data from previous days
           localStorage.removeItem('internshipTrack_checkin');
         }
       } catch (e) {
@@ -50,7 +50,15 @@ export default function CheckInPage() {
         localStorage.removeItem('internshipTrack_checkin');
       }
     }
+    return false; // No valid check-in for today
   }, []);
+
+
+  React.useEffect(() => {
+    if (!loadCheckinFromStorage()) {
+      setStep('initial'); // Default to initial if no valid check-in
+    }
+  }, [loadCheckinFromStorage]);
 
   const saveCheckinToLocalStorage = (time: string, location: string, photoPreview?: string | null) => {
     const todayDateStr = getTodayDateString();
@@ -59,15 +67,18 @@ export default function CheckInPage() {
   };
 
   const resetFlow = () => {
-    setStep('initial');
     setManualReason('');
     setSecurePhoto(null);
-    setSecurePhotoPreview(null);
+    // Keep existing securePhotoPreview if loaded from storage for success step
+    // but clear it if we are actually resetting to initial (i.e., no stored check-in)
     if (securePhotoInputRef.current) {
       securePhotoInputRef.current.value = "";
     }
-    // Optionally clear localStorage for testing, or rely on date check
-    // localStorage.removeItem('internshipTrack_checkin'); 
+
+    if (!loadCheckinFromStorage()) {
+      setStep('initial');
+      setSecurePhotoPreview(null); // Fully clear preview if going to initial
+    }
   };
 
   const handleCheckIn = () => {
@@ -86,8 +97,6 @@ export default function CheckInPage() {
         const currentLocation = 'Acme Corp HQ (Verified)';
         setCheckinTime(currentTime);
         setCheckinLocation(currentLocation);
-        // For GPS, we don't have a securePhotoPreview unless it was captured in a previous step,
-        // which is not the current flow. So, passing current securePhotoPreview (likely null).
         saveCheckinToLocalStorage(currentTime, currentLocation, securePhotoPreview);
         setStep('success');
         toast({ title: 'Success', description: 'Location verified within geofence.' });
@@ -335,3 +344,4 @@ export default function CheckInPage() {
     </div>
   );
 }
+
