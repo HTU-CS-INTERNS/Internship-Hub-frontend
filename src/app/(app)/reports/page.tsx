@@ -2,7 +2,7 @@
 'use client';
 import * as React from 'react';
 import PageHeader from '@/components/shared/page-header';
-import { FileText, PlusCircle, Filter, Eye, Archive } from 'lucide-react'; // Added Eye for mobile view button, Archive for compile
+import { FileText, PlusCircle, Filter, Eye, Archive } from 'lucide-react'; 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import Link from 'next/link';
@@ -53,12 +53,10 @@ export default function ReportsPage() {
       description: "Your reports are being compiled. The consolidated file will be available for download shortly (simulated).",
       duration: 5000, 
     });
-    // In a real app, this would trigger an API call to a backend service
-    // that generates the compiled file.
   };
 
   const ReportCardMobile: React.FC<{ report: DailyReport }> = ({ report }) => (
-    <Card className="shadow-lg rounded-xl mb-4 overflow-hidden border-l-4" style={{borderColor: `hsl(var(--${report.status === 'APPROVED' ? 'chart-3' : report.status === 'SUBMITTED' ? 'primary' : report.status === 'REJECTED' ? 'destructive' : 'accent'}))`}}>
+    <Card className="shadow-lg rounded-xl overflow-hidden border-l-4" style={{borderColor: `hsl(var(--${report.status === 'APPROVED' ? 'chart-3' : report.status === 'SUBMITTED' ? 'primary' : report.status === 'REJECTED' ? 'destructive' : 'accent'}))`}}>
       <CardContent className="p-4 space-y-2">
         <div className="flex justify-between items-start">
           <div>
@@ -138,7 +136,7 @@ export default function ReportsPage() {
         <CardContent className={cn(isMobile ? "p-0" : "p-0")}>
           {filteredReports.length > 0 ? (
             isMobile ? (
-              <div className="space-y-0">
+              <div className="space-y-4">
                 {filteredReports.map((report) => <ReportCardMobile key={report.id} report={report} />)}
               </div>
             ) : (
