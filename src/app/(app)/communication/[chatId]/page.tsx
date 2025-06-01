@@ -1,7 +1,7 @@
 
 'use client';
 import * as React from 'react';
-import { ArrowLeft, Send, User, Briefcase, Search, Phone, Video, MoreVertical, Paperclip, Smile, Users as UsersIconLucide } from 'lucide-react';
+import { ArrowLeft, Send, User, Briefcase, Search, Phone, Video, MoreVertical, Paperclip, Smile, Users as UsersIconLucide, MessageSquareText } from 'lucide-react'; // Added MessageSquareText
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ import type { CommunicationMessage, User as AppUser } from '@/types';
 import { cn } from '@/lib/utils';
 import { format, isToday, isYesterday, parseISO } from 'date-fns';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation'; // For accessing chatId and navigation
+import { useParams, useRouter } from 'next/navigation'; 
 
 interface EnrichedAppUser extends Partial<AppUser> {
   lastMessage?: string;
@@ -199,3 +199,5 @@ export default function ChatDetailPage() {
     </div>
   );
 }
+
+    
