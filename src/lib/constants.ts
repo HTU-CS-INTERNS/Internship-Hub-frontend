@@ -27,7 +27,6 @@ import {
   BookOpen,
   TrendingUp,
   Landmark, // For University Structure
-  UsersCog, // For User Management
   School // For Admin Dashboard
 } from 'lucide-react';
 import type { UserRole, ScoringMetric, Faculty as AppFaculty, Department as AppDepartment } from '@/types'; // Renamed to avoid conflict
@@ -105,7 +104,7 @@ export const NAV_LINKS: NavItem[] = [
   // Admin Section
   { href: '/admin/dashboard', label: 'Admin Dashboard', icon: School, roles: ['ADMIN'], section: "Administration" },
   { href: '/admin/university-structure', label: 'University Structure', icon: Landmark, roles: ['ADMIN'], section: "Administration" },
-  { href: '/admin/user-management', label: 'User Management', icon: UsersCog, roles: ['ADMIN'], section: "Administration" },
+  { href: '/admin/user-management', label: 'User Management', icon: UserCog, roles: ['ADMIN'], section: "Administration" },
 ];
 
 export const BOTTOM_NAV_LINKS: NavItem[] = [
