@@ -5,7 +5,7 @@ import PageHeader from '@/components/shared/page-header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { School, Users, BarChart3, Landmark, UsersCog, Building, UserCheck, TrendingUp } from 'lucide-react';
+import { School, Users, BarChart3, Landmark, UserCog, Building, UserCheck, TrendingUp, Briefcase, Settings } from 'lucide-react';
 
 const AdminDashboardStatCard: React.FC<{ title: string; value: string | number; icon: React.ElementType; description?: string; actionLink?: string; actionLabel?: string }> = ({ title, value, icon: Icon, description, actionLink, actionLabel }) => (
   <Card className="shadow-lg rounded-xl">
@@ -51,7 +51,7 @@ export default function AdminDashboardPage() {
         <AdminDashboardStatCard title="Total Interns" value={universityStats.totalInterns} icon={Users} description="Across all faculties" />
         <AdminDashboardStatCard title="Active Internships" value={universityStats.activeInternships} icon={Building} description={`${((universityStats.activeInternships / universityStats.totalInterns) * 100).toFixed(0)}% engagement`} />
         <AdminDashboardStatCard title="Unassigned Interns" value={universityStats.unassignedInterns} icon={UserCheck} description="Require lecturer assignment" actionLink="/admin/lecturer-assignments" actionLabel="Assign Lecturers"/>
-        <AdminDashboardStatCard title="Total Lecturers" value={universityStats.totalLecturers} icon={UsersCog} description="Faculty members supervising interns" />
+        <AdminDashboardStatCard title="Total Lecturers" value={universityStats.totalLecturers} icon={UserCog} description="Faculty members supervising interns" />
         <AdminDashboardStatCard title="Avg. Lecturer Workload" value={`${universityStats.avgLecturerWorkload} interns`} icon={TrendingUp} description="University average" />
         <AdminDashboardStatCard title="Partner Companies" value={universityStats.totalCompanies} icon={Briefcase} description="Providing internship opportunities" />
       </div>
@@ -72,7 +72,7 @@ export default function AdminDashboardPage() {
                 </Link>
                  <Link href="/admin/user-management" passHref>
                     <Button variant="outline" className="w-full h-auto py-3 rounded-lg flex-col items-start text-left">
-                        <UsersCog className="h-6 w-6 mb-2 text-primary"/>
+                        <UserCog className="h-6 w-6 mb-2 text-primary"/>
                         <span className="font-semibold">Manage Users</span>
                         <span className="text-xs text-muted-foreground">Students, Lecturers, etc.</span>
                     </Button>
