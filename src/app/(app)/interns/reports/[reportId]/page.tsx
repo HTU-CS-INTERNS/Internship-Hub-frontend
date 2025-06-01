@@ -2,7 +2,7 @@
 'use client';
 import * as React from 'react';
 import PageHeader from '@/components/shared/page-header';
-import { FileText, Calendar, Edit3, MessageSquare, Paperclip, ThumbsUp, ThumbsDown, User, Briefcase, Loader2, CheckCircle, XCircle, AlertTriangle, Image as ImageIcon } from 'lucide-react';
+import { FileText, Calendar, Edit3, MessageSquare, Paperclip, ThumbsUp, ThumbsDown, User, Briefcase, Loader2, CheckCircle, XCircle, AlertTriangle, Image as ImageIcon, Save } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,11 +12,11 @@ import type { DailyReport } from '@/types';
 import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { DUMMY_REPORTS as ALL_DUMMY_REPORTS } from '@/app/(app)/reports/page'; // Access shared dummy data
+import { DUMMY_REPORTS as ALL_DUMMY_REPORTS } from '@/app/(app)/reports/page'; 
 import { DUMMY_INTERNS } from '@/app/(app)/interns/page';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import NextImage from 'next/image'; // Renamed to avoid conflict
+import NextImage from 'next/image'; 
 
 const reportStatusColors: Record<DailyReport['status'], string> = {
   PENDING: 'bg-yellow-100 text-yellow-700 border-yellow-500/30 dark:bg-yellow-900/50 dark:text-yellow-300 dark:border-yellow-700/50',
@@ -37,53 +37,53 @@ export default function SupervisorReportReviewPage() {
   const [report, setReport] = React.useState<DailyReport & { title?: string; challengesFaced?: string; learnings?: string; securePhotoUrl?: string } | null>(null);
   const [intern, setIntern] = React.useState<typeof DUMMY_INTERNS[0] | null>(null);
   const [feedbackComment, setFeedbackComment] = React.useState('');
+  const [initialComment, setInitialComment] = React.useState('');
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   React.useEffect(() => {
-    // Simulate fetching report data
     const foundReport = ALL_DUMMY_REPORTS.find(r => r.id === reportId) as DailyReport & { title?: string; challengesFaced?: string; learnings?: string; securePhotoUrl?: string };
     const foundIntern = DUMMY_INTERNS.find(i => i.id === internIdQuery);
     
     if (foundReport) {
-      // Load existing feedback from localStorage if available
       const storedReportsFeedback = JSON.parse(localStorage.getItem(`reportsFeedback_${internIdQuery}`) || '{}');
       const currentFeedback = storedReportsFeedback[reportId];
+      const initialSupervisorComment = currentFeedback?.supervisorComments || foundReport.supervisorComments || '';
       
       setReport({
         ...foundReport,
         status: currentFeedback?.status || foundReport.status,
-        supervisorComments: currentFeedback?.supervisorComments || foundReport.supervisorComments,
-        // Add dummy data for new fields if missing from original DUMMY_REPORTS
+        supervisorComments: initialSupervisorComment,
         title: foundReport.title || `Report - ${format(parseISO(foundReport.date), "do MMM")}`,
         challengesFaced: foundReport.challengesFaced || "No specific challenges were noted for this day.",
         learnings: foundReport.learningObjectives || "General learning objectives met.",
-        securePhotoUrl: foundReport.securePhotoUrl || (reportId === 'report1' ? 'https://placehold.co/600x400.png' : undefined), // Example secure photo for one report
+        securePhotoUrl: foundReport.securePhotoUrl || (reportId === 'report1' ? 'https://placehold.co/600x400.png' : undefined),
       });
-      setFeedbackComment(currentFeedback?.supervisorComments || foundReport.supervisorComments || '');
+      setFeedbackComment(initialSupervisorComment);
+      setInitialComment(initialSupervisorComment);
     }
     if (foundIntern) {
       setIntern(foundIntern);
     }
 
-    // if (!foundReport || !foundIntern) router.push('/interns'); // Redirect if data not found
+    if (!foundReport || !foundIntern && (typeof window !== "undefined")){ 
+        // router.push('/interns'); // Temporarily disabled for potential page refresh issues
+    }
 
   }, [reportId, internIdQuery, router]);
 
   const handleSubmitFeedback = async (newStatus: 'APPROVED' | 'REJECTED') => {
     if (!report) return;
     setIsSubmitting(true);
-
-    // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1500));
 
-    const updatedReport = {
+    const updatedReportData = {
       ...report,
       status: newStatus,
       supervisorComments: feedbackComment,
     };
-    setReport(updatedReport);
+    setReport(updatedReportData);
+    setInitialComment(feedbackComment); 
 
-    // Persist change to localStorage for demo purposes
     const storedReportsFeedback = JSON.parse(localStorage.getItem(`reportsFeedback_${internIdQuery}`) || '{}');
     storedReportsFeedback[report.id] = {
         status: newStatus,
@@ -99,6 +99,34 @@ export default function SupervisorReportReviewPage() {
     router.push(`/interns/details/${internIdQuery}`);
   };
 
+  const handleSaveComments = async () => {
+    if (!report || feedbackComment === initialComment) return;
+    setIsSubmitting(true);
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    const updatedReportData = {
+      ...report,
+      supervisorComments: feedbackComment, 
+      // status remains unchanged
+    };
+    setReport(updatedReportData);
+    setInitialComment(feedbackComment); 
+
+    const storedReportsFeedback = JSON.parse(localStorage.getItem(`reportsFeedback_${internIdQuery}`) || '{}');
+    storedReportsFeedback[report.id] = {
+        status: report.status, // Keep original status
+        supervisorComments: feedbackComment,
+    };
+    localStorage.setItem(`reportsFeedback_${internIdQuery}`, JSON.stringify(storedReportsFeedback));
+
+    setIsSubmitting(false);
+    toast({
+      title: "Comments Saved",
+      description: "Your comments for the report have been saved.",
+    });
+  };
+
+
   if (!report || !intern) {
     return (
       <div className="flex items-center justify-center h-full p-6">
@@ -109,6 +137,8 @@ export default function SupervisorReportReviewPage() {
   }
 
   const canProvideFeedback = report.status === 'SUBMITTED' || report.status === 'PENDING';
+  const commentsChanged = feedbackComment !== initialComment && feedbackComment.trim() !== '';
+
 
   return (
     <div className="space-y-8 p-4 md:p-6">
@@ -160,7 +190,7 @@ export default function SupervisorReportReviewPage() {
 
                     <div>
                         <h3 className="text-base font-semibold text-foreground mb-2 flex items-center"><ThumbsUp className="mr-2 h-5 w-5 text-primary" />Key Learnings / Outcomes</h3>
-                        <p className="text-muted-foreground whitespace-pre-line leading-relaxed">{report.learnings || report.learningObjectives}</p> {/* Cater for potential property name difference */}
+                        <p className="text-muted-foreground whitespace-pre-line leading-relaxed">{report.learnings || report.learningObjectives}</p> 
                     </div>
                     
                     {report.securePhotoUrl && (
@@ -199,7 +229,7 @@ export default function SupervisorReportReviewPage() {
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    {(report.status === 'APPROVED' || report.status === 'REJECTED') && report.supervisorComments && (
+                    {(report.status === 'APPROVED' || report.status === 'REJECTED') && report.supervisorComments && !canProvideFeedback && (
                          <div className="p-3 bg-muted/50 rounded-md border border-input">
                             <p className="text-sm font-medium text-foreground mb-1">Your Feedback:</p>
                             <p className="text-sm text-muted-foreground italic">"{report.supervisorComments}"</p>
@@ -219,22 +249,32 @@ export default function SupervisorReportReviewPage() {
                     )}
                 </CardContent>
                 {canProvideFeedback && (
-                    <CardFooter className="flex flex-col sm:flex-row gap-2 border-t pt-4">
+                    <CardFooter className="flex flex-col gap-2 border-t pt-4">
                         <Button 
-                            variant="destructive" 
-                            onClick={() => handleSubmitFeedback('REJECTED')}
-                            disabled={isSubmitting || !feedbackComment.trim()}
+                            variant="outline"
+                            onClick={handleSaveComments}
+                            disabled={isSubmitting || !commentsChanged}
                             className="w-full rounded-lg"
                         >
-                            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <XCircle className="mr-2 h-4 w-4"/>} Reject
+                            {isSubmitting && feedbackComment === initialComment ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4"/>} Save Comments
                         </Button>
-                        <Button 
-                            onClick={() => handleSubmitFeedback('APPROVED')}
-                            disabled={isSubmitting}
-                            className="w-full rounded-lg bg-green-600 hover:bg-green-700 text-white"
-                        >
-                            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <CheckCircle className="mr-2 h-4 w-4"/>} Approve
-                        </Button>
+                        <div className="flex w-full gap-2">
+                            <Button 
+                                variant="destructive" 
+                                onClick={() => handleSubmitFeedback('REJECTED')}
+                                disabled={isSubmitting || !feedbackComment.trim()}
+                                className="flex-1 rounded-lg"
+                            >
+                                {isSubmitting && feedbackComment !== initialComment ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <XCircle className="mr-2 h-4 w-4"/>} Reject
+                            </Button>
+                            <Button 
+                                onClick={() => handleSubmitFeedback('APPROVED')}
+                                disabled={isSubmitting}
+                                className="flex-1 rounded-lg bg-green-600 hover:bg-green-700 text-white"
+                            >
+                                {isSubmitting && feedbackComment !== initialComment ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <CheckCircle className="mr-2 h-4 w-4"/>} Approve
+                            </Button>
+                        </div>
                     </CardFooter>
                 )}
             </Card>
@@ -243,3 +283,4 @@ export default function SupervisorReportReviewPage() {
     </div>
   );
 }
+
