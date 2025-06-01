@@ -1,7 +1,8 @@
+
 'use client';
 import * as React from 'react';
 import PageHeader from '@/components/shared/page-header';
-import { BarChart3, Users, ClipboardList, FileText, Filter } from 'lucide-react';
+import { BarChart3, Users, ClipboardList, FileText } from 'lucide-react'; // Removed Filter as it's not used directly in this simplified version
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart"
@@ -18,22 +19,31 @@ const DUMMY_CHART_DATA_TASKS = [
 ];
 
 const DUMMY_CHART_DATA_REPORTS_STATUS = [
-  { name: 'Approved', value: 75, fill: 'var(--color-approved)' },
-  { name: 'Pending', value: 15, fill: 'var(--color-pending)' },
-  { name: 'Rejected', value: 5, fill: 'var(--color-rejected)' },
-  { name: 'Submitted', value: 25, fill: 'var(--color-submitted)' },
+  { name: 'Approved', value: 75, fill: 'var(--color-approved)' }, // Assuming --color-approved is defined or maps to a chart color
+  { name: 'Pending', value: 15, fill: 'var(--color-pending)' },   // Assuming --color-pending is defined
+  { name: 'Rejected', value: 5, fill: 'var(--color-rejected)' },  // Assuming --color-rejected is defined
+  { name: 'Submitted', value: 25, fill: 'var(--color-submitted)' }, // Assuming --color-submitted is defined
 ];
 
+// Define these CSS variables in globals.css or map them to existing chart colors
+// For example, in globals.css:
+// :root {
+//   --color-approved: hsl(var(--chart-3)); /* Green */
+//   --color-pending: hsl(var(--chart-4));  /* Yellow/Orange - using chart-4 as an example, adjust if needed */
+//   --color-rejected: hsl(var(--chart-5)); /* Red - using chart-5 as an example, adjust if needed */
+//   --color-submitted: hsl(var(--chart-2));/* Blue/Accent - using chart-2 as an example */
+// }
+
 const chartConfigTasks = {
-  pending: { label: "Pending", color: "hsl(var(--chart-1))" },
+  pending: { label: "Pending", color: "hsl(var(--chart-4))" }, // Mapped to a chart variable
   submitted: { label: "Submitted", color: "hsl(var(--chart-2))" },
   approved: { label: "Approved", color: "hsl(var(--chart-3))" },
 };
 const chartConfigReportsStatus = {
-  approved: { label: "Approved", color: "hsl(var(--chart-3))" }, // Green
-  pending: { label: "Pending", color: "hsl(var(--chart-4))" }, // Yellow
-  rejected: { label: "Rejected", color: "hsl(var(--chart-5))" }, // Red
-  submitted: { label: "Submitted", color: "hsl(var(--chart-2))" }, // Blue
+  approved: { label: "Approved", color: "hsl(var(--chart-3))" },
+  pending: { label: "Pending", color: "hsl(var(--chart-4))" },
+  rejected: { label: "Rejected", color: "hsl(var(--destructive))" }, // Using destructive for rejected
+  submitted: { label: "Submitted", color: "hsl(var(--chart-2))" },
 }
 
 export default function AnalyticsPage() {
@@ -43,23 +53,20 @@ export default function AnalyticsPage() {
 
   React.useEffect(() => {
     const storedRole = typeof window !== "undefined" ? localStorage.getItem('userRole') as UserRole : null;
-    setUserRole(storedRole || 'LECTURER'); // Default for analytics view
+    setUserRole(storedRole || 'LECTURER'); 
   }, []);
 
   const availableDepartments = selectedFaculty ? DEPARTMENTS.filter(d => d.facultyId === selectedFaculty) : DEPARTMENTS;
 
-  // In a real app, data would be fetched based on filters and user role
-  // const { data, isLoading } = useAnalyticsData(userRole, selectedFaculty, selectedDepartment);
-
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 p-4 md:p-6">
       <PageHeader
         title="Reporting & Analytics"
         description={`Insights and statistics for ${userRole ? USER_ROLES[userRole].toLowerCase() : 'the system'}.`}
         icon={BarChart3}
         breadcrumbs={[{ href: "/dashboard", label: "Dashboard" }, { label: "Analytics" }]}
         actions={
-          userRole === 'HOD' && ( // Example: HOD can filter
+          userRole === 'HOD' && (
             <div className="flex flex-col sm:flex-row gap-2">
               <Select value={selectedFaculty} onValueChange={setSelectedFaculty}>
                 <SelectTrigger className="w-full sm:w-[180px]">
@@ -70,7 +77,7 @@ export default function AnalyticsPage() {
                   {FACULTIES.map(f => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}
                 </SelectContent>
               </Select>
-              <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+              <Select value={selectedDepartment} onValueChange={setSelectedDepartment} disabled={!selectedFaculty && availableDepartments.length === DEPARTMENTS.length}>
                 <SelectTrigger className="w-full sm:w-[180px]">
                   <SelectValue placeholder="Filter by Department" />
                 </SelectTrigger>
@@ -85,7 +92,7 @@ export default function AnalyticsPage() {
       />
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="shadow-md">
+        <Card className="shadow-lg rounded-xl">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Students</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -95,7 +102,7 @@ export default function AnalyticsPage() {
             <p className="text-xs text-muted-foreground">+20.1% from last month</p>
           </CardContent>
         </Card>
-        <Card className="shadow-md">
+        <Card className="shadow-lg rounded-xl">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Tasks Submitted</CardTitle>
             <ClipboardList className="h-4 w-4 text-muted-foreground" />
@@ -105,7 +112,7 @@ export default function AnalyticsPage() {
             <p className="text-xs text-muted-foreground">+180 this week</p>
           </CardContent>
         </Card>
-        <Card className="shadow-md">
+        <Card className="shadow-lg rounded-xl">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Reports Approved</CardTitle>
             <FileText className="h-4 w-4 text-muted-foreground" />
@@ -115,7 +122,7 @@ export default function AnalyticsPage() {
             <p className="text-xs text-muted-foreground">92% approval rate</p>
           </CardContent>
         </Card>
-        <Card className="shadow-md">
+        <Card className="shadow-lg rounded-xl">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Companies</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -128,9 +135,9 @@ export default function AnalyticsPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <Card className="shadow-md">
+        <Card className="shadow-lg rounded-xl">
           <CardHeader>
-            <CardTitle className="font-headline">Task Submissions Over Time</CardTitle>
+            <CardTitle className="font-headline text-lg">Task Submissions Over Time</CardTitle>
             <CardDescription>Monthly trend of task statuses.</CardDescription>
           </CardHeader>
           <CardContent>
@@ -141,16 +148,16 @@ export default function AnalyticsPage() {
                 <YAxis />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <ChartLegend content={<ChartLegendContent />} />
-                <Bar dataKey="pending" fill="var(--color-pending)" radius={4} />
-                <Bar dataKey="submitted" fill="var(--color-submitted)" radius={4} />
-                <Bar dataKey="approved" fill="var(--color-approved)" radius={4} />
+                <Bar dataKey="pending" fill="var(--color-pending, hsl(var(--chart-4)))" radius={4} />
+                <Bar dataKey="submitted" fill="var(--color-submitted, hsl(var(--chart-2)))" radius={4} />
+                <Bar dataKey="approved" fill="var(--color-approved, hsl(var(--chart-3)))" radius={4} />
               </BarChart>
             </ChartContainer>
           </CardContent>
         </Card>
-        <Card className="shadow-md">
+        <Card className="shadow-lg rounded-xl">
           <CardHeader>
-            <CardTitle className="font-headline">Report Status Distribution</CardTitle>
+            <CardTitle className="font-headline text-lg">Report Status Distribution</CardTitle>
             <CardDescription>Overall distribution of report statuses.</CardDescription>
           </CardHeader>
           <CardContent className="flex items-center justify-center">

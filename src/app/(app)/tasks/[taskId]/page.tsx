@@ -1,3 +1,4 @@
+
 'use client';
 import * as React from 'react';
 import PageHeader from '@/components/shared/page-header';
@@ -11,7 +12,6 @@ import type { DailyTask } from '@/types';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
-// Dummy task data - replace with actual data fetching
 const DUMMY_TASK_DETAIL: DailyTask = {
   id: 'task1',
   date: '2024-07-28',
@@ -26,21 +26,21 @@ const DUMMY_TASK_DETAIL: DailyTask = {
 };
 
 const statusColors: Record<DailyTask['status'], string> = {
-  PENDING: 'bg-yellow-500/20 text-yellow-700 border-yellow-500/30',
-  SUBMITTED: 'bg-blue-500/20 text-blue-700 border-blue-500/30',
-  APPROVED: 'bg-green-500/20 text-green-700 border-green-500/30',
-  REJECTED: 'bg-red-500/20 text-red-700 border-red-500/30',
+  PENDING: 'bg-[hsl(var(--accent)/0.1)] text-[hsl(var(--accent))] border-[hsl(var(--accent)/0.2)]',
+  SUBMITTED: 'bg-[hsl(var(--primary)/0.1)] text-[hsl(var(--primary))] border-[hsl(var(--primary)/0.2)]',
+  APPROVED: 'bg-[hsl(var(--chart-3)/0.1)] text-[hsl(var(--chart-3))] border-[hsl(var(--chart-3)/0.2)]',
+  REJECTED: 'bg-[hsl(var(--destructive)/0.1)] text-[hsl(var(--destructive))] border-[hsl(var(--destructive)/0.2)]',
 };
 
 export default function TaskDetailPage({ params }: { params: { taskId: string } }) {
-  const task = DUMMY_TASK_DETAIL; // In a real app, fetch task by params.taskId
+  const task = DUMMY_TASK_DETAIL; 
 
   if (!task) {
-    return <div>Task not found.</div>;
+    return <div className="p-6 text-center text-lg">Task not found.</div>;
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 p-4 md:p-6">
       <PageHeader
         title={`Task Details: ${format(new Date(task.date), "PPP")}`}
         description="Comprehensive view of your declared daily task."
@@ -51,9 +51,9 @@ export default function TaskDetailPage({ params }: { params: { taskId: string } 
           { label: `Task - ${task.id}` }
         ]}
         actions={
-          task.status === 'PENDING' && ( // Allow editing only if pending
-            <Link href={`/tasks/edit/${task.id}`} passHref> {/* Assuming an edit route */}
-              <Button>
+          task.status === 'PENDING' && (
+            <Link href={`/tasks/edit/${task.id}`} passHref>
+              <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
                 <Edit3 className="mr-2 h-4 w-4" /> Edit Task
               </Button>
             </Link>
@@ -61,56 +61,56 @@ export default function TaskDetailPage({ params }: { params: { taskId: string } 
         }
       />
 
-      <Card className="shadow-lg">
-        <CardHeader>
-          <div className="flex justify-between items-start">
+      <Card className="shadow-lg rounded-xl overflow-hidden">
+        <CardHeader className="p-6 border-b">
+          <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
             <div>
-              <CardTitle className="font-headline text-2xl">Task Overview</CardTitle>
-              <CardDescription>Submitted on {format(new Date(task.date), "MMMM d, yyyy")}</CardDescription>
+              <CardTitle className="font-headline text-xl md:text-2xl">Task Overview</CardTitle>
+              <CardDescription className="text-sm">Submitted on {format(new Date(task.date), "MMMM d, yyyy")}</CardDescription>
             </div>
-            <Badge variant="outline" className={cn("text-sm px-3 py-1", statusColors[task.status])}>
+            <Badge variant="outline" className={cn("text-sm px-3 py-1 self-start sm:self-center", statusColors[task.status])}>
               {task.status}
             </Badge>
           </div>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="p-6 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-1">
-              <h3 className="text-sm font-medium text-muted-foreground flex items-center"><Calendar className="mr-2 h-4 w-4 text-primary" />Date</h3>
-              <p className="text-foreground">{format(new Date(task.date), "PPP")}</p>
+              <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center"><Calendar className="mr-2 h-4 w-4 text-primary" />Date</h3>
+              <p className="text-foreground text-base">{format(new Date(task.date), "PPP")}</p>
             </div>
              <div className="space-y-1">
-              <h3 className="text-sm font-medium text-muted-foreground flex items-center"><Award className="mr-2 h-4 w-4 text-primary" />Department Outcome Link</h3>
-              <p className="text-foreground">{task.departmentOutcomeLink || 'N/A'}</p>
+              <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center"><Award className="mr-2 h-4 w-4 text-primary" />Department Outcome Link</h3>
+              <p className="text-foreground text-base">{task.departmentOutcomeLink || 'N/A'}</p>
             </div>
           </div>
           
           <Separator />
 
           <div>
-            <h3 className="text-lg font-semibold text-foreground mb-2 flex items-center"><ClipboardList className="mr-2 h-5 w-5 text-primary" />Description</h3>
-            <p className="text-muted-foreground whitespace-pre-line">{task.description}</p>
+            <h3 className="text-base font-semibold text-foreground mb-2 flex items-center"><ClipboardList className="mr-2 h-5 w-5 text-primary" />Description</h3>
+            <p className="text-muted-foreground whitespace-pre-line leading-relaxed">{task.description}</p>
           </div>
 
           <div>
-            <h3 className="text-lg font-semibold text-foreground mb-2 flex items-center"><Target className="mr-2 h-5 w-5 text-primary" />Outcomes/Results</h3>
-            <p className="text-muted-foreground whitespace-pre-line">{task.outcomes}</p>
+            <h3 className="text-base font-semibold text-foreground mb-2 flex items-center"><Target className="mr-2 h-5 w-5 text-primary" />Outcomes/Results</h3>
+            <p className="text-muted-foreground whitespace-pre-line leading-relaxed">{task.outcomes}</p>
           </div>
 
           <div>
-            <h3 className="text-lg font-semibold text-foreground mb-2 flex items-center"><Award className="mr-2 h-5 w-5 text-primary" />Learning Objectives Achieved</h3>
-            <p className="text-muted-foreground whitespace-pre-line">{task.learningObjectives}</p>
+            <h3 className="text-base font-semibold text-foreground mb-2 flex items-center"><Award className="mr-2 h-5 w-5 text-primary" />Learning Objectives Achieved</h3>
+            <p className="text-muted-foreground whitespace-pre-line leading-relaxed">{task.learningObjectives}</p>
           </div>
 
           {task.attachments && task.attachments.length > 0 && (
             <div>
-              <h3 className="text-lg font-semibold text-foreground mb-2 flex items-center"><Paperclip className="mr-2 h-5 w-5 text-primary" />Attachments</h3>
-              <ul className="list-disc pl-5 space-y-1">
+              <h3 className="text-base font-semibold text-foreground mb-2 flex items-center"><Paperclip className="mr-2 h-5 w-5 text-primary" />Attachments</h3>
+              <ul className="list-none space-y-2">
                 {task.attachments.map((file, index) => (
                   <li key={index}>
-                    <Button variant="link" className="p-0 h-auto text-base text-accent hover:text-accent/80" asChild>
-                      <a href={`/path/to/attachments/${file}`} target="_blank" rel="noopener noreferrer" data-ai-hint="document file">
-                        {file}
+                    <Button variant="link" className="p-0 h-auto text-base text-accent hover:text-accent/80 font-normal" asChild>
+                      <a href={`/placeholder-download/${file}`} target="_blank" rel="noopener noreferrer" data-ai-hint="document file">
+                        <Paperclip className="mr-1 h-4 w-4" /> {file}
                       </a>
                     </Button>
                   </li>
@@ -123,14 +123,13 @@ export default function TaskDetailPage({ params }: { params: { taskId: string } 
             <>
             <Separator />
             <div>
-                <h3 className="text-lg font-semibold text-foreground mb-2 flex items-center"><MessageSquare className="mr-2 h-5 w-5 text-primary" />Supervisor Comments</h3>
-                <Card className="bg-muted/50 p-4 border-l-4 border-primary">
-                    <p className="text-foreground whitespace-pre-line">{task.supervisorComments}</p>
+                <h3 className="text-base font-semibold text-foreground mb-2 flex items-center"><MessageSquare className="mr-2 h-5 w-5 text-primary" />Supervisor Comments</h3>
+                <Card className="bg-muted/30 p-4 border-l-4 border-primary shadow-inner">
+                    <p className="text-foreground whitespace-pre-line leading-relaxed">{task.supervisorComments}</p>
                 </Card>
             </div>
             </>
           )}
-
         </CardContent>
       </Card>
     </div>

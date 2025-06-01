@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -23,12 +24,12 @@ import { useToast } from '@/hooks/use-toast';
 import type { InternshipDetails } from '@/types';
 
 const internshipDetailsSchema = z.object({
-  companyName: z.string().min(2, { message: 'Company name is required.' }),
-  supervisorName: z.string().min(2, { message: 'Supervisor name is required.' }),
+  companyName: z.string().min(2, { message: 'Company name is required (min 2 chars).' }).max(100, { message: 'Company name too long (max 100).' }),
+  supervisorName: z.string().min(2, { message: 'Supervisor name is required (min 2 chars).' }).max(100, { message: 'Supervisor name too long (max 100).' }),
   supervisorEmail: z.string().email({ message: 'Valid supervisor email is required.' }),
   startDate: z.date({ required_error: 'Start date is required.' }),
   endDate: z.date({ required_error: 'End date is required.' }),
-  location: z.string().min(2, { message: 'Location is required.' }),
+  location: z.string().min(2, { message: 'Location is required (min 2 chars).' }).max(100, { message: 'Location too long (max 100).' }),
 }).refine(data => data.endDate >= data.startDate, {
   message: "End date cannot be before start date.",
   path: ["endDate"],
@@ -59,22 +60,21 @@ export default function InternshipDetailsForm({ defaultValues, onSuccess }: Inte
 
   async function onSubmit(values: InternshipDetailsFormValues) {
     setIsLoading(true);
-    // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000));
     setIsLoading(false);
 
     toast({
       title: 'Internship Details Updated!',
       description: 'Your internship information has been saved.',
+      variant: "default",
     });
     onSuccess?.();
-    // console.log(values);
   }
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-8">
           <FormField
             control={form.control}
             name="companyName"
@@ -82,7 +82,7 @@ export default function InternshipDetailsForm({ defaultValues, onSuccess }: Inte
               <FormItem>
                 <FormLabel>Company Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="Acme Corp" {...field} />
+                  <Input placeholder="Acme Corp" {...field} className="rounded-lg" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -95,7 +95,7 @@ export default function InternshipDetailsForm({ defaultValues, onSuccess }: Inte
               <FormItem>
                 <FormLabel>Location (e.g., City, Remote)</FormLabel>
                 <FormControl>
-                  <Input placeholder="New York / Remote" {...field} />
+                  <Input placeholder="New York / Remote" {...field} className="rounded-lg" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -108,7 +108,7 @@ export default function InternshipDetailsForm({ defaultValues, onSuccess }: Inte
               <FormItem>
                 <FormLabel>Company Supervisor Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="Jane Smith" {...field} />
+                  <Input placeholder="Jane Smith" {...field} className="rounded-lg" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -121,7 +121,7 @@ export default function InternshipDetailsForm({ defaultValues, onSuccess }: Inte
               <FormItem>
                 <FormLabel>Supervisor Email</FormLabel>
                 <FormControl>
-                  <Input type="email" placeholder="supervisor@company.com" {...field} />
+                  <Input type="email" placeholder="supervisor@company.com" {...field} className="rounded-lg" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -138,22 +138,20 @@ export default function InternshipDetailsForm({ defaultValues, onSuccess }: Inte
                     <FormControl>
                       <Button
                         variant={"outline"}
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !field.value && "text-muted-foreground"
-                        )}
+                        className={cn("w-full justify-start text-left font-normal rounded-lg", !field.value && "text-muted-foreground")}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
                       </Button>
                     </FormControl>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
+                  <PopoverContent className="w-auto p-0 bg-card border-border" align="start">
                     <Calendar
                       mode="single"
                       selected={field.value}
                       onSelect={field.onChange}
                       initialFocus
+                      className="bg-card text-card-foreground"
                     />
                   </PopoverContent>
                 </Popover>
@@ -172,17 +170,14 @@ export default function InternshipDetailsForm({ defaultValues, onSuccess }: Inte
                     <FormControl>
                       <Button
                         variant={"outline"}
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !field.value && "text-muted-foreground"
-                        )}
+                        className={cn("w-full justify-start text-left font-normal rounded-lg", !field.value && "text-muted-foreground")}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
                       </Button>
                     </FormControl>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
+                  <PopoverContent className="w-auto p-0 bg-card border-border" align="start">
                     <Calendar
                       mode="single"
                       selected={field.value}
@@ -191,6 +186,7 @@ export default function InternshipDetailsForm({ defaultValues, onSuccess }: Inte
                         form.getValues("startDate") ? date < form.getValues("startDate") : false
                       }
                       initialFocus
+                      className="bg-card text-card-foreground"
                     />
                   </PopoverContent>
                 </Popover>
@@ -199,9 +195,14 @@ export default function InternshipDetailsForm({ defaultValues, onSuccess }: Inte
             )}
           />
         </div>
-        <Button type="submit" className="w-full sm:w-auto" disabled={isLoading}>
-          {isLoading ? 'Saving...' : 'Save Internship Details'}
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            <Button type="submit" className="w-full sm:w-auto rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isLoading}>
+            {isLoading ? 'Saving...' : 'Save Internship Details'}
+            </Button>
+             <Button type="button" variant="outline" className="w-full sm:w-auto rounded-lg" onClick={onSuccess} disabled={isLoading}>
+                Cancel
+            </Button>
+        </div>
       </form>
     </Form>
   );

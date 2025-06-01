@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -21,18 +22,11 @@ import { FACULTIES, DEPARTMENTS } from '@/lib/constants';
 import type { Department, Faculty } from '@/types';
 
 const profileSchema = z.object({
-  name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
+  name: z.string().min(2, { message: 'Name must be at least 2 characters.' }).max(100, { message: 'Name too long (max 100).' }),
   email: z.string().email({ message: 'Please enter a valid email address.' }),
   facultyId: z.string().min(1, { message: 'Please select a faculty.' }),
   departmentId: z.string().min(1, { message: 'Please select a department.' }),
-  // password: z.string().min(6, { message: "Password must be at least 6 characters." }).optional(),
-  // confirmPassword: z.string().optional(),
 });
-// .refine((data) => data.password === data.confirmPassword, {
-//   message: "Passwords don't match",
-//   path: ["confirmPassword"],
-// });
-
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
 
@@ -60,9 +54,9 @@ export default function ProfileSetupForm({ defaultValues, onSuccess }: ProfileSe
 
   React.useEffect(() => {
     if (selectedFacultyId) {
-      setAvailableDepartments(DEPARTMENTS.filter(d => d.facultyId === selectedFacultyId));
-      // Reset department if faculty changes and current department is not in new list
-      if (!DEPARTMENTS.find(d => d.facultyId === selectedFacultyId && d.id === form.getValues('departmentId'))) {
+      const depts = DEPARTMENTS.filter(d => d.facultyId === selectedFacultyId);
+      setAvailableDepartments(depts);
+      if (!depts.find(d => d.id === form.getValues('departmentId'))) {
         form.setValue('departmentId', '');
       }
     } else {
@@ -72,30 +66,27 @@ export default function ProfileSetupForm({ defaultValues, onSuccess }: ProfileSe
   }, [selectedFacultyId, form]);
 
   React.useEffect(() => {
-    // Initialize departments if default facultyId is present
     if (defaultValues?.facultyId) {
       setAvailableDepartments(DEPARTMENTS.filter(d => d.facultyId === defaultValues.facultyId));
     }
   }, [defaultValues]);
 
-
   async function onSubmit(values: ProfileFormValues) {
     setIsLoading(true);
-    // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000));
     setIsLoading(false);
 
     toast({
       title: 'Profile Updated!',
       description: 'Your profile information has been successfully saved.',
+      variant: "default",
     });
     onSuccess?.();
-    // console.log(values);
   }
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <FormField
           control={form.control}
           name="name"
@@ -103,7 +94,7 @@ export default function ProfileSetupForm({ defaultValues, onSuccess }: ProfileSe
             <FormItem>
               <FormLabel>Full Name</FormLabel>
               <FormControl>
-                <Input placeholder="John Doe" {...field} />
+                <Input placeholder="John Doe" {...field} className="rounded-lg" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -116,7 +107,7 @@ export default function ProfileSetupForm({ defaultValues, onSuccess }: ProfileSe
             <FormItem>
               <FormLabel>Email Address</FormLabel>
               <FormControl>
-                <Input type="email" placeholder="your.email@example.com" {...field} />
+                <Input type="email" placeholder="your.email@example.com" {...field} className="rounded-lg" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -130,7 +121,7 @@ export default function ProfileSetupForm({ defaultValues, onSuccess }: ProfileSe
               <FormLabel>Faculty</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger className="rounded-lg">
                     <SelectValue placeholder="Select your faculty" />
                   </SelectTrigger>
                 </FormControl>
@@ -152,9 +143,9 @@ export default function ProfileSetupForm({ defaultValues, onSuccess }: ProfileSe
           render={({ field }) => (
             <FormItem>
               <FormLabel>Department</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!selectedFacultyId || availableDepartments.length === 0}>
+              <Select onValueChange={field.onChange} value={field.value} disabled={!selectedFacultyId || availableDepartments.length === 0}>
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger className="rounded-lg">
                     <SelectValue placeholder="Select your department" />
                   </SelectTrigger>
                 </FormControl>
@@ -171,37 +162,14 @@ export default function ProfileSetupForm({ defaultValues, onSuccess }: ProfileSe
             </FormItem>
           )}
         />
-        {/* Optional Password Fields
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>New Password (optional)</FormLabel>
-              <FormControl>
-                <Input type="password" placeholder="Leave blank to keep current" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="confirmPassword"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Confirm New Password</FormLabel>
-              <FormControl>
-                <Input type="password" placeholder="Confirm new password" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        */}
-        <Button type="submit" className="w-full sm:w-auto" disabled={isLoading}>
-          {isLoading ? 'Saving...' : 'Save Changes'}
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            <Button type="submit" className="w-full sm:w-auto rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isLoading}>
+            {isLoading ? 'Saving...' : 'Save Changes'}
+            </Button>
+            <Button type="button" variant="outline" className="w-full sm:w-auto rounded-lg" onClick={onSuccess} disabled={isLoading}>
+                Cancel
+            </Button>
+        </div>
       </form>
     </Form>
   );

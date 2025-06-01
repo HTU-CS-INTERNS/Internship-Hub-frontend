@@ -1,3 +1,4 @@
+
 'use client';
 import * as React from 'react';
 import PageHeader from '@/components/shared/page-header';
@@ -8,18 +9,21 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import type { DailyReport } from '@/types'; // Assuming DailyReport type is similar to DailyTask for now
+import type { DailyReport } from '@/types';
+import { cn } from '@/lib/utils';
 
 const DUMMY_REPORTS: DailyReport[] = [
   { id: 'report1', date: '2024-07-26', description: 'Weekly summary of authentication module progress.', outcomes: 'Module 70% complete.', learningObjectives: 'Project management and reporting.', studentId: 'stu1', status: 'APPROVED' },
   { id: 'report2', date: '2024-07-27', description: 'Mid-internship review presentation preparation.', outcomes: 'Presentation draft ready.', learningObjectives: 'Presentation skills.', studentId: 'stu1', status: 'SUBMITTED' },
+  { id: 'report3', date: '2024-07-25', description: 'Initial setup and planning for the new feature X.', outcomes: 'Project plan created.', learningObjectives: 'Agile planning.', studentId: 'stu1', status: 'PENDING' },
+  { id: 'report4', date: '2024-07-24', description: 'Bug fixing for version 1.2 release.', outcomes: 'Critical bugs resolved.', learningObjectives: 'Debugging techniques.', studentId: 'stu1', status: 'REJECTED' },
 ];
 
 const statusColors: Record<DailyReport['status'], string> = {
-  PENDING: 'bg-yellow-500/20 text-yellow-700 border-yellow-500/30',
-  SUBMITTED: 'bg-blue-500/20 text-blue-700 border-blue-500/30',
-  APPROVED: 'bg-green-500/20 text-green-700 border-green-500/30',
-  REJECTED: 'bg-red-500/20 text-red-700 border-red-500/30',
+  PENDING: 'bg-[hsl(var(--accent)/0.1)] text-[hsl(var(--accent))] border-[hsl(var(--accent)/0.2)]',
+  SUBMITTED: 'bg-[hsl(var(--primary)/0.1)] text-[hsl(var(--primary))] border-[hsl(var(--primary)/0.2)]',
+  APPROVED: 'bg-[hsl(var(--chart-3)/0.1)] text-[hsl(var(--chart-3))] border-[hsl(var(--chart-3)/0.2)]',
+  REJECTED: 'bg-[hsl(var(--destructive)/0.1)] text-[hsl(var(--destructive))] border-[hsl(var(--destructive)/0.2)]',
 };
 
 export default function ReportsPage() {
@@ -40,9 +44,9 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 p-4 md:p-6">
       <PageHeader
-        title="Daily Work Reports"
+        title="Work Reports"
         description="Submit your daily work reports and track their approval status."
         icon={FileText}
         breadcrumbs={[{ href: "/dashboard", label: "Dashboard" }, { label: "Work Reports" }]}
@@ -50,7 +54,7 @@ export default function ReportsPage() {
            <div className="flex gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline">
+                <Button variant="outline" className="bg-card hover:bg-accent hover:text-accent-foreground">
                   <Filter className="mr-2 h-4 w-4" /> Filter Status
                 </Button>
               </DropdownMenuTrigger>
@@ -69,19 +73,19 @@ export default function ReportsPage() {
               </DropdownMenuContent>
             </DropdownMenu>
             <Link href="/reports/new" passHref>
-              <Button>
+              <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
                 <PlusCircle className="mr-2 h-4 w-4" /> Submit New Report
               </Button>
             </Link>
           </div>
         }
       />
-      <Card className="shadow-lg">
+      <Card className="shadow-lg rounded-xl overflow-hidden">
         <CardHeader>
-          <CardTitle className="font-headline">Report History</CardTitle>
+          <CardTitle className="font-headline text-lg">Report History</CardTitle>
           <CardDescription>A log of all your submitted work reports.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           {filteredReports.length > 0 ? (
             <Table>
               <TableHeader>
@@ -112,7 +116,7 @@ export default function ReportsPage() {
               </TableBody>
             </Table>
           ) : (
-             <div className="text-center py-12 text-muted-foreground">
+             <div className="text-center py-12 text-muted-foreground p-6">
               <FileText className="mx-auto h-12 w-12 mb-4" />
               <p className="text-lg font-semibold">No reports found.</p>
               <p>Submit a new report or adjust your filters.</p>
@@ -120,7 +124,7 @@ export default function ReportsPage() {
           )}
         </CardContent>
         {filteredReports.length > 0 && (
-          <CardFooter className="justify-end">
+          <CardFooter className="justify-end p-4 border-t">
              <p className="text-sm text-muted-foreground">Showing {filteredReports.length} of {DUMMY_REPORTS.length} reports</p>
           </CardFooter>
         )}

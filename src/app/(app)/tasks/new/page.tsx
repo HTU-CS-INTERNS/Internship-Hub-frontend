@@ -1,3 +1,4 @@
+
 'use client';
 import PageHeader from '@/components/shared/page-header';
 import DailyTaskForm from '@/components/forms/daily-task-form';
@@ -6,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 
 export default function NewTaskPage() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 p-4 md:p-6">
       <PageHeader
         title="Declare New Daily Task"
         description="Fill in the details of the task you performed today."
@@ -17,12 +18,12 @@ export default function NewTaskPage() {
           { label: "New Task" }
         ]}
       />
-      <Card className="max-w-2xl mx-auto shadow-lg">
-        <CardHeader>
+      <Card className="max-w-3xl mx-auto shadow-lg rounded-xl">
+        <CardHeader className="p-6">
             <CardTitle className="font-headline text-xl">Task Details</CardTitle>
             <CardDescription>Provide a clear description of your task, its outcomes, and what you learned.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
           <DailyTaskForm />
         </CardContent>
       </Card>

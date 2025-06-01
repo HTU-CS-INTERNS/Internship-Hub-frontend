@@ -1,3 +1,4 @@
+
 'use client';
 import * as React from 'react';
 import PageHeader from '@/components/shared/page-header';
@@ -11,7 +12,6 @@ import InternshipDetailsForm from '@/components/forms/internship-details-form';
 import type { UserRole } from '@/types';
 import { USER_ROLES } from '@/lib/constants';
 
-// Dummy data, replace with actual data from auth/context
 const DUMMY_USER_DATA = {
   name: 'Alex Johnson',
   email: 'alex.johnson@example.com',
@@ -21,6 +21,7 @@ const DUMMY_USER_DATA = {
   internship: {
     companyName: 'Tech Solutions Inc.',
     supervisorName: 'Dr. Emily Carter',
+    supervisorEmail: 'emily.carter@techsolutions.com', // Added for form
     startDate: '2024-06-01',
     endDate: '2024-12-31',
     location: 'Remote / New York Office'
@@ -42,7 +43,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 p-4 md:p-6">
       <PageHeader
         title="My Profile"
         description="View and manage your personal and internship information."
@@ -50,43 +51,43 @@ export default function ProfilePage() {
         breadcrumbs={[{ href: "/dashboard", label: "Dashboard" }, { label: "Profile" }]}
       />
 
-      <Card className="shadow-lg">
-        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <Card className="shadow-lg rounded-xl">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6">
           <div className="flex items-center gap-4">
             <Avatar className="h-20 w-20 border-2 border-primary">
               <AvatarImage src={DUMMY_USER_DATA.avatarUrl} alt={DUMMY_USER_DATA.name} data-ai-hint="person portrait"/>
-              <AvatarFallback className="text-2xl">{getInitials(DUMMY_USER_DATA.name)}</AvatarFallback>
+              <AvatarFallback className="text-2xl bg-primary/20 text-primary">{getInitials(DUMMY_USER_DATA.name)}</AvatarFallback>
             </Avatar>
             <div>
               <CardTitle className="text-2xl font-headline">{DUMMY_USER_DATA.name}</CardTitle>
               <CardDescription className="text-base">{DUMMY_USER_DATA.email}</CardDescription>
-              {userRole && <p className="text-sm text-primary">{USER_ROLES[userRole]}</p>}
+              {userRole && <p className="text-sm text-primary font-medium">{USER_ROLES[userRole]}</p>}
             </div>
           </div>
-          <Button variant="outline" onClick={() => setIsEditingProfile(!isEditingProfile)}>
-            <Edit3 className="mr-2 h-4 w-4" /> {isEditingProfile ? 'Cancel' : 'Edit Profile'}
+          <Button variant="outline" onClick={() => setIsEditingProfile(!isEditingProfile)} className="bg-card hover:bg-accent hover:text-accent-foreground">
+            <Edit3 className="mr-2 h-4 w-4" /> {isEditingProfile ? 'Cancel Edit' : 'Edit Profile'}
           </Button>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="p-6">
           {isEditingProfile ? (
             <ProfileSetupForm 
               defaultValues={{ 
                 name: DUMMY_USER_DATA.name, 
                 email: DUMMY_USER_DATA.email, 
-                facultyId: 'F003', // Example default
-                departmentId: 'D005' // Example default
+                facultyId: FACULTIES.find(f => f.name === DUMMY_USER_DATA.faculty)?.id || '',
+                departmentId: DEPARTMENTS.find(d => d.name === DUMMY_USER_DATA.department)?.id || '',
               }} 
               onSuccess={() => setIsEditingProfile(false)} 
             />
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 text-sm">
               <div>
                 <p className="font-medium text-foreground">Faculty:</p>
-                <p className="text-muted-foreground">{DUMMY_USER_DATA.faculty}</p>
+                <p className="text-muted-foreground">{DUMMY_USER_DATA.faculty || 'Not set'}</p>
               </div>
               <div>
                 <p className="font-medium text-foreground">Department:</p>
-                <p className="text-muted-foreground">{DUMMY_USER_DATA.department}</p>
+                <p className="text-muted-foreground">{DUMMY_USER_DATA.department || 'Not set'}</p>
               </div>
             </div>
           )}
@@ -96,31 +97,35 @@ export default function ProfilePage() {
       {userRole === 'STUDENT' && (
         <>
           <Separator />
-          <Card className="shadow-lg" id="internship">
-            <CardHeader className="flex flex-row items-center justify-between">
+          <Card className="shadow-lg rounded-xl" id="internship">
+            <CardHeader className="flex flex-row items-center justify-between p-6">
               <div className="flex items-center gap-3">
                 <Briefcase className="h-6 w-6 text-primary" />
                 <CardTitle className="text-xl font-headline">Internship Details</CardTitle>
               </div>
-              <Button variant="outline" onClick={() => setIsEditingInternship(!isEditingInternship)}>
-                 <Edit3 className="mr-2 h-4 w-4" /> {isEditingInternship ? 'Cancel' : 'Edit Details'}
+              <Button variant="outline" onClick={() => setIsEditingInternship(!isEditingInternship)} className="bg-card hover:bg-accent hover:text-accent-foreground">
+                 <Edit3 className="mr-2 h-4 w-4" /> {isEditingInternship ? 'Cancel Edit' : 'Edit Details'}
               </Button>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-6">
               {isEditingInternship ? (
                 <InternshipDetailsForm 
                   defaultValues={DUMMY_USER_DATA.internship}
                   onSuccess={() => setIsEditingInternship(false)}
                 />
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 text-sm">
                   <div>
                     <p className="font-medium text-foreground">Company Name:</p>
                     <p className="text-muted-foreground">{DUMMY_USER_DATA.internship.companyName}</p>
                   </div>
                   <div>
-                    <p className="font-medium text-foreground">Supervisor:</p>
+                    <p className="font-medium text-foreground">Supervisor Name:</p>
                     <p className="text-muted-foreground">{DUMMY_USER_DATA.internship.supervisorName}</p>
+                  </div>
+                   <div>
+                    <p className="font-medium text-foreground">Supervisor Email:</p>
+                    <p className="text-muted-foreground">{DUMMY_USER_DATA.internship.supervisorEmail}</p>
                   </div>
                   <div>
                     <p className="font-medium text-foreground">Start Date:</p>
@@ -140,17 +145,16 @@ export default function ProfilePage() {
           </Card>
         </>
       )}
-       {/* Placeholder for other role-specific profile sections */}
       {userRole === 'LECTURER' && (
-        <Card className="shadow-lg">
-          <CardHeader>
+        <Card className="shadow-lg rounded-xl">
+          <CardHeader className="p-6">
             <div className="flex items-center gap-3">
               <BookOpen className="h-6 w-6 text-primary" />
               <CardTitle className="text-xl font-headline">Academic Information</CardTitle>
             </div>
           </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">Lecturer-specific profile details would go here.</p>
+          <CardContent className="p-6">
+            <p className="text-muted-foreground">Lecturer-specific profile details would go here, such as courses supervised, research interests, or office hours.</p>
             {/* Example: Research areas, courses taught, etc. */}
           </CardContent>
         </Card>
