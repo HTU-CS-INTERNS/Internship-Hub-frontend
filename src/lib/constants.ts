@@ -1,5 +1,20 @@
 import type { LucideIcon } from 'lucide-react';
-import { LayoutDashboard, User, ClipboardList, FileText, MessageSquare, Users, Briefcase, Building, BarChart3, Settings, LogOut } from 'lucide-react';
+import { 
+  LayoutDashboard, 
+  User, 
+  ClipboardList, 
+  FileText, 
+  MessageSquare, 
+  Users, 
+  Briefcase, 
+  Building, 
+  BarChart3, 
+  Settings, 
+  LogOut,
+  GraduationCap, // Added import
+  CheckSquare,   // Added import
+  FileCheck      // Added import
+} from 'lucide-react';
 import type { UserRole } from '@/types';
 
 export interface NavItem {
@@ -98,10 +113,3 @@ export const DEPARTMENTS = [
   { id: 'D007', name: 'Psychology', facultyId: 'F004' },
   { id: 'D008', name: 'Sociology', facultyId: 'F004' },
 ];
-
-// Helper function to get Lucide icons dynamically (example, not used directly by sidebar component yet)
-// For icons used in children like CheckSquare, FileCheck, GraduationCap, they need to be imported above.
-// Adding dummy icons for any potentially missing ones just for compilation, replace with actual ones.
-const CheckSquare = Users; 
-const FileCheck = Users;
-const GraduationCap = Users;
