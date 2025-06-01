@@ -99,12 +99,13 @@ export const NAV_LINKS: NavItem[] = [
     roles: ['HOD'],
     section: "Management"
   },
-  { href: '/analytics', label: 'Analytics', icon: BarChart3, roles: ['LECTURER', 'SUPERVISOR', 'HOD', 'ADMIN'], section: "Management" }, // Admin can also view analytics
+  { href: '/analytics', label: 'Analytics', icon: BarChart3, roles: ['LECTURER', 'SUPERVISOR', 'HOD', 'ADMIN'], section: "Management" },
 
   // Admin Section
   { href: '/admin/dashboard', label: 'Admin Dashboard', icon: School, roles: ['ADMIN'], section: "Administration" },
   { href: '/admin/university-structure', label: 'University Structure', icon: Landmark, roles: ['ADMIN'], section: "Administration" },
   { href: '/admin/user-management', label: 'User Management', icon: UserCog, roles: ['ADMIN'], section: "Administration" },
+  { href: '/admin/settings', label: 'System Settings', icon: Settings, roles: ['ADMIN'], section: "Administration" },
 ];
 
 export const BOTTOM_NAV_LINKS: NavItem[] = [
