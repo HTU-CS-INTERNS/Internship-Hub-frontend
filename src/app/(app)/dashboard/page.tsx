@@ -4,7 +4,7 @@
 import * as React from 'react';
 import PageHeader from '@/components/shared/page-header';
 import { 
-    LayoutDashboard, User, Briefcase, Building, CalendarCheck, FileText as FileTextLucide, MapPinIcon, StarIcon, ClockIcon, AlertOctagonIcon, UsersIcon, SchoolIcon, CheckCircle2, CircleDot, PlusCircle, CalendarDays, UploadCloud, Edit, MessageSquarePlus, BarChart3, SettingsIcon, UserCheck, FileUp, Users2, Activity
+    LayoutDashboard, User, Briefcase, Building, CalendarCheck, FileText as FileTextLucide, MapPinIcon, StarIcon, ClockIcon, AlertOctagonIcon, UsersIcon, SchoolIcon, CheckCircle2, CircleDot, PlusCircle, CalendarDays, UploadCloud, Edit, MessageSquarePlus, BarChart3, SettingsIcon, UserCheck, FileUp, Users2, Activity, CheckSquare, Contact
 } from 'lucide-react';
 import type { UserRole } from '@/types';
 import { USER_ROLES, FACULTIES, DEPARTMENTS } from '@/lib/constants';
@@ -23,7 +23,6 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 import { PieChart, Pie, Cell } from "recharts";
 import { useToast } from '@/hooks/use-toast';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const getInitials = (name: string) => {
     if (!name) return 'U';
@@ -151,13 +150,54 @@ const StudentFeedbackItem: React.FC<{name: string; role: string; comment: string
     </div>
 )};
 
-const studentCheckInChartData = [{ name: 'Checked In', value: 92, fill: 'hsl(var(--primary))' }, { name: 'Remaining', value: 8, fill: 'hsl(var(--muted))' }];
-const studentCheckInChartConfig = { "Checked In": { label: "Checked In" }, "Remaining": { label: "Remaining" } };
+interface StoredCheckinData {
+  time: string;
+  location: string;
+  date: string; 
+  photoPreview?: string | null;
+}
 
 const StudentDashboard: React.FC<{ userName: string }> = ({ userName }) => {
     const [reportDate, setReportDate] = React.useState<Date | undefined>(new Date());
     const [reportSummary, setReportSummary] = React.useState('');
     const { toast } = useToast();
+    const [isCheckedInToday, setIsCheckedInToday] = React.useState(false);
+    const [checkinDetails, setCheckinDetails] = React.useState<StoredCheckinData | null>(null);
+
+    const getTodayDateString = () => format(new Date(), 'yyyy-MM-dd');
+
+    React.useEffect(() => {
+        const todayDateStr = getTodayDateString();
+        const storedCheckinRaw = typeof window !== "undefined" ? localStorage.getItem('internshipTrack_checkin') : null;
+        if (storedCheckinRaw) {
+            try {
+                const storedCheckin: StoredCheckinData = JSON.parse(storedCheckinRaw);
+                if (storedCheckin.date === todayDateStr) {
+                    setIsCheckedInToday(true);
+                    setCheckinDetails(storedCheckin);
+                } else {
+                    setIsCheckedInToday(false);
+                    setCheckinDetails(null);
+                }
+            } catch (e) {
+                console.error("Failed to parse stored check-in data for dashboard", e);
+                setIsCheckedInToday(false);
+                setCheckinDetails(null);
+            }
+        } else {
+            setIsCheckedInToday(false);
+            setCheckinDetails(null);
+        }
+    }, []);
+    
+    const studentCheckInChartData = isCheckedInToday 
+        ? [{ name: 'Checked In', value: 100, fill: 'hsl(var(--primary))' }]
+        : [{ name: 'Not Checked In', value: 100, fill: 'hsl(var(--muted))' }];
+    
+    const studentCheckInChartConfig = isCheckedInToday
+        ? { "Checked In": { label: "Checked In" } }
+        : { "Not Checked In": { label: "Not Checked In" } };
+
 
     const handleQuickReportSubmit = () => {
         if (!reportSummary.trim()) {
@@ -167,6 +207,10 @@ const StudentDashboard: React.FC<{ userName: string }> = ({ userName }) => {
         toast({ title: "Quick Report Submitted!", description: `Summary for ${format(reportDate!, "PPP")} recorded.`});
         setReportSummary('');
     };
+    
+    // Placeholder data for supervisor and lecturer
+    const companySupervisor = { name: 'Mr. John Smith', avatarUrl: 'https://placehold.co/100x100.png', role: 'Company Supervisor' };
+    const facultyLecturer = { name: 'Dr. Elara Vance', avatarUrl: 'https://placehold.co/100x100.png', role: 'Faculty Lecturer' };
 
     return (
         <>
@@ -184,10 +228,9 @@ const StudentDashboard: React.FC<{ userName: string }> = ({ userName }) => {
                 </div>
             </Card>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 <DashboardStatsCard title="Days Completed" value="14" icon={CalendarCheck} progress={15.5} progressLabel="Total Days: 90" iconBgColor="bg-indigo-100 dark:bg-indigo-900/70" iconColor="text-indigo-600 dark:text-indigo-300" />
                 <DashboardStatsCard title="Reports Submitted" value="12" icon={FileTextLucide} detail={<span>Approved: 10 <span className="text-green-600">(83.3%)</span></span>} iconBgColor="bg-green-100 dark:bg-green-900/70" iconColor="text-green-600 dark:text-green-300" />
-                <DashboardStatsCard title="Check-in Rate" value="92%" icon={MapPinIcon} detail={<span>Last Check-in: Today <span className="text-blue-600">(On Time)</span></span>} iconBgColor="bg-blue-100 dark:bg-blue-900/70" iconColor="text-blue-600 dark:text-blue-300" />
                 <DashboardStatsCard title="Supervisor Rating" value="4.8" icon={StarIcon} detail={
                 <div className="flex items-center text-xs">
                     <div className="flex text-yellow-400"> <StarIcon fill="currentColor" className="w-3 h-3"/> <StarIcon fill="currentColor" className="w-3 h-3"/> <StarIcon fill="currentColor" className="w-3 h-3"/> <StarIcon fill="currentColor" className="w-3 h-3"/> <StarIcon fill="currentColor" stroke="currentColor" strokeWidth={1} className="w-3 h-3 text-yellow-400/80"/></div>
@@ -269,55 +312,111 @@ const StudentDashboard: React.FC<{ userName: string }> = ({ userName }) => {
                 </div>
                 
                 <div className="space-y-6">
-                <Card className="shadow-lg rounded-xl overflow-hidden bg-card text-card-foreground">
-                    <CardHeader className="border-b border-border">
-                    <CardTitle className="font-headline text-lg">Check-in Status</CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-4">
-                    <div className="flex flex-col items-center">
-                        <ChartContainer config={studentCheckInChartConfig} className="mx-auto aspect-square h-[120px]">
-                        <PieChart accessibilityLayer>
-                            <ChartTooltip content={<ChartTooltipContent hideLabel className="text-xs bg-popover text-popover-foreground border-border" />} />
-                            <Pie data={studentCheckInChartData} dataKey="value" nameKey="name" innerRadius={35} outerRadius={50} strokeWidth={2}>
-                            <Cell fill="hsl(var(--primary))" radius={8}/>
-                            <Cell fill="hsl(var(--muted))" radius={8}/>
-                            </Pie>
-                            <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle" className="fill-primary text-lg font-bold">
-                                92%
-                            </text>
-                        </PieChart>
-                        </ChartContainer>
-                        <div className="text-center mt-2">
-                        <h4 className="font-medium text-base text-foreground">On-site Attendance</h4>
-                        <p className="text-muted-foreground text-xs mt-0.5">12 of 14 days checked in</p>
-                        </div>
-                        <Link href="/check-in" className="w-full">
-                            <Button className="mt-4 w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg">Check-in Now</Button>
-                        </Link>
-                    </div>
-                    </CardContent>
-                </Card>
-                
-                <Card className="shadow-lg rounded-xl overflow-hidden bg-card text-card-foreground">
-                    <CardHeader className="border-b border-border">
-                    <CardTitle className="font-headline text-lg">Upcoming Deadlines</CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-0 divide-y divide-border">
-                        <StudentDeadlineItem title="Final Project Submission" dueText="Due in 3 days" date="July 15, 2024" icon={AlertOctagonIcon} iconBg="bg-red-100 dark:bg-red-900/70" iconColor="text-red-600 dark:text-red-300" />
-                        <StudentDeadlineItem title="Mid-term Evaluation" dueText="Due in 7 days" date="July 19, 2024" icon={FileTextLucide} iconBg="bg-yellow-100 dark:bg-yellow-900/70" iconColor="text-yellow-600 dark:text-yellow-300" />
-                        <StudentDeadlineItem title="Team Presentation" dueText="Due in 10 days" date="July 22, 2024" icon={UsersIcon} iconBg="bg-blue-100 dark:bg-blue-900/70" iconColor="text-blue-600 dark:text-blue-300" />
-                    </CardContent>
-                </Card>
-                
-                <Card className="shadow-lg rounded-xl overflow-hidden bg-card text-card-foreground">
-                    <CardHeader className="border-b border-border">
-                    <CardTitle className="font-headline text-lg">Recent Feedback</CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-0 divide-y divide-border">
-                        <StudentFeedbackItem name="Mr. Smith" role="Company Supervisor" comment="Great progress on the documentation. Just a few minor corrections needed on section 3.2." time="2 hours ago" avatarUrl="https://placehold.co/100x100.png" data-ai-hint="person portrait" avatarFallback="MS" icon={Briefcase} status="Approved"/>
-                        <StudentFeedbackItem name="Prof. Johnson" role="Faculty Lecturer" comment="Please provide more details about team collaboration in your next report." time="1 day ago" avatarUrl="https://placehold.co/100x100.png" data-ai-hint="person portrait" avatarFallback="PJ" icon={SchoolIcon} status="Pending"/>
-                    </CardContent>
-                </Card>
+                    <Card className="shadow-lg rounded-xl overflow-hidden bg-card text-card-foreground">
+                        <CardHeader className="border-b border-border">
+                            <CardTitle className="font-headline text-lg flex items-center">
+                                <MapPinIcon className="mr-2 h-5 w-5 text-primary"/> Check-in Status
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-4">
+                            <div className="flex flex-col items-center">
+                                <ChartContainer config={studentCheckInChartConfig} className="mx-auto aspect-square h-[120px]">
+                                <PieChart accessibilityLayer>
+                                    <ChartTooltip content={<ChartTooltipContent hideLabel className="text-xs bg-popover text-popover-foreground border-border" />} />
+                                    <Pie data={studentCheckInChartData} dataKey="value" nameKey="name" innerRadius={35} outerRadius={50} strokeWidth={2}>
+                                    <Cell fill={isCheckedInToday ? 'hsl(var(--primary))' : 'hsl(var(--muted))'} radius={8}/>
+                                    </Pie>
+                                    <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle" className={`fill-current ${isCheckedInToday ? 'text-primary' : 'text-muted-foreground'} text-lg font-bold`}>
+                                        {isCheckedInToday ? 'Done' : 'N/A'}
+                                    </text>
+                                </PieChart>
+                                </ChartContainer>
+                                <div className="text-center mt-2">
+                                <h4 className="font-medium text-base text-foreground">{isCheckedInToday ? "Checked In for Today!" : "Awaiting Check-in"}</h4>
+                                {isCheckedInToday && checkinDetails && (
+                                    <p className="text-muted-foreground text-xs mt-0.5">{checkinDetails.time} at {checkinDetails.location.substring(0, 25) + (checkinDetails.location.length > 25 ? '...' : '')}</p>
+                                )}
+                                {!isCheckedInToday && (
+                                     <p className="text-muted-foreground text-xs mt-0.5">Verify your location for attendance.</p>
+                                )}
+                                </div>
+                                <Link href="/check-in" className="w-full">
+                                    <Button className="mt-4 w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg">
+                                        {isCheckedInToday ? "View Check-in" : "Check-in Now"}
+                                    </Button>
+                                </Link>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    
+                    <Card className="shadow-lg rounded-xl bg-card text-card-foreground">
+                        <CardHeader className="border-b border-border">
+                            <CardTitle className="font-headline text-lg flex items-center"><Briefcase className="mr-2 h-5 w-5 text-primary"/>Company Supervisor</CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-4">
+                            <div className="flex items-center space-x-3">
+                                <Avatar className="h-12 w-12 border">
+                                    <AvatarImage src={companySupervisor.avatarUrl} alt={companySupervisor.name} data-ai-hint="person office" />
+                                    <AvatarFallback className="bg-primary/20 text-primary">{getInitials(companySupervisor.name)}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <p className="font-medium text-foreground">{companySupervisor.name}</p>
+                                    <p className="text-xs text-muted-foreground">{companySupervisor.role}</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                        <CardFooter className="p-4 border-t border-border">
+                             <Link href="/communication" className="w-full">
+                                <Button variant="outline" className="w-full rounded-lg border-input text-foreground hover:bg-muted">
+                                    <Contact className="mr-2 h-4 w-4"/> Contact Supervisor
+                                </Button>
+                            </Link>
+                        </CardFooter>
+                    </Card>
+
+                    <Card className="shadow-lg rounded-xl bg-card text-card-foreground">
+                        <CardHeader className="border-b border-border">
+                            <CardTitle className="font-headline text-lg flex items-center"><SchoolIcon className="mr-2 h-5 w-5 text-primary"/>Assigned Lecturer</CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-4">
+                             <div className="flex items-center space-x-3">
+                                <Avatar className="h-12 w-12 border">
+                                    <AvatarImage src={facultyLecturer.avatarUrl} alt={facultyLecturer.name} data-ai-hint="person academic" />
+                                    <AvatarFallback className="bg-primary/20 text-primary">{getInitials(facultyLecturer.name)}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <p className="font-medium text-foreground">{facultyLecturer.name}</p>
+                                    <p className="text-xs text-muted-foreground">{facultyLecturer.role}</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                         <CardFooter className="p-4 border-t border-border">
+                            <Link href="/communication" className="w-full">
+                                <Button variant="outline" className="w-full rounded-lg border-input text-foreground hover:bg-muted">
+                                    <Contact className="mr-2 h-4 w-4"/> Contact Lecturer
+                                </Button>
+                            </Link>
+                        </CardFooter>
+                    </Card>
+
+                    <Card className="shadow-lg rounded-xl overflow-hidden bg-card text-card-foreground">
+                        <CardHeader className="border-b border-border">
+                        <CardTitle className="font-headline text-lg">Upcoming Deadlines</CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-0 divide-y divide-border">
+                            <StudentDeadlineItem title="Final Project Submission" dueText="Due in 3 days" date="July 15, 2024" icon={AlertOctagonIcon} iconBg="bg-red-100 dark:bg-red-900/70" iconColor="text-red-600 dark:text-red-300" />
+                            <StudentDeadlineItem title="Mid-term Evaluation" dueText="Due in 7 days" date="July 19, 2024" icon={FileTextLucide} iconBg="bg-yellow-100 dark:bg-yellow-900/70" iconColor="text-yellow-600 dark:text-yellow-300" />
+                        </CardContent>
+                    </Card>
+                    
+                    <Card className="shadow-lg rounded-xl overflow-hidden bg-card text-card-foreground">
+                        <CardHeader className="border-b border-border">
+                        <CardTitle className="font-headline text-lg">Recent Feedback</CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-0 divide-y divide-border">
+                            <StudentFeedbackItem name="Mr. Smith" role="Company Supervisor" comment="Great progress on the documentation. Just a few minor corrections needed on section 3.2." time="2 hours ago" avatarUrl="https://placehold.co/100x100.png" data-ai-hint="person portrait" avatarFallback="MS" icon={Briefcase} status="Approved"/>
+                        </CardContent>
+                    </Card>
                 </div>
             </div>
         </>
@@ -463,18 +562,17 @@ const HODDashboard: React.FC<{ userName: string }> = ({ userName }) => {
     const [selectedFaculty, setSelectedFaculty] = React.useState<string>('');
     const [selectedDepartment, setSelectedDepartment] = React.useState<string>('');
     
-    // Simulate HOD is linked to one faculty and their specific department. This would come from user data.
-    const hodFacultyId = FACULTIES[0]?.id || ''; // Example: First faculty
-    const hodDepartmentId = DEPARTMENTS.find(d => d.facultyId === hodFacultyId)?.id || ''; // Example: First department in that faculty
+    const hodFacultyId = FACULTIES[0]?.id || ''; 
+    const hodDepartmentId = DEPARTMENTS.find(d => d.facultyId === hodFacultyId)?.id || ''; 
 
     React.useEffect(() => {
         setSelectedFaculty(hodFacultyId);
         setSelectedDepartment(hodDepartmentId);
     }, [hodFacultyId, hodDepartmentId]);
     
-    const departmentStudents = [ // Filtered by HOD's department
-        { id: 'stu1', name: 'Alice Wonderland', faculty: FACULTIES[0]?.name, department: DEPARTMENTS[0]?.name, avatar: 'https://placehold.co/100x100.png', dataAiHint: 'person portrait', compliance: '95%', issues: 0 },
-        { id: 'stu4', name: 'Diana Prince', faculty: FACULTIES[0]?.name, department: DEPARTMENTS[0]?.name, avatar: 'https://placehold.co/100x100.png', dataAiHint: 'person portrait', compliance: '80%', issues: 2 },
+    const departmentStudents = [ 
+        { id: 'stu1', name: 'Alice Wonderland', faculty: FACULTIES.find(f => f.id === hodFacultyId)?.name, department: DEPARTMENTS.find(d=>d.id === hodDepartmentId)?.name, avatar: 'https://placehold.co/100x100.png', dataAiHint: 'person portrait', compliance: '95%', issues: 0 },
+        { id: 'stu4', name: 'Diana Prince', faculty: FACULTIES.find(f => f.id === hodFacultyId)?.name, department: DEPARTMENTS.find(d=>d.id === hodDepartmentId)?.name, avatar: 'https://placehold.co/100x100.png', dataAiHint: 'person portrait', compliance: '80%', issues: 2 },
     ];
 
     return (
@@ -530,7 +628,7 @@ const HODDashboard: React.FC<{ userName: string }> = ({ userName }) => {
                                     <TableCell><Progress value={parseInt(student.compliance)} className="h-2" /> <span className="text-xs">{student.compliance}</span></TableCell>
                                     <TableCell className="text-center"><Badge variant={student.issues > 0 ? "destructive" : "default"}>{student.issues}</Badge></TableCell>
                                     <TableCell className="text-right">
-                                        <Link href={`/analytics?studentId=${student.id}`} passHref> {/* Example link */}
+                                        <Link href={`/analytics?studentId=${student.id}`} passHref> 
                                             <Button variant="ghost" size="sm">View Details</Button>
                                         </Link>
                                     </TableCell>
