@@ -16,65 +16,84 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, Loader2 } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import type { InternshipDetails } from '@/types';
 
 const internshipDetailsSchema = z.object({
   companyName: z.string().min(2, { message: 'Company name is required (min 2 chars).' }).max(100, { message: 'Company name too long (max 100).' }),
+  companyAddress: z.string().min(5, { message: 'Company address is required (min 5 chars).' }).max(200, { message: 'Address too long (max 200).' }).optional(),
   supervisorName: z.string().min(2, { message: 'Supervisor name is required (min 2 chars).' }).max(100, { message: 'Supervisor name too long (max 100).' }),
   supervisorEmail: z.string().email({ message: 'Valid supervisor email is required.' }),
   startDate: z.date({ required_error: 'Start date is required.' }),
   endDate: z.date({ required_error: 'End date is required.' }),
-  location: z.string().min(2, { message: 'Location is required (min 2 chars).' }).max(100, { message: 'Location too long (max 100).' }),
+  // location field was present in original type, but companyAddress is more specific from user flow. Keeping location for now.
+  location: z.string().min(2, { message: 'Location/Work Arrangement is required (min 2 chars).' }).max(100, { message: 'Location too long (max 100).' }),
 }).refine(data => data.endDate >= data.startDate, {
   message: "End date cannot be before start date.",
   path: ["endDate"],
 });
 
-type InternshipDetailsFormValues = z.infer<typeof internshipDetailsSchema>;
+export type InternshipDetailsFormValues = z.infer<typeof internshipDetailsSchema>;
 
 interface InternshipDetailsFormProps {
-  defaultValues?: Partial<InternshipDetails>;
-  onSuccess?: () => void;
+  defaultValues?: Partial<InternshipDetails & { companyAddress?: string }>; // Allow companyAddress
+  onSuccess?: (data: InternshipDetailsFormValues) => void;
 }
 
 export default function InternshipDetailsForm({ defaultValues, onSuccess }: InternshipDetailsFormProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = React.useState(false);
 
+  const parseDate = (dateString?: string): Date | undefined => {
+    if (!dateString) return undefined;
+    try {
+      // Handles both "YYYY-MM-DD" and full ISO strings
+      return parseISO(dateString);
+    } catch (e) {
+      return undefined;
+    }
+  };
+
   const form = useForm<InternshipDetailsFormValues>({
     resolver: zodResolver(internshipDetailsSchema),
     defaultValues: {
       companyName: defaultValues?.companyName || '',
+      companyAddress: (defaultValues as any)?.companyAddress || '', // From user flow
       supervisorName: defaultValues?.supervisorName || '',
       supervisorEmail: defaultValues?.supervisorEmail || '',
-      startDate: defaultValues?.startDate ? new Date(defaultValues.startDate) : undefined,
-      endDate: defaultValues?.endDate ? new Date(defaultValues.endDate) : undefined,
-      location: defaultValues?.location || '',
+      startDate: parseDate(defaultValues?.startDate),
+      endDate: parseDate(defaultValues?.endDate),
+      location: defaultValues?.location || '', // e.g. Remote, On-site, Hybrid
     },
   });
 
   async function onSubmit(values: InternshipDetailsFormValues) {
     setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setIsLoading(false);
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
 
+    // Simulate sending invitation email to supervisor
+    toast({
+      title: 'Supervisor Invitation Sent (Simulated)',
+      description: `An invitation email has been sent to ${values.supervisorEmail}.`,
+    });
+    
+    setIsLoading(false);
     toast({
       title: 'Internship Details Updated!',
       description: 'Your internship information has been saved.',
       variant: "default",
     });
-    onSuccess?.();
+    onSuccess?.(values);
   }
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-8">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
           <FormField
             control={form.control}
             name="companyName"
@@ -90,12 +109,12 @@ export default function InternshipDetailsForm({ defaultValues, onSuccess }: Inte
           />
           <FormField
             control={form.control}
-            name="location"
+            name="companyAddress"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Location (e.g., City, Remote)</FormLabel>
+                <FormLabel>Company Address</FormLabel>
                 <FormControl>
-                  <Input placeholder="New York / Remote" {...field} className="rounded-lg" />
+                  <Input placeholder="123 Main St, Anytown, USA" {...field} className="rounded-lg" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -194,12 +213,26 @@ export default function InternshipDetailsForm({ defaultValues, onSuccess }: Inte
               </FormItem>
             )}
           />
+           <FormField
+            control={form.control}
+            name="location"
+            render={({ field }) => (
+              <FormItem className="md:col-span-2">
+                <FormLabel>Location / Work Arrangement</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g., Remote, New York Office, Hybrid" {...field} className="rounded-lg" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
         <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <Button type="submit" className="w-full sm:w-auto rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isLoading}>
-            {isLoading ? 'Saving...' : 'Save Internship Details'}
+            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            Save Internship Details
             </Button>
-             <Button type="button" variant="outline" className="w-full sm:w-auto rounded-lg" onClick={onSuccess} disabled={isLoading}>
+             <Button type="button" variant="outline" className="w-full sm:w-auto rounded-lg" onClick={() => onSuccess?.(form.getValues())} disabled={isLoading}>
                 Cancel
             </Button>
         </div>
@@ -207,3 +240,5 @@ export default function InternshipDetailsForm({ defaultValues, onSuccess }: Inte
     </Form>
   );
 }
+
+    

@@ -20,25 +20,27 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { FACULTIES, DEPARTMENTS } from '@/lib/constants';
 import type { Department, Faculty } from '@/types';
+import { Loader2 } from 'lucide-react';
 
 const profileSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }).max(100, { message: 'Name too long (max 100).' }),
   email: z.string().email({ message: 'Please enter a valid email address.' }),
   facultyId: z.string().min(1, { message: 'Please select a faculty.' }),
   departmentId: z.string().min(1, { message: 'Please select a department.' }),
+  contactNumber: z.string().optional(), // Added contact number
 });
 
-type ProfileFormValues = z.infer<typeof profileSchema>;
+export type ProfileFormValues = z.infer<typeof profileSchema>;
 
 interface ProfileSetupFormProps {
   defaultValues?: Partial<ProfileFormValues>;
-  onSuccess?: () => void;
+  onSuccess?: (data: ProfileFormValues) => void; // Pass data back on success
 }
 
 export default function ProfileSetupForm({ defaultValues, onSuccess }: ProfileSetupFormProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = React.useState(false);
-  const [availableDepartments, setAvailableDepartments] = React.useState<Department[]>([]);
+  const [availableDepartments, setAvailableDepartments] = React.useState<Department[]>(DEPARTMENTS);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -47,6 +49,7 @@ export default function ProfileSetupForm({ defaultValues, onSuccess }: ProfileSe
       email: defaultValues?.email || '',
       facultyId: defaultValues?.facultyId || '',
       departmentId: defaultValues?.departmentId || '',
+      contactNumber: defaultValues?.contactNumber || '',
     },
   });
   
@@ -56,24 +59,26 @@ export default function ProfileSetupForm({ defaultValues, onSuccess }: ProfileSe
     if (selectedFacultyId) {
       const depts = DEPARTMENTS.filter(d => d.facultyId === selectedFacultyId);
       setAvailableDepartments(depts);
+      // Reset department if current selection is not in the new list
       if (!depts.find(d => d.id === form.getValues('departmentId'))) {
-        form.setValue('departmentId', '');
+        form.setValue('departmentId', ''); 
       }
     } else {
-      setAvailableDepartments([]);
-      form.setValue('departmentId', '');
+      setAvailableDepartments(DEPARTMENTS); // Show all if no faculty selected, or handle as needed
     }
   }, [selectedFacultyId, form]);
 
+  // Ensure departments are loaded based on default faculty on initial render
   React.useEffect(() => {
     if (defaultValues?.facultyId) {
       setAvailableDepartments(DEPARTMENTS.filter(d => d.facultyId === defaultValues.facultyId));
     }
-  }, [defaultValues]);
+  }, [defaultValues?.facultyId]);
+
 
   async function onSubmit(values: ProfileFormValues) {
     setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
     setIsLoading(false);
 
     toast({
@@ -81,12 +86,12 @@ export default function ProfileSetupForm({ defaultValues, onSuccess }: ProfileSe
       description: 'Your profile information has been successfully saved.',
       variant: "default",
     });
-    onSuccess?.();
+    onSuccess?.(values); // Pass the form values back to the parent
   }
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
           control={form.control}
           name="name"
@@ -108,6 +113,19 @@ export default function ProfileSetupForm({ defaultValues, onSuccess }: ProfileSe
               <FormLabel>Email Address</FormLabel>
               <FormControl>
                 <Input type="email" placeholder="your.email@example.com" {...field} className="rounded-lg" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="contactNumber"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Contact Number (Optional)</FormLabel>
+              <FormControl>
+                <Input placeholder="e.g., +1234567890" {...field} className="rounded-lg" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -143,7 +161,7 @@ export default function ProfileSetupForm({ defaultValues, onSuccess }: ProfileSe
           render={({ field }) => (
             <FormItem>
               <FormLabel>Department</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value} disabled={!selectedFacultyId || availableDepartments.length === 0}>
+              <Select onValueChange={field.onChange} value={field.value} disabled={!selectedFacultyId && availableDepartments.length === DEPARTMENTS.length}>
                 <FormControl>
                   <SelectTrigger className="rounded-lg">
                     <SelectValue placeholder="Select your department" />
@@ -157,16 +175,18 @@ export default function ProfileSetupForm({ defaultValues, onSuccess }: ProfileSe
                   ))}
                 </SelectContent>
               </Select>
-              {!selectedFacultyId && <FormDescription>Please select a faculty first.</FormDescription>}
+              {!selectedFacultyId && <FormDescription className="text-xs">Please select a faculty first.</FormDescription>}
+               {selectedFacultyId && availableDepartments.length === 0 && <FormDescription className="text-xs text-destructive">No departments found for selected faculty.</FormDescription>}
               <FormMessage />
             </FormItem>
           )}
         />
         <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <Button type="submit" className="w-full sm:w-auto rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isLoading}>
-            {isLoading ? 'Saving...' : 'Save Changes'}
+            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            Save Profile
             </Button>
-            <Button type="button" variant="outline" className="w-full sm:w-auto rounded-lg" onClick={onSuccess} disabled={isLoading}>
+            <Button type="button" variant="outline" className="w-full sm:w-auto rounded-lg" onClick={() => onSuccess?.(form.getValues())} disabled={isLoading}>
                 Cancel
             </Button>
         </div>
@@ -174,3 +194,5 @@ export default function ProfileSetupForm({ defaultValues, onSuccess }: ProfileSe
     </Form>
   );
 }
+
+    

@@ -14,14 +14,16 @@ import {
   GraduationCap,
   CheckSquare,
   FileCheck,
-  Home, // Used for Dashboard in mockup
-  ListChecks, // Used for Daily Tasks
-  MapPin, // Used for Check-in
-  CalendarDays, // Used for Schedule
-  UserCog, // Used for Profile
-  UserCircle, // For mobile profile
+  Home,
+  ListChecks, // Used for Daily Tasks in mockup
+  MapPin, // Used for Check-in in mockup
+  CalendarDays, // Used for Schedule in mockup
+  UserCog, // Used for Profile (desktop)
+  UserCircle, // For mobile profile & general user
   Bell, 
-  Mail 
+  Mail,
+  Palette, // For Appearance settings
+  ShieldCheck, // For Privacy & Security settings
 } from 'lucide-react';
 import type { UserRole } from '@/types';
 
@@ -31,8 +33,8 @@ export interface NavItem {
   icon: LucideIcon;
   roles: UserRole[];
   children?: NavItem[];
-  section?: string; // For grouping in sidebar
-  mobile?: boolean; // Whether to show on mobile bottom nav
+  section?: string; 
+  mobile?: boolean; // To show on mobile bottom nav (first 4-5 items)
 }
 
 export const USER_ROLES: Record<UserRole, string> = {
@@ -42,6 +44,7 @@ export const USER_ROLES: Record<UserRole, string> = {
   HOD: 'Head of Department',
 };
 
+// Sidebar Navigation Structure (Desktop)
 export const NAV_LINKS: NavItem[] = [
   // Main Section
   { href: '/dashboard', label: 'Dashboard', icon: Home, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Main", mobile: true },
@@ -57,15 +60,15 @@ export const NAV_LINKS: NavItem[] = [
     href: '/reports', 
     label: 'Reports', 
     icon: FileText, 
-    roles: ['STUDENT'],
-    section: "Main"
-    // mobile: true // Potentially add if space or combine under tasks
+    roles: ['STUDENT'], // Also for SUPERVISOR/LECTURER to view
+    section: "Main",
+    mobile: true // Student might want quick access
   },
   { href: '/company', label: 'Company', icon: Building, roles: ['STUDENT'], section: "Main" }, 
 
   // Tools Section
   { href: '/check-in', label: 'Check-in', icon: MapPin, roles: ['STUDENT'], section: "Tools", mobile: true }, 
-  { href: '/schedule', label: 'Schedule', icon: CalendarDays, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Tools", mobile: true }, 
+  { href: '/schedule', label: 'Schedule', icon: CalendarDays, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Tools" }, 
   { href: '/communication', label: 'Feedback', icon: MessageSquare, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Tools" }, 
 
   // Management for other roles
@@ -78,15 +81,15 @@ export const NAV_LINKS: NavItem[] = [
   },
   { 
     href: '/interns', 
-    label: 'Interns', 
+    label: 'My Interns', 
     icon: Briefcase, 
-    roles: ['SUPERVISOR'],
+    roles: ['SUPERVISOR'], // Renamed from 'Interns' for clarity in sidebar
     section: "Management"
   },
   { 
-    href: '/department', 
+    href: '/department-ops', // Example, actual link TBD
     label: 'Department Ops', 
-    icon: Building, 
+    icon: GraduationCap, // Changed from Building to avoid conflict with Company
     roles: ['HOD'],
     section: "Management"
   },
@@ -94,15 +97,17 @@ export const NAV_LINKS: NavItem[] = [
 ];
 
 export const BOTTOM_NAV_LINKS: NavItem[] = [
-    { href: '/profile', label: 'Profile', icon: UserCog, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Settings", mobile: true }, // UserCog for desktop, UserCircle for mobile
+    { href: '/profile', label: 'Profile', icon: UserCog, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Settings", mobile: true },
     { href: '/settings', label: 'Settings', icon: Settings, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Settings" },
 ];
+
 
 export const FACULTIES = [
   { id: 'F001', name: 'Faculty of Engineering' },
   { id: 'F002', name: 'Faculty of Business and Management' },
   { id: 'F003', name: 'Faculty of Information Technology' },
   { id: 'F004', name: 'Faculty of Arts and Social Sciences' },
+  { id: 'F_MOCK', name: 'Faculty of Mock Data'},
 ];
 
 export const DEPARTMENTS = [
@@ -114,4 +119,7 @@ export const DEPARTMENTS = [
   { id: 'D006', name: 'Cybersecurity', facultyId: 'F003' },
   { id: 'D007', name: 'Psychology', facultyId: 'F004' },
   { id: 'D008', name: 'Sociology', facultyId: 'F004' },
+  { id: 'D_MOCK', name: 'Department of Examples', facultyId: 'F_MOCK'},
 ];
+
+    

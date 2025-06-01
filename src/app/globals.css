@@ -9,7 +9,7 @@ body {
 
 @layer base {
   :root {
-    --background: 0 0% 96%; /* Light Gray #F5F5F5 */
+    --background: 0 0% 96%; /* Light Gray #F5F5F5 (similar to mockup's bg-gray-50) */
     --foreground: 0 0% 20%; /* Dark Gray #333333 */
 
     --card: 0 0% 100%; /* White */
@@ -18,41 +18,42 @@ body {
     --popover: 0 0% 100%; /* White */
     --popover-foreground: 0 0% 15%; /* Darker text for popovers */
 
-    --primary: 207 88% 71%; /* Soft Blue #64B5F6 */
-    --primary-foreground: 207 25% 15%; /* Dark blueish gray for text on primary */
+    /* Indigo/Purple Theme from Mockup */
+    --primary: 225 73% 57%; /* Indigo-600 equivalent: hsl(225, 73%, 57%) */
+    --primary-foreground: 0 0% 100%; /* White text on primary */
 
-    --secondary: 210 40% 96.1%; /* Lighter blueish gray */
-    --secondary-foreground: 210 40% 20%; /* Darker text for secondary */
+    --secondary: 225 60% 95%; /* Lighter indigo/blueish gray */
+    --secondary-foreground: 225 50% 25%; /* Darker text for secondary */
 
-    --muted: 0 0% 90%; /* Muted gray, slightly darker than background */
+    --muted: 0 0% 90%; /* Muted gray */
     --muted-foreground: 0 0% 45.1%; /* Default medium gray */
 
-    --accent: 33 100% 65%; /* Warm Orange #FFB74D */
-    --accent-foreground: 33 50% 15%; /* Dark orangish brown for text on accent */
+    --accent: 260 80% 70%; /* Purple from mockup gradient: hsl(260, 80%, 70%) - for highlights */
+    --accent-foreground: 0 0% 100%; /* White text on accent */
 
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 72% 51%; /* Adjusted destructive to fit theme (reddish) */
     --destructive-foreground: 0 0% 98%;
 
-    --border: 0 0% 88%; /* Slightly darker border #E0E0E0 */
+    --border: 0 0% 88%; /* Light gray border #E0E0E0 */
     --input: 0 0% 88%; /* Consistent with border */
-    --ring: 207 88% 65%; /* Ring color based on primary */
+    --ring: 225 73% 50%; /* Ring color based on primary (indigo) */
 
-    --chart-1: 207 88% 71%; /* Primary blue */
-    --chart-2: 33 100% 65%; /* Accent orange */
-    --chart-3: 120 60% 65%; /* A gentle green */
-    --chart-4: 0 80% 70%;   /* A soft red */
-    --chart-5: 260 70% 75%; /* A muted purple */
+    --chart-1: 225 73% 57%; /* Primary indigo */
+    --chart-2: 260 80% 70%; /* Accent purple */
+    --chart-3: 145 63% 49%; /* A complementary green */
+    --chart-4: 30 90% 55%;   /* A warm orange/yellow */
+    --chart-5: 320 70% 65%; /* A pink/magenta */
     --radius: 0.5rem;
 
-    /* Sidebar specific variables to align with PRD + Mockup structure */
-    --sidebar-background: 225 73% 30%; /* Darker Indigo/Blue base like mockup, but can be adjusted */
-    --sidebar-foreground: 0 0% 95%;   /* Light text for dark sidebar */
-    --sidebar-primary: 207 88% 85%;   /* Lighter blue for active items on dark sidebar */
-    --sidebar-primary-foreground: 225 73% 15%; /* Darker text for active items */
-    --sidebar-accent: 225 73% 35%;    /* Slightly lighter for hover on dark sidebar */
+    /* Sidebar specific variables - Mockup inspired */
+    --sidebar-background: 225 73% 30%; /* Dark Indigo base from mockup (bg-indigo-800) hsl(225, 73%, 30%)*/
+    --sidebar-foreground: 0 0% 95%;   /* Light text for dark sidebar (text-white/text-indigo-200) */
+    --sidebar-primary: 0 0% 100%;   /* White for active items (text-white) on dark sidebar */
+    --sidebar-primary-foreground: 225 73% 20%; /* Darker text for active items if bg is light (not used in mockup) */
+    --sidebar-accent: 225 73% 40%;    /* Slightly lighter for hover (hover:bg-indigo-700) hsl(225, 73%, 40%)*/
     --sidebar-accent-foreground: 0 0% 100%; /* White text for hover */
-    --sidebar-border: 225 73% 25%;    /* Border for dark sidebar */
-    --sidebar-ring: 207 88% 71%;      /* Primary blue ring */
+    --sidebar-border: 225 73% 25%;    /* Border for dark sidebar (border-indigo-700) hsl(225, 73%, 25%) */
+    --sidebar-ring: 225 73% 57%;      /* Primary indigo ring */
 
     /* Mobile layout variables */
     --mobile-header-height: 3.75rem; /* 60px */
@@ -60,49 +61,50 @@ body {
   }
 
   .dark {
-    --background: 0 0% 10%; /* Dark background */
-    --foreground: 0 0% 90%; /* Light foreground */
+    /* Keeping dark theme variables, but primary focus is light theme for mockup match */
+    --background: 0 0% 10%; 
+    --foreground: 0 0% 90%; 
 
-    --card: 0 0% 15%; /* Dark card */
-    --card-foreground: 0 0% 90%; /* Light text on card */
+    --card: 0 0% 15%; 
+    --card-foreground: 0 0% 90%; 
 
-    --popover: 0 0% 15%; /* Dark popover */
-    --popover-foreground: 0 0% 90%; /* Light text on popover */
+    --popover: 0 0% 15%; 
+    --popover-foreground: 0 0% 90%; 
 
-    --primary: 207 88% 65%; /* Slightly desaturated Soft Blue for dark */
-    --primary-foreground: 207 25% 10%; 
+    --primary: 225 73% 65%; /* Dark theme primary indigo */
+    --primary-foreground: 0 0% 10%; 
 
-    --secondary: 210 30% 20%; /* Darker secondary */
+    --secondary: 225 30% 25%; 
     --secondary-foreground: 0 0% 90%;
 
     --muted: 0 0% 20%;
     --muted-foreground: 0 0% 60%;
 
-    --accent: 33 100% 60%; /* Slightly desaturated Warm Orange */
-    --accent-foreground: 33 50% 10%;
+    --accent: 260 80% 70%; /* Dark theme accent purple */
+    --accent-foreground: 0 0% 10%;
 
-    --destructive: 0 70% 50%;
+    --destructive: 0 70% 55%;
     --destructive-foreground: 0 0% 90%;
 
     --border: 0 0% 25%;
     --input: 0 0% 25%;
-    --ring: 207 88% 65%;
+    --ring: 225 73% 65%;
     
-    --chart-1: 207 88% 65%;
-    --chart-2: 33 100% 60%;
-    --chart-3: 120 50% 60%;
-    --chart-4: 0 70% 60%;
-    --chart-5: 260 60% 70%;
+    --chart-1: 225 73% 65%;
+    --chart-2: 260 80% 70%;
+    --chart-3: 145 50% 55%;
+    --chart-4: 30 80% 50%;
+    --chart-5: 320 60% 60%;
 
-    /* Dark Sidebar */
-    --sidebar-background: 0 0% 12%; 
+    /* Dark Sidebar - Adjusted to fit dark indigo theme */
+    --sidebar-background: 225 40% 18%; /* Darker indigo/almost black */
     --sidebar-foreground: 0 0% 85%;   
-    --sidebar-primary: 207 88% 75%;   
-    --sidebar-primary-foreground: 0 0% 10%; 
-    --sidebar-accent: 0 0% 22%;    
+    --sidebar-primary: 0 0% 95%;   /* Lighter text for active on dark sidebar */
+    --sidebar-primary-foreground: 225 40% 10%; 
+    --sidebar-accent: 225 40% 28%;    /* Slightly lighter for hover */
     --sidebar-accent-foreground: 0 0% 95%; 
-    --sidebar-border: 0 0% 18%;    
-    --sidebar-ring: 207 88% 65%;     
+    --sidebar-border: 225 40% 15%;    
+    --sidebar-ring: 225 73% 65%;     
   }
 }
 
@@ -115,13 +117,6 @@ body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
-}
-
-/* Custom class for progress ring text if needed */
-.progress-ring-text {
-  font-size: 1.25em; /* Adjust as needed */
-  font-weight: bold;
-  fill: hsl(var(--primary)); /* Use primary color */
 }
 
 /* Animations from mockup */
@@ -143,14 +138,15 @@ body {
   to { transform: translateY(20px); opacity: 0; }
 }
 
-.pulse-once { /* To avoid conflict with Tailwind's animate-pulse */
-  animation: pulseOnce 1.5s infinite;
+.pulse-once, .pulse { /* .pulse for mockup compatibility */
+  animation: pulseOnce 1.5s ease-in-out infinite;
 }
 
-@keyframes pulseOnce { /* Mockup's pulse is more subtle */
-  0%, 100% { box-shadow: 0 0 0 0 hsl(var(--primary)/ 0.4); }
-  70% { box-shadow: 0 0 0 10px hsl(var(--primary)/ 0); }
+@keyframes pulseOnce {
+  0%, 100% { box-shadow: 0 0 0 0 hsl(var(--primary)/ 0.4); opacity: 1; }
+  50% { box-shadow: 0 0 0 10px hsl(var(--primary)/ 0); opacity: 0.7; }
 }
+
 
 .geofence-indicator {
   position: relative;
@@ -177,3 +173,4 @@ body {
   box-shadow: 0 -4px 6px -1px rgb(0 0 0 / 0.1), 0 -2px 4px -2px rgb(0 0 0 / 0.1);
 }
 
+    

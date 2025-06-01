@@ -1,24 +1,24 @@
 
-import { LoginForm } from '@/components/auth/login-form';
+import { RegistrationForm } from '@/components/auth/registration-form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
-export default function LoginPage() {
+export default function RegisterPage() {
   return (
     <Card className="shadow-xl rounded-xl">
       <CardHeader className="space-y-1 text-center p-6">
-        <CardTitle className="text-3xl font-headline">Welcome Back!</CardTitle>
+        <CardTitle className="text-3xl font-headline">Create Account</CardTitle>
         <CardDescription className="font-body text-base">
-          Enter your credentials to access your account.
+          Start your internship journey with InternshipTrack.
         </CardDescription>
       </CardHeader>
       <CardContent className="p-6 space-y-6">
-        <LoginForm />
+        <RegistrationForm />
         <div className="text-center text-sm">
-          Don&apos;t have an account?{' '}
+          Already have an account?{' '}
           <Button variant="link" asChild className="p-0 h-auto">
-            <Link href="/register">Sign up</Link>
+            <Link href="/login">Log in</Link>
           </Button>
         </div>
       </CardContent>
