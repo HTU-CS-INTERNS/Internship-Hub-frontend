@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -16,10 +17,11 @@ import {
 import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from '@/components/ui/label';
-import { useRouter } from 'next/navigation'; // Corrected import
+import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import type { UserRole } from '@/types';
 import { USER_ROLES } from '@/lib/constants';
+import { Loader2 } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
@@ -51,17 +53,29 @@ export function LoginForm() {
     await new Promise(resolve => setTimeout(resolve, 1500));
     setIsLoading(false);
 
-    // In a real app, you would authenticate here and store user session
-    // For now, just show a toast and redirect to dashboard
     toast({
       title: "Login Successful!",
-      description: `Welcome back, ${values.email}. You are logged in as a ${USER_ROLES[values.role as UserRole]}.`,
+      description: `Welcome back! You are logged in as a ${USER_ROLES[values.role as UserRole]}.`,
       variant: "default",
     });
     
-    // Store role for layout/dashboard redirection (example, use context/state management in real app)
     if (typeof window !== "undefined") {
       localStorage.setItem('userRole', values.role);
+      localStorage.setItem('userEmail', values.email); // Store the email
+
+      // Set a userName if not already present or if it's a placeholder like "New User"
+      let currentUserName = localStorage.getItem('userName');
+      if (!currentUserName || currentUserName === 'New User' || currentUserName === 'User') {
+        // For students, the name should ideally be set during registration.
+        // If a student logs in directly without full registration (not ideal),
+        // this provides a basic name. Profile page handles full name update.
+        const nameFromEmail = values.email.split('@')[0];
+        const capitalizedName = nameFromEmail.charAt(0).toUpperCase() + nameFromEmail.slice(1);
+        localStorage.setItem('userName', capitalizedName);
+      }
+      // Note: The 'onboardingComplete' flag is NOT touched here.
+      // The registration flow manages it to guide new students through profile/internship setup.
+      // Logged-in users go to dashboard; profile page handles missing info if 'onboardingComplete' is not 'true'.
     }
     
     router.push('/dashboard');
@@ -125,7 +139,7 @@ export function LoginForm() {
           )}
         />
         <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isLoading}>
-          {isLoading ? 'Logging in...' : 'Login'}
+          {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Login'}
         </Button>
       </form>
     </Form>
