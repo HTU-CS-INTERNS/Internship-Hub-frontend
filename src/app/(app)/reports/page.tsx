@@ -14,11 +14,58 @@ import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile'; 
 import { useToast } from '@/hooks/use-toast';
 
-export const DUMMY_REPORTS: DailyReport[] = [
-  { id: 'report1', date: '2024-07-26', description: 'Weekly summary of authentication module progress. Focused on JWT implementation and secure endpoint testing.', outcomes: 'Module 70% complete.', learningObjectives: 'Project management and reporting.', studentId: 'stu1', status: 'APPROVED' },
-  { id: 'report2', date: '2024-07-27', description: 'Mid-internship review presentation preparation and content finalization for all key sections.', outcomes: 'Presentation draft ready.', learningObjectives: 'Presentation skills.', studentId: 'stu1', status: 'SUBMITTED' },
-  { id: 'report3', date: '2024-07-25', description: 'Initial setup and planning for the new feature X, including requirement gathering and timeline estimation.', outcomes: 'Project plan created.', learningObjectives: 'Agile planning.', studentId: 'stu1', status: 'PENDING' },
-  { id: 'report4', date: '2024-07-24', description: 'Bug fixing for version 1.2 release, addressing critical issues reported by QA.', outcomes: 'Critical bugs resolved.', learningObjectives: 'Debugging techniques.', studentId: 'stu1', status: 'REJECTED' },
+export const DUMMY_REPORTS: (DailyReport & { title?: string; challengesFaced?: string; securePhotoUrl?: string; attachments?: string[]; supervisorComments?: string })[] = [
+  { 
+    id: 'report1', 
+    date: '2024-07-26', 
+    title: 'Weekly Auth Module Summary',
+    description: 'Weekly summary of authentication module progress. Focused on JWT implementation and secure endpoint testing. Reviewed security protocols and updated documentation.', 
+    outcomes: 'Module 70% complete. Security review passed.', 
+    learningObjectives: 'Advanced JWT, security best practices, technical documentation.', 
+    studentId: 'stu1', 
+    status: 'APPROVED',
+    challengesFaced: "Minor issues with token refresh logic, resolved by adjusting expiration strategy.",
+    attachments: ['auth_architecture.pdf', 'security_review_notes.txt'],
+    securePhotoUrl: 'https://placehold.co/600x400.png',
+    supervisorComments: "Good progress this week, Alice. The JWT implementation looks solid. Keep up the great work!"
+  },
+  { 
+    id: 'report2', 
+    date: '2024-07-27', 
+    title: 'Mid-Internship Presentation Prep',
+    description: 'Mid-internship review presentation preparation and content finalization for all key sections. Practiced delivery and timing.', 
+    outcomes: 'Presentation draft ready. Confident in delivery.', 
+    learningObjectives: 'Presentation skills, summarizing technical work for diverse audiences.', 
+    studentId: 'stu1', 
+    status: 'SUBMITTED',
+    challengesFaced: "Condensing all work into a short presentation was challenging.",
+    attachments: ['mid_term_presentation.pptx'],
+    supervisorComments: "Looking forward to seeing the presentation."
+  },
+  { 
+    id: 'report3', 
+    date: '2024-07-25', 
+    title: 'New Feature X Planning',
+    description: 'Initial setup and planning for the new feature X, including requirement gathering, user story creation, and timeline estimation.', 
+    outcomes: 'Project plan created. User stories documented.', 
+    learningObjectives: 'Agile planning, requirement elicitation techniques.', 
+    studentId: 'stu1', 
+    status: 'PENDING',
+    challengesFaced: "Ambiguity in initial requirements, clarified with product manager.",
+    securePhotoUrl: 'https://placehold.co/600x400.png'
+  },
+  { 
+    id: 'report4', 
+    date: '2024-07-24', 
+    title: 'Bug Fixing Sprint v1.2',
+    description: 'Bug fixing for version 1.2 release, addressing critical issues reported by QA. Focused on payment module bugs.', 
+    outcomes: 'Critical bugs in payment module resolved. Test coverage improved.', 
+    learningObjectives: 'Advanced debugging techniques, payment gateway integration nuances.', 
+    studentId: 'stu1', 
+    status: 'REJECTED',
+    challengesFaced: "One particularly elusive bug took significant time to trace and fix.",
+    supervisorComments: "Some non-critical bugs remain. Please address them and resubmit the affected module for testing."
+  },
 ];
 
 const statusColors: Record<DailyReport['status'], string> = {
