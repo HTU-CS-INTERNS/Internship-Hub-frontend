@@ -66,40 +66,41 @@ export const NAV_LINKS: NavItem[] = [
     mobile: true 
   },
   { href: '/company', label: 'My Company', icon: Building, roles: ['STUDENT'], section: "Main", mobile: false }, 
+  
+  // Tools Section
+  { href: '/check-in', label: 'Check-in', icon: MapPin, roles: ['STUDENT'], section: "Tools", mobile: true }, 
+  { href: '/schedule', label: 'My Schedule', icon: CalendarDays, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Tools", mobile: false }, 
+  { href: '/communication', label: 'Feedback Hub', icon: MessageSquare, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Tools", mobile: true }, 
+
+  // Management for other roles
   { 
     href: '/interns', 
     label: 'My Interns', 
     icon: Briefcase, 
     roles: ['SUPERVISOR'],
-    section: "Management", // Supervisor's main management page
-    mobile: true // Key page for supervisors
+    section: "Management", 
+    mobile: true 
   },
-
-  // Tools Section
-  { href: '/check-in', label: 'Check-in', icon: MapPin, roles: ['STUDENT'], section: "Tools", mobile: true }, 
-  { href: '/schedule', label: 'My Schedule', icon: CalendarDays, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Tools", mobile: false }, 
-  { href: '/communication', label: 'Feedback Hub', icon: MessageSquare, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Tools", mobile: true }, // Important for mobile
-
-  // Management for other roles
   { 
     href: '/assignments', 
-    label: 'Assignments', 
+    label: 'Student Assignments', 
     icon: Users, 
     roles: ['LECTURER', 'HOD'],
-    section: "Management"
+    section: "Management",
+    mobile: true // Important for Lecturers/HODs on mobile
   },
   { 
     href: '/department-ops', 
     label: 'Department Ops', 
     icon: GraduationCap, 
-    roles: ['HOD'],
+    roles: ['HOD'], // HOD specific
     section: "Management"
   },
   { href: '/analytics', label: 'Analytics', icon: BarChart3, roles: ['LECTURER', 'SUPERVISOR', 'HOD'], section: "Management" },
 ];
 
 export const BOTTOM_NAV_LINKS: NavItem[] = [
-    { href: '/profile', label: 'Profile', icon: UserCog, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Settings", mobile: true }, // Profile is often key on mobile
+    { href: '/profile', label: 'Profile', icon: UserCog, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Settings", mobile: true }, 
     { href: '/settings', label: 'Settings', icon: Settings, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Settings" },
 ];
 
@@ -131,3 +132,4 @@ export const SCORING_METRICS: ScoringMetric[] = [
   { id: 'professionalism', label: 'Professionalism', description: 'Conduct, attitude, and adherence to workplace ethics.' },
   { id: 'timeliness_initiative', label: 'Timeliness & Initiative', description: 'Punctuality, meeting deadlines, and proactiveness.' },
 ];
+

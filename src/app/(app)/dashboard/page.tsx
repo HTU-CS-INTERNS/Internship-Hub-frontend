@@ -424,9 +424,9 @@ const StudentDashboard: React.FC<{ userName: string }> = ({ userName }) => {
 
 const LecturerDashboard: React.FC<{ userName: string }> = ({ userName }) => {
     const assignedStudents = [
-        { id: 'stu1', name: 'Alice Wonderland', department: 'Software Engineering', avatar: 'https://placehold.co/100x100.png', dataAiHint: 'person portrait', overdueTasks: 1, pendingReports: 0 },
-        { id: 'stu2', name: 'Bob The Intern', department: 'Mechanical Engineering', avatar: 'https://placehold.co/100x100.png', dataAiHint: 'person portrait', overdueTasks: 0, pendingReports: 1 },
-        { id: 'stu3', name: 'Charlie Brown', department: 'Marketing', avatar: 'https://placehold.co/100x100.png', dataAiHint: 'person portrait', overdueTasks: 2, pendingReports: 2 },
+        { id: 'std1', name: 'Alice Wonderland', department: 'Software Engineering', avatar: 'https://placehold.co/100x100.png', dataAiHint: 'person portrait', overdueTasks: 1, pendingReports: 0 },
+        { id: 'std2', name: 'Bob The Intern', department: 'Mechanical Engineering', avatar: 'https://placehold.co/100x100.png', dataAiHint: 'person portrait', overdueTasks: 0, pendingReports: 1 },
+        { id: 'std3', name: 'Charlie Brown', department: 'Marketing', avatar: 'https://placehold.co/100x100.png', dataAiHint: 'person portrait', overdueTasks: 2, pendingReports: 2 },
     ];
     return (
         <>
@@ -441,7 +441,7 @@ const LecturerDashboard: React.FC<{ userName: string }> = ({ userName }) => {
             </div>
             <Card className="shadow-lg rounded-xl mt-6">
                 <CardHeader>
-                    <CardTitle>My Students</CardTitle>
+                    <CardTitle className="font-headline text-lg">My Students</CardTitle>
                     <CardDescription>Quick overview of students you are supervising.</CardDescription>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -503,12 +503,12 @@ const SupervisorDashboard: React.FC<{ userName: string }> = ({ userName }) => {
             </Card>
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <DashboardStatsCard title="Assigned Interns" value={supervisedInterns.length} icon={Users2} iconBgColor="bg-green-100 dark:bg-green-900" iconColor="text-green-500 dark:text-green-300" actionLink="/interns" actionLabel="View My Interns"/>
-                <DashboardStatsCard title="Pending Approvals" value="4" icon={CheckSquare} detail="3 Tasks, 1 Report" iconBgColor="bg-orange-100 dark:bg-orange-900" iconColor="text-orange-500 dark:text-orange-300" actionLink="/interns/approve-tasks" actionLabel="Review Submissions" />
+                <DashboardStatsCard title="Pending Approvals" value="4" icon={CheckSquare} detail="3 Tasks, 1 Report" iconBgColor="bg-orange-100 dark:bg-orange-900" iconColor="text-orange-500 dark:text-orange-300" actionLink="/interns/approve-reports" actionLabel="Review Submissions" />
                 <DashboardStatsCard title="Intern Activity" value="High" icon={Activity} detail="Most interns active daily" iconBgColor="bg-purple-100 dark:bg-purple-900" iconColor="text-purple-500 dark:text-purple-300" actionLink="/interns" actionLabel="Monitor Activity" />
             </div>
             <Card className="shadow-lg rounded-xl mt-6">
                 <CardHeader>
-                    <CardTitle>My Interns</CardTitle>
+                    <CardTitle className="font-headline text-lg">My Interns</CardTitle>
                     <CardDescription>Quick overview of interns you are supervising.</CardDescription>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -597,7 +597,7 @@ const HODDashboard: React.FC<{ userName: string }> = ({ userName }) => {
             
             <Card className="shadow-lg rounded-xl mt-6">
                 <CardHeader>
-                    <CardTitle>{DEPARTMENTS.find(d=>d.id === hodDepartmentId)?.name || 'Department'} Student Overview</CardTitle>
+                    <CardTitle className="font-headline text-lg">{DEPARTMENTS.find(d=>d.id === hodDepartmentId)?.name || 'Department'} Student Overview</CardTitle>
                     <CardDescription>Summary of student progress within your department.</CardDescription>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -692,3 +692,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+
