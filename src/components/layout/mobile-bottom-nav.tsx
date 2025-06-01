@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 import { Home, ListChecks, MapPin, UserCircle, CalendarDays } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { UserRole } from '@/types';
-import { NAV_LINKS } from '@/lib/constants'; // Use main NAV_LINKS
+import { NAV_LINKS, BOTTOM_NAV_LINKS } from '@/lib/constants'; // Use main NAV_LINKS
 
 interface MobileBottomNavProps {
   userRole: UserRole;
