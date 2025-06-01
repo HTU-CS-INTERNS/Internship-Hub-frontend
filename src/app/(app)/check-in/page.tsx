@@ -4,24 +4,59 @@ import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { MapPin, LocateFixed, AlertTriangle, CheckCircle, Camera, XCircle, Info, Image as ImageIcon } from 'lucide-react';
-import Image from 'next/image'; // For image preview and map placeholder
+import { MapPin, LocateFixed, AlertTriangle, CheckCircle, Camera, XCircle, Info, Image as ImageIcon, TrendingUp, Clock, CalendarCheck2 } from 'lucide-react';
+import Image from 'next/image';
+import { format } from 'date-fns';
 
 type CheckinStep = 'initial' | 'gpsPrompt' | 'manualReason' | 'geofenceWarning' | 'success';
+
+interface StoredCheckinData {
+  time: string;
+  location: string;
+  date: string; // YYYY-MM-DD
+  photoPreview?: string | null;
+}
 
 export default function CheckInPage() {
   const [step, setStep] = React.useState<CheckinStep>('initial');
   const [manualReason, setManualReason] = React.useState('');
   const [checkinTime, setCheckinTime] = React.useState('');
   const [checkinLocation, setCheckinLocation] = React.useState('');
-  const [hasCameraPermission, setHasCameraPermission] = React.useState<boolean | null>(null); // Keep for potential future use
   const [securePhoto, setSecurePhoto] = React.useState<File | null>(null);
   const [securePhotoPreview, setSecurePhotoPreview] = React.useState<string | null>(null);
-  const videoRef = React.useRef<HTMLVideoElement>(null); // Keep for potential future direct camera integration
   const securePhotoInputRef = React.useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  const getTodayDateString = () => format(new Date(), 'yyyy-MM-dd');
+
+  React.useEffect(() => {
+    const todayDateStr = getTodayDateString();
+    const storedCheckinRaw = localStorage.getItem('internshipTrack_checkin');
+    if (storedCheckinRaw) {
+      try {
+        const storedCheckin: StoredCheckinData = JSON.parse(storedCheckinRaw);
+        if (storedCheckin.date === todayDateStr) {
+          setCheckinTime(storedCheckin.time);
+          setCheckinLocation(storedCheckin.location);
+          setSecurePhotoPreview(storedCheckin.photoPreview || null);
+          setStep('success');
+        } else {
+          // Clear old checkin data from previous days
+          localStorage.removeItem('internshipTrack_checkin');
+        }
+      } catch (e) {
+        console.error("Failed to parse stored check-in data", e);
+        localStorage.removeItem('internshipTrack_checkin');
+      }
+    }
+  }, []);
+
+  const saveCheckinToLocalStorage = (time: string, location: string, photoPreview?: string | null) => {
+    const todayDateStr = getTodayDateString();
+    const checkinData: StoredCheckinData = { time, location, date: todayDateStr, photoPreview };
+    localStorage.setItem('internshipTrack_checkin', JSON.stringify(checkinData));
+  };
 
   const resetFlow = () => {
     setStep('initial');
@@ -31,6 +66,8 @@ export default function CheckInPage() {
     if (securePhotoInputRef.current) {
       securePhotoInputRef.current.value = "";
     }
+    // Optionally clear localStorage for testing, or rely on date check
+    // localStorage.removeItem('internshipTrack_checkin'); 
   };
 
   const handleCheckIn = () => {
@@ -41,12 +78,17 @@ export default function CheckInPage() {
     toast({ title: 'Requesting Location', description: 'Please wait...' });
     try {
       await new Promise(resolve => setTimeout(resolve, 1500));
-      const withinGeofence = Math.random() < 0.8; // 80% success for geofence
+      const withinGeofence = Math.random() < 0.8; 
 
       if (withinGeofence) {
         const now = new Date();
-        setCheckinTime(now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }));
-        setCheckinLocation('Acme Corp HQ (Verified)');
+        const currentTime = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+        const currentLocation = 'Acme Corp HQ (Verified)';
+        setCheckinTime(currentTime);
+        setCheckinLocation(currentLocation);
+        // For GPS, we don't have a securePhotoPreview unless it was captured in a previous step,
+        // which is not the current flow. So, passing current securePhotoPreview (likely null).
+        saveCheckinToLocalStorage(currentTime, currentLocation, securePhotoPreview);
         setStep('success');
         toast({ title: 'Success', description: 'Location verified within geofence.' });
       } else {
@@ -70,8 +112,11 @@ export default function CheckInPage() {
       return;
     }
     const now = new Date();
-    setCheckinTime(now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }));
-    setCheckinLocation(`Manual: ${manualReason.substring(0,30) || 'Photo Submitted'}`);
+    const currentTime = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+    const currentLocation = `Manual: ${manualReason.substring(0,30) || 'Photo Submitted'}`;
+    setCheckinTime(currentTime);
+    setCheckinLocation(currentLocation);
+    saveCheckinToLocalStorage(currentTime, currentLocation, securePhotoPreview);
     setStep('success');
     toast({ title: 'Manual Check-in Submitted', description: 'Your check-in reason has been recorded.' });
   };
@@ -95,6 +140,23 @@ export default function CheckInPage() {
       securePhotoInputRef.current.value = "";
     }
   };
+
+  const AnalyticsStatCard: React.FC<{title: string, value: string, icon: React.ElementType, description?: string, iconBgColor?: string}> = 
+    ({ title, value, icon: Icon, description, iconBgColor = 'bg-primary/10' }) => (
+    <Card className="shadow-lg rounded-xl">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
+        <div className={`p-2 rounded-full ${iconBgColor}`}>
+          <Icon className="h-4 w-4 text-primary" />
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold text-foreground">{value}</div>
+        {description && <p className="text-xs text-muted-foreground">{description}</p>}
+      </CardContent>
+    </Card>
+  );
+
 
   const renderStepContent = () => {
     switch (step) {
@@ -161,7 +223,7 @@ export default function CheckInPage() {
                             id="secure-photo-manual-input"
                             type="file"
                             accept="image/*"
-                            capture="environment" // Prioritize back camera
+                            capture="environment" 
                             onChange={handleSecurePhotoChange}
                             className="hidden"
                          />
@@ -196,14 +258,16 @@ export default function CheckInPage() {
         );
       case 'success':
         return (
-          <div className="text-center py-6 slide-in">
-            <div className="w-24 h-24 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-8">
-              <CheckCircle className="text-green-500 w-12 h-12" />
+          <div className="py-6 slide-in space-y-6">
+            <div className="text-center">
+              <div className="w-24 h-24 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <CheckCircle className="text-green-500 w-12 h-12" />
+              </div>
+              <h4 className="font-bold text-xl text-foreground mb-1">Checked-in Successfully!</h4>
+              <p className="text-muted-foreground mb-6">Your attendance for {format(new Date(getTodayDateString()), "PPP")} is recorded.</p>
             </div>
-            <h4 className="font-bold text-xl text-foreground mb-2">Checked-in Successfully!</h4>
-            <p className="text-muted-foreground mb-8">Your attendance for today has been recorded.</p>
             
-            <Card className="bg-muted/30 p-4 text-left mb-6 shadow-inner rounded-xl border-input">
+            <Card className="bg-muted/30 p-4 text-left shadow-inner rounded-xl border-input">
               <CardContent className="space-y-3 p-0">
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Time:</span>
@@ -235,7 +299,16 @@ export default function CheckInPage() {
                 )}
               </CardContent>
             </Card>
-            <Button onClick={resetFlow} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 rounded-lg text-lg">Done</Button>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <AnalyticsStatCard title="Check-in Streak" value="5 Days" icon={TrendingUp} description="Consecutive daily check-ins" iconBgColor="bg-green-500/10"/>
+                <AnalyticsStatCard title="Punctuality" value="92%" icon={Clock} description="On-time check-in rate" iconBgColor="bg-blue-500/10"/>
+                <AnalyticsStatCard title="Monthly Check-ins" value="18" icon={CalendarCheck2} description={`In ${format(new Date(), 'MMMM')}`} iconBgColor="bg-purple-500/10"/>
+            </div>
+
+            <Button onClick={resetFlow} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 rounded-lg text-lg mt-2">
+              Done
+            </Button>
           </div>
         );
       default:
@@ -250,8 +323,8 @@ export default function CheckInPage() {
            <div className="flex items-center justify-between">
             <CardTitle className="font-headline text-xl">Daily Check-in</CardTitle>
             <div className="flex items-center space-x-1.5">
-                <div className={`w-3 h-3 rounded-full ${step === 'success' || (step === 'initial' && checkinTime) ? 'bg-green-500 animate-pulse' : 'bg-muted'}`}></div>
-                <span className="text-xs text-muted-foreground">{step === 'success' || (step === 'initial' && checkinTime) ? 'Online & Verified' : 'Awaiting Check-in'}</span>
+                <div className={`w-3 h-3 rounded-full ${step === 'success' ? 'bg-green-500 animate-pulse' : 'bg-muted'}`}></div>
+                <span className="text-xs text-muted-foreground">{step === 'success' ? 'Checked In' : 'Awaiting Check-in'}</span>
             </div>
            </div>
          </CardHeader>
