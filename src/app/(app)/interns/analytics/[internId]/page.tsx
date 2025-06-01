@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import PageHeader from '@/components/shared/page-header';
-import { BarChart3, User, Loader2, AlertTriangle, CheckCircle, FileText, ListChecks, Activity } from 'lucide-react';
+import { BarChart3, User, Loader2, AlertTriangle, CheckCircle, FileText, ListChecks, Activity, MapPin, MessageSquare, CheckSquare as CheckSquareIcon } from 'lucide-react';
 import { DUMMY_INTERNS } from '@/app/(app)/interns/page';
 import { DUMMY_REPORTS as ALL_DUMMY_REPORTS } from '@/app/(app)/reports/page';
 import type { DailyReport } from '@/types';
@@ -13,6 +13,9 @@ import Link from 'next/link';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { Progress } from '@/components/ui/progress';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { format, subDays } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 // Dummy task data for the intern for analytics
 const DUMMY_TASK_ANALYTICS = [
@@ -28,6 +31,36 @@ const taskChartConfig = {
   overdue: { label: "Overdue", color: "hsl(var(--destructive))" },
 };
 
+interface ActivityLogEntry {
+  id: string;
+  timestamp: Date;
+  type: 'report_submitted' | 'report_approved' | 'report_rejected' | 'task_declared' | 'task_completed' | 'check_in' | 'feedback_received' | 'communication';
+  description: string;
+  details?: string; 
+}
+
+const DUMMY_ACTIVITY_LOG: ActivityLogEntry[] = [
+  { id: 'act1', timestamp: subDays(new Date(), 1), type: 'report_submitted', description: 'Submitted Weekly Report #4', details: 'Covered X, Y, Z activities.' },
+  { id: 'act2', timestamp: subDays(new Date(), 1), type: 'check_in', description: 'Checked in at Acme Corp HQ', details: 'Location verified via GPS.' },
+  { id: 'act3', timestamp: subDays(new Date(), 2), type: 'task_completed', description: 'Completed task: API Integration', details: 'All endpoints functional.' },
+  { id: 'act4', timestamp: subDays(new Date(), 3), type: 'feedback_received', description: 'Feedback received on Report #3', details: 'Supervisor: "Good progress, minor revisions needed."' },
+  { id: 'act5', timestamp: subDays(new Date(), 3), type: 'report_approved', description: 'Report #3: Mid-term Review Prep approved' },
+  { id: 'act6', timestamp: subDays(new Date(), 5), type: 'communication', description: 'Messaged Dr. Carter about project scope' },
+  { id: 'act7', timestamp: subDays(new Date(), 6), type: 'task_declared', description: 'Declared task: Research new charting libraries'},
+];
+
+const activityIconMap: Record<ActivityLogEntry['type'], React.ElementType> = {
+  report_submitted: FileText,
+  report_approved: CheckCircle,
+  report_rejected: AlertTriangle,
+  task_declared: ListChecks,
+  task_completed: CheckSquareIcon,
+  check_in: MapPin,
+  feedback_received: MessageSquare,
+  communication: MessageSquare,
+};
+
+
 export default function InternAnalyticsPage() {
   const params = useParams();
   const router = useRouter();
@@ -36,15 +69,14 @@ export default function InternAnalyticsPage() {
   const [intern, setIntern] = React.useState<typeof DUMMY_INTERNS[0] | null>(null);
   const [internReports, setInternReports] = React.useState<DailyReport[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [activityLog] = React.useState<ActivityLogEntry[]>(DUMMY_ACTIVITY_LOG);
 
   React.useEffect(() => {
     const foundIntern = DUMMY_INTERNS.find(i => i.id === internId);
     if (foundIntern) {
       setIntern(foundIntern);
       const reports = ALL_DUMMY_REPORTS.filter(report => {
-        // Assuming intern1's reports are linked to stu1 as per previous setup
         if (foundIntern.id === 'intern1') return report.studentId === 'stu1';
-        // Add more specific logic if other interns have reports
         return false;
       });
       setInternReports(reports);
@@ -213,15 +245,41 @@ export default function InternAnalyticsPage() {
 
        <Card className="shadow-xl rounded-xl">
         <CardHeader>
-            <CardTitle className="font-headline text-lg flex items-center"><Activity className="mr-2 h-5 w-5 text-primary"/>Activity Log (Placeholder)</CardTitle>
-            <CardDescription>Recent activities and interactions related to {intern.name}.</CardDescription>
+            <CardTitle className="font-headline text-lg flex items-center"><Activity className="mr-2 h-5 w-5 text-primary"/>Recent Activity Log</CardTitle>
+            <CardDescription>A timeline of recent interactions and submissions by {intern.name}.</CardDescription>
         </CardHeader>
-        <CardContent className="p-6 min-h-[200px] flex flex-col items-center justify-center text-center">
-            <Activity className="h-16 w-16 text-muted-foreground/30 mb-4"/>
-            <p className="text-md font-semibold text-foreground">Detailed Activity Log Coming Soon</p>
-            <p className="text-sm text-muted-foreground max-w-md">
-                This section will show a timeline of check-ins, report submissions, task updates, feedback received, and communication history.
-            </p>
+        <CardContent className="p-0">
+            {activityLog.length > 0 ? (
+            <ScrollArea className="h-[350px] w-full">
+                <div className="p-4 space-y-4">
+                    {activityLog.map((item) => {
+                        const IconComponent = activityIconMap[item.type] || Activity;
+                        return (
+                            <div key={item.id} className="flex items-start space-x-3 p-3 bg-muted/30 rounded-lg shadow-sm border border-input">
+                                <div className="flex-shrink-0 mt-0.5">
+                                    <IconComponent className={cn("h-5 w-5", 
+                                        item.type === 'report_approved' || item.type === 'task_completed' ? 'text-green-500' :
+                                        item.type === 'report_rejected' ? 'text-red-500' : 
+                                        item.type === 'report_submitted' || item.type === 'task_declared' ? 'text-blue-500' :
+                                        'text-primary'
+                                    )} />
+                                </div>
+                                <div className="flex-1">
+                                    <p className="text-sm font-medium text-foreground">{item.description}</p>
+                                    {item.details && <p className="text-xs text-muted-foreground mt-0.5">{item.details}</p>}
+                                    <p className="text-xs text-muted-foreground mt-1">{format(item.timestamp, "MMMM d, yyyy 'at' h:mm a")}</p>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </ScrollArea>
+            ) : (
+             <div className="p-6 min-h-[200px] flex flex-col items-center justify-center text-center text-muted-foreground">
+                <Activity className="h-16 w-16 opacity-30 mb-4"/>
+                <p>No recent activity recorded for {intern.name}.</p>
+            </div>
+            )}
         </CardContent>
       </Card>
 
@@ -233,3 +291,5 @@ export default function InternAnalyticsPage() {
     </div>
   );
 }
+
+    
