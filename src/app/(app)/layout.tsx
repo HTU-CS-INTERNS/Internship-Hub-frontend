@@ -28,7 +28,6 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
       setIsLoading(false); 
       router.push('/login');
     }
-    // Removed setIsLoading(false) from here as it's handled above
   }, [router]);
 
   if (isLoading) {
@@ -45,7 +44,7 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
 
   // Ensure userRole is not null before rendering main content
   if (!userRole) {
-    return null; // Or a more specific redirect/error state
+    return null; 
   }
 
 
@@ -66,7 +65,7 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
       <AppSidebar userRole={userRole} />
       <div className="flex flex-col flex-1 overflow-x-hidden">
         <AppHeader />
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex flex-col flex-1 overflow-y-auto"> {/* Ensured this is a flex column container */}
           {children}
         </main>
       </div>
