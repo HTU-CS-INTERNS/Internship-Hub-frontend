@@ -14,7 +14,7 @@ import { USER_ROLES, FACULTIES, DEPARTMENTS } from '@/lib/constants';
 import { useRouter } from 'next/navigation'; 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from '@/lib/utils';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, isValid } from 'date-fns';
 
 const getInitials = (name: string) => {
     if (!name) return 'U';
@@ -22,10 +22,10 @@ const getInitials = (name: string) => {
 };
 
 const statusAlertColors: Record<InternshipStatus, { bg: string, border: string, iconColor: string, icon: React.ElementType }> = {
-    PENDING_APPROVAL: { bg: "bg-yellow-500/10", border: "border-yellow-500/50", iconColor: "text-yellow-600", icon: Clock },
-    APPROVED: { bg: "bg-green-500/10", border: "border-green-500/50", iconColor: "text-green-600", icon: CheckCircle },
-    REJECTED: { bg: "bg-destructive/10", border: "border-destructive/50", iconColor: "text-destructive", icon: AlertTriangle },
-    NOT_SUBMITTED: { bg: "bg-blue-500/10", border: "border-blue-500/50", iconColor: "text-blue-600", icon: Edit3 },
+    PENDING_APPROVAL: { bg: "bg-yellow-500/10 dark:bg-yellow-800/30", border: "border-yellow-500/50 dark:border-yellow-700/50", iconColor: "text-yellow-600 dark:text-yellow-400", icon: Clock },
+    APPROVED: { bg: "bg-green-500/10 dark:bg-green-800/30", border: "border-green-500/50 dark:border-green-700/50", iconColor: "text-green-600 dark:text-green-400", icon: CheckCircle },
+    REJECTED: { bg: "bg-destructive/10 dark:bg-destructive/30", border: "border-destructive/50 dark:border-destructive/70", iconColor: "text-destructive dark:text-red-400", icon: AlertTriangle },
+    NOT_SUBMITTED: { bg: "bg-blue-500/10 dark:bg-blue-800/30", border: "border-blue-500/50 dark:border-blue-700/50", iconColor: "text-blue-600 dark:text-blue-400", icon: Edit3 },
 };
 
 
@@ -40,8 +40,6 @@ export default function ProfilePage() {
     facultyName: string;
     departmentName: string;
     internship: InternshipDetails;
-    supervisorCompanyName?: string;
-    supervisorCompanyAddress?: string;
   }>({
     name: 'User',
     email: 'user@example.com',
@@ -82,12 +80,16 @@ export default function ProfilePage() {
         companyName: '', companyAddress: '', supervisorName: '', supervisorEmail: '',
         startDate: '', endDate: '', location: '', status: 'NOT_SUBMITTED', rejectionReason: ''
     };
-    const storedInternshipString = typeof window !== "undefined" ? localStorage.getItem('userInternshipDetails') : null;
-    if (storedInternshipString) {
-        try {
-            const parsed = JSON.parse(storedInternshipString);
-            storedInternship = { ...storedInternship, ...parsed }; 
-        } catch (e) { console.error("Error parsing internship details from localStorage", e); }
+    // Load student-specific internship details
+    if (storedRole === 'STUDENT' && storedEmail) {
+        const studentInternshipKey = `userInternshipDetails_${storedEmail}`;
+        const studentInternshipString = typeof window !== "undefined" ? localStorage.getItem(studentInternshipKey) : null;
+        if (studentInternshipString) {
+            try {
+                const parsed = JSON.parse(studentInternshipString);
+                storedInternship = { ...storedInternship, ...parsed }; 
+            } catch (e) { console.error("Error parsing internship details from localStorage", e); }
+        }
     }
     
     const faculty = FACULTIES.find(f => f.id === storedFacultyId);
@@ -177,22 +179,18 @@ export default function ProfilePage() {
   };
 
   const handleInternshipSaveSuccess = (updatedInternshipData: InternshipDetails) => {
-    const newInternshipData = {
-        ...updatedInternshipData,
-        startDate: updatedInternshipData.startDate instanceof Date ? updatedInternshipData.startDate.toISOString().split('T')[0] : updatedInternshipData.startDate,
-        endDate: updatedInternshipData.endDate instanceof Date ? updatedInternshipData.endDate.toISOString().split('T')[0] : updatedInternshipData.endDate,
-    };
     setUserData(prev => ({
         ...prev,
-        internship: newInternshipData
+        internship: updatedInternshipData
     }));
 
-    if (typeof window !== "undefined") {
-        localStorage.setItem('userInternshipDetails', JSON.stringify(newInternshipData));
-        if (newInternshipData.status === 'APPROVED') {
+    if (typeof window !== "undefined" && userData.email) {
+        const studentInternshipKey = `userInternshipDetails_${userData.email}`;
+        localStorage.setItem(studentInternshipKey, JSON.stringify(updatedInternshipData));
+        if (updatedInternshipData.status === 'APPROVED') {
             localStorage.setItem('onboardingComplete', 'true');
             router.push('/dashboard'); 
-        } else if (newInternshipData.status === 'PENDING_APPROVAL') {
+        } else if (updatedInternshipData.status === 'PENDING_APPROVAL') {
              localStorage.removeItem('onboardingComplete'); 
         }
     }
@@ -315,10 +313,11 @@ export default function ProfilePage() {
                 <Briefcase className="h-6 w-6 text-primary" />
                 <CardTitle className="text-xl font-headline">Internship Details</CardTitle>
               </div>
-               {!isEditingProfile && !isEditingInternship && currentInternshipStatus !== 'PENDING_APPROVAL' && (
+               {!isEditingProfile && !isEditingInternship && 
+                (currentInternshipStatus === 'NOT_SUBMITTED' || currentInternshipStatus === 'REJECTED' || currentInternshipStatus === 'APPROVED') && (
                 <Button variant="outline" onClick={() => setIsEditingInternship(true)} className="bg-card hover:bg-accent hover:text-accent-foreground rounded-lg">
                     <Edit3 className="mr-2 h-4 w-4" /> 
-                    {currentInternshipStatus === 'REJECTED' || currentInternshipStatus === 'NOT_SUBMITTED' ? 'Enter/Update Details' : 'Edit Internship'}
+                    {currentInternshipStatus === 'NOT_SUBMITTED' || currentInternshipStatus === 'REJECTED' ? 'Enter/Update Details' : 'Edit Internship'}
                 </Button>
                )}
                {isEditingInternship && (
@@ -335,7 +334,7 @@ export default function ProfilePage() {
                         {currentInternshipStatus.replace('_', ' ').toUpperCase()}
                     </AlertTitle>
                     <AlertDescription className="text-muted-foreground">
-                        {currentInternshipStatus === 'PENDING_APPROVAL' && "Your internship details are currently awaiting review by the administration."}
+                        {currentInternshipStatus === 'PENDING_APPROVAL' && "Your internship details are currently awaiting HOD review."}
                         {currentInternshipStatus === 'APPROVED' && "Your internship details have been approved! You are all set."}
                         {currentInternshipStatus === 'REJECTED' && `Your internship details were rejected. ${userData.internship.rejectionReason ? `Reason: ${userData.internship.rejectionReason}. ` : ''}Please update and resubmit.`}
                     </AlertDescription>
@@ -368,11 +367,11 @@ export default function ProfilePage() {
                   </div>
                   <div>
                     <p className="font-medium text-foreground">Start Date:</p>
-                    <p className="text-muted-foreground">{userData.internship.startDate ? format(parseISO(userData.internship.startDate), "PPP") : 'N/A'}</p>
+                    <p className="text-muted-foreground">{userData.internship.startDate && isValid(parseISO(userData.internship.startDate)) ? format(parseISO(userData.internship.startDate), "PPP") : 'N/A'}</p>
                   </div>
                   <div>
                     <p className="font-medium text-foreground">End Date:</p>
-                    <p className="text-muted-foreground">{userData.internship.endDate ? format(parseISO(userData.internship.endDate), "PPP") : 'N/A'}</p>
+                    <p className="text-muted-foreground">{userData.internship.endDate && isValid(parseISO(userData.internship.endDate)) ? format(parseISO(userData.internship.endDate), "PPP") : 'N/A'}</p>
                   </div>
                   <div className="md:col-span-2">
                     <p className="font-medium text-foreground">Location/Work Arrangement:</p>
@@ -383,7 +382,7 @@ export default function ProfilePage() {
                 <div className="text-center py-6">
                     <Briefcase className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
                     <p className="text-lg font-semibold text-foreground">Internship Details Not Submitted</p>
-                    <p className="text-muted-foreground mb-4">Please add your internship placement information.</p>
+                    <p className="text-muted-foreground mb-4">Please add your internship placement information to be approved by your Head of Department.</p>
                     <Button onClick={() => setIsEditingInternship(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg">
                         Add Internship Details
                     </Button>
@@ -428,7 +427,7 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
       )}
-      {userRole !== 'STUDENT' && userRole !== null && (
+      {userRole !== 'STUDENT' && userRole !== null && userRole !== 'SUPERVISOR' && (
          <Card className="shadow-xl rounded-xl mt-6">
           <CardHeader className="p-6 border-b">
             <div className="flex items-center gap-3">
@@ -438,8 +437,8 @@ export default function ProfilePage() {
           </CardHeader>
           <CardContent className="p-6">
             <p className="text-muted-foreground">
-              As a {USER_ROLES[userRole]}, your primary role involves { userRole === 'SUPERVISOR' ? 'overseeing assigned interns, reviewing their tasks and reports, and providing timely feedback.' : userRole === 'LECTURER' ? 'managing student assignments, tracking progress, and facilitating communication.' : 'overseeing departmental internship activities, managing assignments, and analyzing overall program performance.' }
-              You can manage relevant aspects via the appropriate sections like '{userRole === 'SUPERVISOR' ? 'My Interns' : 'Assignments'}' and use the 'Feedback Hub' for communication.
+              As a {USER_ROLES[userRole]}, your primary role involves { userRole === 'LECTURER' ? 'managing student assignments, tracking progress, and facilitating communication.' : userRole === 'HOD' ? 'overseeing departmental internship activities, managing assignments, and analyzing overall program performance.' : '' }
+              You can manage relevant aspects via the appropriate sections like '{userRole === 'LECTURER' ? 'Assignments' : 'Department Ops'}' and use the 'Feedback Hub' for communication.
             </p>
              {isEditingProfile && <p className="mt-4 text-sm text-destructive">Please save your profile information first to proceed.</p>}
           </CardContent>

@@ -31,12 +31,25 @@ export interface InternshipDetails {
   companyAddress?: string;
   supervisorName: string;
   supervisorEmail: string;
-  startDate: string;
-  endDate: string;
+  startDate: string; // Store as YYYY-MM-DD string
+  endDate: string;   // Store as YYYY-MM-DD string
   location: string;
   status: InternshipStatus;
   rejectionReason?: string;
+  hodComments?: string; // For HOD to add comments if needed during approval
 }
+
+export interface HODApprovalQueueItem {
+  studentId: string; // Using email for now as ID
+  studentName: string;
+  companyName: string;
+  supervisorName: string;
+  supervisorEmail: string;
+  submissionDate: string; // ISO string
+  status: 'PENDING_APPROVAL'; // Only pending items are in this queue
+  // Potentially add facultyId and departmentId if HODs are scoped
+}
+
 
 export interface DailyTask {
   id: string;
@@ -49,15 +62,14 @@ export interface DailyTask {
   status: 'PENDING' | 'SUBMITTED' | 'APPROVED' | 'REJECTED';
   attachments?: string[];
   supervisorComments?: string;
-  lecturerComments?: string; // Added for lecturer feedback
+  lecturerComments?: string;
 }
 
 export interface DailyReport extends DailyTask {
   title?: string;
   challengesFaced?: string;
-  learnings?: string; 
+  learnings?: string;
   securePhotoUrl?: string;
-  // lecturerComments is inherited from DailyTask
 }
 
 export interface CommunicationMessage {
@@ -82,14 +94,9 @@ export interface ScoringMetric {
 }
 
 export interface InternEvaluation {
-  scores: Record<string, number | undefined>; 
+  scores: Record<string, number | undefined>;
   overallComments: string;
   evaluationDate?: string;
-}
-
-export interface ProfileFormValuesExtended extends ProfileFormValues {
-    supervisorCompanyName?: string;
-    supervisorCompanyAddress?: string;
 }
 
 export interface ProfileFormValues {

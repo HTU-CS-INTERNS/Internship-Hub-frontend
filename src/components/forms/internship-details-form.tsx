@@ -20,9 +20,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { CalendarIcon, Loader2 } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, isValid } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-import type { InternshipDetails, InternshipStatus } from '@/types';
+import type { InternshipDetails, InternshipStatus, HODApprovalQueueItem } from '@/types';
 
 const internshipDetailsSchema = z.object({
   companyName: z.string().min(2, { message: 'Company name is required (min 2 chars).' }).max(100, { message: 'Company name too long (max 100).' }),
@@ -32,7 +32,7 @@ const internshipDetailsSchema = z.object({
   startDate: z.date({ required_error: 'Start date is required.' }),
   endDate: z.date({ required_error: 'End date is required.' }),
   location: z.string().min(2, { message: 'Location/Work Arrangement is required (min 2 chars).' }).max(100, { message: 'Location too long (max 100).' }),
-  status: z.custom<InternshipStatus>().optional(), // Status will be set on submit
+  status: z.custom<InternshipStatus>().optional(),
   rejectionReason: z.string().optional(),
 }).refine(data => data.endDate >= data.startDate, {
   message: "End date cannot be before start date.",
@@ -43,7 +43,7 @@ export type InternshipDetailsFormValues = z.infer<typeof internshipDetailsSchema
 
 interface InternshipDetailsFormProps {
   defaultValues?: Partial<InternshipDetails>;
-  onSuccess?: (data: InternshipDetailsFormValues) => void;
+  onSuccess?: (data: InternshipDetails) => void;
   isResubmitting?: boolean;
 }
 
@@ -51,15 +51,14 @@ export default function InternshipDetailsForm({ defaultValues, onSuccess, isResu
   const { toast } = useToast();
   const [isLoading, setIsLoading] = React.useState(false);
 
-  const parseDate = (dateString?: string): Date | undefined => {
-    if (!dateString) return undefined;
-    try {
-      // Ensure we handle both Date objects and ISO strings correctly
-      if (dateString instanceof Date) return dateString;
-      return parseISO(dateString);
-    } catch (e) {
-      return undefined;
+  const parseDateSafe = (dateInput?: string | Date): Date | undefined => {
+    if (!dateInput) return undefined;
+    if (dateInput instanceof Date && isValid(dateInput)) return dateInput;
+    if (typeof dateInput === 'string') {
+      const parsed = parseISO(dateInput);
+      if (isValid(parsed)) return parsed;
     }
+    return undefined;
   };
   
   const form = useForm<InternshipDetailsFormValues>({
@@ -69,8 +68,8 @@ export default function InternshipDetailsForm({ defaultValues, onSuccess, isResu
       companyAddress: defaultValues?.companyAddress || '',
       supervisorName: defaultValues?.supervisorName || '',
       supervisorEmail: defaultValues?.supervisorEmail || '',
-      startDate: parseDate(defaultValues?.startDate),
-      endDate: parseDate(defaultValues?.endDate),
+      startDate: parseDateSafe(defaultValues?.startDate),
+      endDate: parseDateSafe(defaultValues?.endDate),
       location: defaultValues?.location || '',
       status: defaultValues?.status || 'NOT_SUBMITTED',
       rejectionReason: defaultValues?.rejectionReason || '',
@@ -83,8 +82,8 @@ export default function InternshipDetailsForm({ defaultValues, onSuccess, isResu
       companyAddress: defaultValues?.companyAddress || '',
       supervisorName: defaultValues?.supervisorName || '',
       supervisorEmail: defaultValues?.supervisorEmail || '',
-      startDate: parseDate(defaultValues?.startDate),
-      endDate: parseDate(defaultValues?.endDate),
+      startDate: parseDateSafe(defaultValues?.startDate),
+      endDate: parseDateSafe(defaultValues?.endDate),
       location: defaultValues?.location || '',
       status: defaultValues?.status || 'NOT_SUBMITTED',
       rejectionReason: defaultValues?.rejectionReason || '',
@@ -96,23 +95,47 @@ export default function InternshipDetailsForm({ defaultValues, onSuccess, isResu
     setIsLoading(true);
     await new Promise(resolve => setTimeout(resolve, 1000)); 
     
-    const submissionData: InternshipDetailsFormValues = {
+    const studentEmail = localStorage.getItem('userEmail') || 'unknown_student@example.com';
+    const studentName = localStorage.getItem('userName') || 'Unknown Student';
+
+    const submissionDataForStudent: InternshipDetails = {
         ...values,
-        status: 'PENDING_APPROVAL', // Set status on submission
+        startDate: format(values.startDate, 'yyyy-MM-dd'),
+        endDate: format(values.endDate, 'yyyy-MM-dd'),
+        status: 'PENDING_APPROVAL',
     };
+    
+    // Save full details for the student's profile page
+    localStorage.setItem(`userInternshipDetails_${studentEmail}`, JSON.stringify(submissionDataForStudent));
+
+    // Add to HOD approval queue
+    const hodQueueItem: HODApprovalQueueItem = {
+        studentId: studentEmail, // Using email as studentId for this simulation
+        studentName: studentName,
+        companyName: values.companyName,
+        supervisorName: values.supervisorName,
+        supervisorEmail: values.supervisorEmail,
+        submissionDate: new Date().toISOString(),
+        status: 'PENDING_APPROVAL',
+    };
+
+    const currentQueueRaw = localStorage.getItem('hodCompanyApprovalQueue');
+    let currentQueue: HODApprovalQueueItem[] = currentQueueRaw ? JSON.parse(currentQueueRaw) : [];
+    // Remove any previous pending submission from this student to avoid duplicates
+    currentQueue = currentQueue.filter(item => item.studentId !== studentEmail || item.status !== 'PENDING_APPROVAL');
+    currentQueue.push(hodQueueItem);
+    localStorage.setItem('hodCompanyApprovalQueue', JSON.stringify(currentQueue));
+    
+    localStorage.removeItem('onboardingComplete'); // Ensure onboarding isn't marked complete until HOD approves
 
     setIsLoading(false);
     toast({
       title: isResubmitting ? 'Internship Details Resubmitted!' : 'Internship Details Submitted!',
-      description: 'Your internship information has been sent for approval.',
+      description: 'Your internship information has been sent for HOD approval.',
       variant: "default",
     });
-    toast({
-      title: 'Supervisor Invitation Sent (Simulated)',
-      description: `An invitation email has been sent to ${values.supervisorEmail} to join InternshipTrack.`,
-      duration: 5000,
-    });
-    onSuccess?.(submissionData);
+    // Supervisor invitation toast can be triggered by HOD approval later
+    onSuccess?.(submissionDataForStudent);
   }
 
   return (
@@ -167,7 +190,7 @@ export default function InternshipDetailsForm({ defaultValues, onSuccess, isResu
                 <FormControl>
                   <Input type="email" placeholder="supervisor@company.com" {...field} className="rounded-lg" />
                 </FormControl>
-                <FormDescription>An invitation will be sent to this email (simulated).</FormDescription>
+                <FormDescription>This email will be used to invite your supervisor once approved by HOD.</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -257,9 +280,9 @@ export default function InternshipDetailsForm({ defaultValues, onSuccess, isResu
         <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <Button type="submit" className="w-full sm:w-auto rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isLoading}>
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            {isResubmitting ? 'Resubmit for Approval' : 'Submit for Approval'}
+            {isResubmitting ? 'Resubmit for HOD Approval' : 'Submit for HOD Approval'}
             </Button>
-             <Button type="button" variant="outline" className="w-full sm:w-auto rounded-lg" onClick={() => onSuccess?.(form.getValues())} disabled={isLoading}>
+             <Button type="button" variant="outline" className="w-full sm:w-auto rounded-lg" onClick={() => onSuccess?.(form.getValues() as InternshipDetails)} disabled={isLoading}>
                 Cancel
             </Button>
         </div>
