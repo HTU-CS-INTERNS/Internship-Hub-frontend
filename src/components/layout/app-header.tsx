@@ -13,10 +13,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Bell, Mail, Settings, User, LogOut, Sun, Moon, PanelLeft } from 'lucide-react'; // Added Mail
+import { Bell, Mail, Settings, User, LogOut, Sun, Moon, PanelLeft, ChevronDown } from 'lucide-react'; // Added Mail & ChevronDown
 import { USER_ROLES } from '@/lib/constants';
 import type { UserRole } from '@/types';
-import { useRouter }_ from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link'; // Added Link for profile navigation
 
 // Dummy user data - replace with actual user data from context/auth
@@ -62,6 +62,7 @@ export default function AppHeader() {
   };
   
   const getInitials = (name: string) => {
+    if (!name) return '';
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
 
@@ -70,7 +71,9 @@ export default function AppHeader() {
     if(typeof window !== "undefined") {
       const currentPath = window.location.pathname.split('/').pop();
       if (currentPath) {
-        setPageTitle(currentPath.charAt(0).toUpperCase() + currentPath.slice(1) || 'Dashboard');
+        setPageTitle(currentPath.charAt(0).toUpperCase() + currentPath.slice(1).replace('-', ' ') || 'Dashboard');
+      } else if (window.location.pathname === '/dashboard') {
+        setPageTitle('Dashboard');
       }
     }
   }, [typeof window !== "undefined" ? window.location.pathname : null]);
@@ -136,7 +139,7 @@ export default function AppHeader() {
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild className="cursor-pointer">
-               <Link href="/settings">
+               <Link href="/settings"> {/* Updated to settings */}
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Settings</span>
               </Link>
