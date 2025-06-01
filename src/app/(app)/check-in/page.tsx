@@ -325,9 +325,9 @@ export default function CheckInPage() {
   };
 
   return (
-    <div className="flex-grow p-4 md:p-6 flex flex-col items-center justify-center">
+    <div className="p-4 md:p-6"> 
        <Card className={cn(
-           "w-full shadow-xl rounded-xl flex flex-col bg-card text-card-foreground",
+           "w-full mx-auto shadow-xl rounded-xl flex flex-col bg-card text-card-foreground",
            step === 'success' ? 'md:max-w-3xl lg:max-w-4xl' : 'max-w-lg' 
          )}>
          <CardHeader className="border-b border-border p-4">
