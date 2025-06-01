@@ -10,7 +10,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import type { CommunicationMessage, User as AppUser } from '@/types';
 import { cn } from '@/lib/utils';
 import { format, isToday, isYesterday, parseISO } from 'date-fns';
-import PageHeader from '@/components/shared/page-header'; // Keep for breadcrumbs
+import PageHeader from '@/components/shared/page-header'; 
+import { Badge } from '@/components/ui/badge'; // Added missing import
 
 interface EnrichedAppUser extends Partial<AppUser> {
   lastMessage?: string;
@@ -89,11 +90,10 @@ export default function CommunicationPage() {
       receiverId: selectedContact.id!,
       content: newMessage,
       timestamp: new Date().toISOString(),
-      read: false, // Will be true for sender, false for receiver until they "read"
+      read: false, 
     };
     setMessages(prev => [...prev, message]);
     
-    // Update DUMMY_MESSAGES and DUMMY_CONTACTS for persistence in this demo
     if (!DUMMY_MESSAGES[selectedContact.id!]) DUMMY_MESSAGES[selectedContact.id!] = [];
     DUMMY_MESSAGES[selectedContact.id!].push(message);
     
@@ -101,7 +101,6 @@ export default function CommunicationPage() {
     if (contactIndex !== -1) {
       DUMMY_CONTACTS[contactIndex].lastMessage = newMessage;
       DUMMY_CONTACTS[contactIndex].lastMessageTimestamp = message.timestamp;
-      // If selected contact is not current user, their unreadCount should increment (not shown here)
     }
     setNewMessage('');
   };
@@ -120,14 +119,13 @@ export default function CommunicationPage() {
   );
 
   return (
-    <div className="flex flex-col h-[calc(100vh-var(--app-header-height,theme(spacing.16)))]"> {/* Full height minus app header */}
+    <div className="flex flex-col h-[calc(100vh-var(--app-header-height,theme(spacing.16)))]"> 
       <PageHeader
           title="Communication Hub"
           icon={MessageSquareText}
           breadcrumbs={[{ href: "/dashboard", label: "Dashboard" }, { label: "Communication" }]}
         />
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-0 border-t border-border overflow-hidden"> {/* Removed gap */}
-        {/* Contact List Pane */}
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-0 border-t border-border overflow-hidden">
         <div className="md:col-span-1 lg:col-span-1 bg-card border-r border-border flex flex-col h-full">
           <div className="p-4 border-b border-border">
             <div className="relative">
@@ -180,11 +178,9 @@ export default function CommunicationPage() {
           </ScrollArea>
         </div>
 
-        {/* Chat Area Pane */}
         <div className="md:col-span-2 lg:col-span-3 bg-background flex flex-col h-full">
           {selectedContact ? (
             <>
-              {/* Chat Header */}
               <div className="flex items-center p-3 border-b border-border bg-card shadow-sm h-[65px]">
                  <Avatar className="h-10 w-10 mr-3">
                   <AvatarImage src={selectedContact.avatarUrl} alt={selectedContact.name} data-ai-hint="person portrait"/>
@@ -201,11 +197,9 @@ export default function CommunicationPage() {
                 </div>
               </div>
 
-              {/* Messages Area */}
-              <ScrollArea className="flex-1 p-4 space-y-4 bg-muted/20"> {/* Subtle background for chat messages area */}
+              <ScrollArea className="flex-1 p-4 space-y-4 bg-muted/20">
                 {messages.map((msg, index) => {
                   const isSender = msg.senderId === CURRENT_USER_ID;
-                  // Group messages by sender if consecutive
                   const prevMessage = messages[index-1];
                   const nextMessage = messages[index+1];
                   const isFirstInGroup = !prevMessage || prevMessage.senderId !== msg.senderId;
@@ -221,13 +215,11 @@ export default function CommunicationPage() {
                   >
                     <div className={cn(
                         "max-w-[70%] sm:max-w-[60%] p-0",
-                        isSender ? "pl-6" : "pr-6" // Ensure space for tail or avatar if grouped
+                        isSender ? "pl-6" : "pr-6" 
                     )}>
                         <div className={cn(
                             "flex flex-col gap-1 rounded-lg px-3 py-2 text-sm shadow-md",
                             isSender ? "bg-primary text-primary-foreground rounded-br-none" : "bg-card text-card-foreground rounded-bl-none",
-                            // Tailwind doesn't have direct support for message tails, using border radius for now
-                            // More complex tails would require custom CSS or pseudo-elements
                             isFirstInGroup && isSender && "rounded-tr-lg",
                             isFirstInGroup && !isSender && "rounded-tl-lg",
                             isLastInGroup && isSender && "rounded-br-lg",
@@ -247,7 +239,6 @@ export default function CommunicationPage() {
                 <div ref={messagesEndRef} />
               </ScrollArea>
 
-              {/* Input Footer */}
               <div className="p-3 border-t border-border bg-card h-[70px]">
                 <form onSubmit={handleSendMessage} className="flex w-full items-center space-x-2">
                   <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-primary"><Smile className="h-5 w-5"/></Button>
@@ -278,6 +269,5 @@ export default function CommunicationPage() {
       </div>
     </div>
   );
-}
 
     
