@@ -56,18 +56,20 @@ export default function AnalyticsPage() {
 
     if (storedRole === 'HOD') {
       if (!selectedFaculty) setSelectedFaculty(hodFacultyId);
-      // Only set department if faculty is set and department is not yet set (or needs resetting)
       if (hodFacultyId && !selectedDepartment) {
          const defaultDeptForHod = DEPARTMENTS.find(d => d.facultyId === hodFacultyId)?.id;
          if (defaultDeptForHod) setSelectedDepartment(defaultDeptForHod);
       }
+    } else if (storedRole === 'ADMIN') {
+      // Admins see all by default, so no pre-selected faculty/department
+      setSelectedFaculty(""); // Explicitly set to empty to signify "All" or no filter
+      setSelectedDepartment("");
     }
-  }, [userRole, selectedFaculty, selectedDepartment, hodFacultyId, hodDepartmentId]); // Added dependencies
+  }, [selectedFaculty, selectedDepartment, hodFacultyId, hodDepartmentId]); // Removed userRole from deps to avoid re-triggering on userRole change if filters are already set
 
   const handleFacultyChange = (value: string) => {
     const facultyId = value === ALL_FACULTIES_ITEM_VALUE ? "" : value;
     setSelectedFaculty(facultyId);
-    // Reset department if faculty changes or "All Faculties" is selected
     setSelectedDepartment(""); 
   };
 
@@ -77,10 +79,22 @@ export default function AnalyticsPage() {
 
   const availableDepartments = selectedFaculty ? DEPARTMENTS.filter(d => d.facultyId === selectedFaculty) : DEPARTMENTS;
   
-  const pageTitle = userRole === 'HOD' ? "Departmental Analytics" : "Reporting & Analytics";
-  const pageDescription = userRole === 'HOD' 
-    ? `Insights for ${DEPARTMENTS.find(d => d.id === (selectedDepartment || hodDepartmentId))?.name || 'your department'}` 
-    : `Insights and statistics for ${userRole ? USER_ROLES[userRole].toLowerCase() : 'the system'}.`;
+  let pageTitle = "Reporting & Analytics";
+  let pageDescription = `Insights and statistics for ${userRole ? USER_ROLES[userRole].toLowerCase() : 'the system'}.`;
+
+  if (userRole === 'HOD') {
+    pageTitle = "Departmental Analytics";
+    pageDescription = `Insights for ${DEPARTMENTS.find(d => d.id === (selectedDepartment || hodDepartmentId))?.name || 'your department'}`;
+  } else if (userRole === 'ADMIN') {
+    pageTitle = "University-Wide Analytics";
+    if (selectedFaculty && selectedDepartment) {
+      pageDescription = `Analytics for ${DEPARTMENTS.find(d => d.id === selectedDepartment)?.name}, ${FACULTIES.find(f => f.id === selectedFaculty)?.name}.`;
+    } else if (selectedFaculty) {
+      pageDescription = `Analytics for ${FACULTIES.find(f => f.id === selectedFaculty)?.name}.`;
+    } else {
+      pageDescription = "Overall university internship program analytics.";
+    }
+  }
 
 
   return (
@@ -89,9 +103,9 @@ export default function AnalyticsPage() {
         title={pageTitle}
         description={pageDescription}
         icon={BarChart3}
-        breadcrumbs={[{ href: "/dashboard", label: "Dashboard" }, { label: "Analytics" }]}
+        breadcrumbs={[{ href: userRole === 'ADMIN' ? "/admin/dashboard" : "/dashboard", label: "Dashboard" }, { label: "Analytics" }]}
         actions={
-          (userRole === 'HOD' || userRole === 'LECTURER') && ( // Allow LECTURER to also filter if needed, though HOD has defaults
+          (userRole === 'HOD' || userRole === 'LECTURER' || userRole === 'ADMIN') && (
             <div className="flex flex-col sm:flex-row gap-2">
               <Select 
                 value={selectedFaculty || (userRole === 'HOD' ? hodFacultyId : '')} 
@@ -108,7 +122,7 @@ export default function AnalyticsPage() {
               <Select 
                 value={selectedDepartment || (userRole === 'HOD' && selectedFaculty === hodFacultyId ? hodDepartmentId : '')} 
                 onValueChange={handleDepartmentChange}
-                disabled={!selectedFaculty && availableDepartments.length === DEPARTMENTS.length && userRole !== 'HOD'} // HOD can always select a department if they selected their faculty
+                disabled={!selectedFaculty && availableDepartments.length === DEPARTMENTS.length && userRole !== 'HOD' && userRole !== 'ADMIN'}
               >
                 <SelectTrigger className="w-full sm:w-[180px] rounded-lg">
                   <SelectValue placeholder="Filter by Department" />
@@ -126,41 +140,41 @@ export default function AnalyticsPage() {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card className="shadow-lg rounded-xl">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Students {userRole === 'HOD' ? '(Dept.)' : ''}</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Students {userRole === 'HOD' ? '(Dept.)' : userRole === 'ADMIN' && selectedDepartment ? '(Dept.)' : userRole === 'ADMIN' && selectedFaculty ? '(Faculty)' : ''}</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{userRole === 'HOD' ? '35' : '150'}</div>
+            <div className="text-2xl font-bold">{userRole === 'HOD' ? '35' : userRole === 'ADMIN' ? '750' : '150'}</div>
             <p className="text-xs text-muted-foreground">+5 from last month</p>
           </CardContent>
         </Card>
         <Card className="shadow-lg rounded-xl">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tasks Submitted {userRole === 'HOD' ? '(Dept.)' : ''}</CardTitle>
+            <CardTitle className="text-sm font-medium">Tasks Submitted {userRole === 'HOD' ? '(Dept.)' : userRole === 'ADMIN' && selectedDepartment ? '(Dept.)' : userRole === 'ADMIN' && selectedFaculty ? '(Faculty)' : ''}</CardTitle>
             <ClipboardList className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{userRole === 'HOD' ? '280' : '1250'}</div>
+            <div className="text-2xl font-bold">{userRole === 'HOD' ? '280' : userRole === 'ADMIN' ? '5200' : '1250'}</div>
             <p className="text-xs text-muted-foreground">+40 this week</p>
           </CardContent>
         </Card>
         <Card className="shadow-lg rounded-xl">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Reports Approved {userRole === 'HOD' ? '(Dept.)' : ''}</CardTitle>
+            <CardTitle className="text-sm font-medium">Reports Approved {userRole === 'HOD' ? '(Dept.)' : userRole === 'ADMIN' && selectedDepartment ? '(Dept.)' : userRole === 'ADMIN' && selectedFaculty ? '(Faculty)' : ''}</CardTitle>
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{userRole === 'HOD' ? '80' : '350'}</div>
+            <div className="text-2xl font-bold">{userRole === 'HOD' ? '80' : userRole === 'ADMIN' ? '2350' : '350'}</div>
             <p className="text-xs text-muted-foreground">90% approval rate</p>
           </CardContent>
         </Card>
         <Card className="shadow-lg rounded-xl">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Companies {userRole === 'HOD' ? '(Dept. Placements)' : ''}</CardTitle>
+            <CardTitle className="text-sm font-medium">Active Companies {userRole === 'HOD' ? '(Dept. Placements)' : userRole === 'ADMIN' && selectedDepartment ? '(Dept.)' : userRole === 'ADMIN' && selectedFaculty ? '(Faculty)' : ''}</CardTitle>
             <Building className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{userRole === 'HOD' ? '12' : '42'}</div>
+            <div className="text-2xl font-bold">{userRole === 'HOD' ? '12' : userRole === 'ADMIN' ? '120' :'42'}</div>
             <p className="text-xs text-muted-foreground">+2 new partnerships</p>
           </CardContent>
         </Card>
@@ -169,8 +183,8 @@ export default function AnalyticsPage() {
       <div className="grid gap-6 md:grid-cols-2">
         <Card className="shadow-lg rounded-xl">
           <CardHeader>
-            <CardTitle className="font-headline text-lg">Task Submissions Over Time {userRole === 'HOD' ? '(Dept.)' : ''}</CardTitle>
-            <CardDescription>Monthly trend of task statuses. {userRole === 'HOD' && !selectedDepartment && '(Select a department to refine)'}</CardDescription>
+            <CardTitle className="font-headline text-lg">Task Submissions Over Time {userRole === 'HOD' ? '(Dept.)' : userRole === 'ADMIN' && selectedDepartment ? '(Dept.)' : userRole === 'ADMIN' && selectedFaculty ? '(Faculty)' : ''}</CardTitle>
+            <CardDescription>Monthly trend of task statuses. {(userRole === 'HOD' || userRole === 'ADMIN') && !selectedDepartment && '(Select a department to refine)'}</CardDescription>
           </CardHeader>
           <CardContent>
             <ChartContainer config={chartConfigTasks} className="h-[300px] w-full">
@@ -189,8 +203,8 @@ export default function AnalyticsPage() {
         </Card>
         <Card className="shadow-lg rounded-xl">
           <CardHeader>
-            <CardTitle className="font-headline text-lg">Report Status Distribution {userRole === 'HOD' ? '(Dept.)' : ''}</CardTitle>
-            <CardDescription>Overall distribution of report statuses. {userRole === 'HOD' && !selectedDepartment && '(Select a department to refine)'}</CardDescription>
+            <CardTitle className="font-headline text-lg">Report Status Distribution {userRole === 'HOD' ? '(Dept.)' : userRole === 'ADMIN' && selectedDepartment ? '(Dept.)' : userRole === 'ADMIN' && selectedFaculty ? '(Faculty)' : ''}</CardTitle>
+            <CardDescription>Overall distribution of report statuses. {(userRole === 'HOD' || userRole === 'ADMIN') && !selectedDepartment && '(Select a department to refine)'}</CardDescription>
           </CardHeader>
           <CardContent className="flex items-center justify-center">
             <ChartContainer config={chartConfigReportsStatus} className="h-[300px] w-full max-w-[400px]">
@@ -217,14 +231,7 @@ export default function AnalyticsPage() {
                     <CardDescription>Summary of lecturer engagement and student supervision within {DEPARTMENTS.find(d => d.id === (selectedDepartment || hodDepartmentId))?.name || 'your department'}.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {/* Placeholder: In a real app, this would be a table or list of lecturers with stats */}
                     <p className="text-muted-foreground">Lecturer-specific analytics and activity summaries will be displayed here. (e.g., number of students supervised, average report review time, etc.)</p>
-                    {/* Example of what could be here:
-                    <Table>
-                        <TableHeader>...</TableHeader>
-                        <TableBody>...</TableBody>
-                    </Table>
-                    */}
                 </CardContent>
              </Card>
              <Card className="shadow-lg rounded-xl">
@@ -233,7 +240,6 @@ export default function AnalyticsPage() {
                     <CardDescription>In-depth view of student performance and compliance in {DEPARTMENTS.find(d => d.id === (selectedDepartment || hodDepartmentId))?.name || 'your department'}.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                     {/* Placeholder: In a real app, this would be a more detailed table of students */}
                     <p className="text-muted-foreground">A comprehensive table listing all students in the selected department with detailed progress metrics (report status, task completion, feedback summaries, etc.) will be shown here.</p>
                 </CardContent>
              </Card>
@@ -242,3 +248,5 @@ export default function AnalyticsPage() {
     </div>
   );
 }
+
+    

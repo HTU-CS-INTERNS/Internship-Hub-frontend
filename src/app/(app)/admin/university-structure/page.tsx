@@ -2,23 +2,24 @@
 'use client';
 import * as React from 'react';
 import PageHeader from '@/components/shared/page-header';
-import { Landmark, PlusCircle, Edit, Trash2, AlertTriangle } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Landmark, PlusCircle, Edit, Trash2, AlertTriangle, Save } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FACULTIES, DEPARTMENTS } from '@/lib/constants';
 import type { Faculty as AppFaculty, Department as AppDepartment } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 
 interface EditableFaculty extends AppFaculty { isEditing?: boolean; newName?: string; }
-interface EditableDepartment extends AppDepartment { isEditing?: boolean; newName?: string; }
+interface EditableDepartment extends AppDepartment { isEditing?: boolean; newName?: string; newFacultyId?: string; }
 
 export default function UniversityStructurePage() {
   const { toast } = useToast();
   const [faculties, setFaculties] = React.useState<EditableFaculty[]>(() => FACULTIES.map(f => ({...f, isEditing: false, newName: f.name })));
-  const [departments, setDepartments] = React.useState<EditableDepartment[]>(() => DEPARTMENTS.map(d => ({...d, isEditing: false, newName: d.name })));
+  const [departments, setDepartments] = React.useState<EditableDepartment[]>(() => DEPARTMENTS.map(d => ({...d, isEditing: false, newName: d.name, newFacultyId: d.facultyId })));
   
   const [showAddFacultyDialog, setShowAddFacultyDialog] = React.useState(false);
   const [newFacultyName, setNewFacultyName] = React.useState('');
@@ -28,6 +29,10 @@ export default function UniversityStructurePage() {
   const [newDepartmentName, setNewDepartmentName] = React.useState('');
   const [newDepartmentId, setNewDepartmentId] = React.useState('');
   const [selectedFacultyForNewDept, setSelectedFacultyForNewDept] = React.useState('');
+  
+  const [showEditDepartmentDialog, setShowEditDepartmentDialog] = React.useState(false);
+  const [editingDepartment, setEditingDepartment] = React.useState<EditableDepartment | null>(null);
+
 
   const handleAddFaculty = () => {
     if (!newFacultyName.trim() || !newFacultyId.trim()) {
@@ -54,7 +59,7 @@ export default function UniversityStructurePage() {
         toast({ title: "Error", description: `Department ID "${newDepartmentId}" already exists.`, variant: "destructive"});
         return;
     }
-    setDepartments(prev => [...prev, { id: newDepartmentId, name: newDepartmentName, facultyId: selectedFacultyForNewDept, isEditing: false, newName: newDepartmentName }]);
+    setDepartments(prev => [...prev, { id: newDepartmentId, name: newDepartmentName, facultyId: selectedFacultyForNewDept, isEditing: false, newName: newDepartmentName, newFacultyId: selectedFacultyForNewDept }]);
     toast({ title: "Department Added", description: `Department "${newDepartmentName}" added to ${faculties.find(f=>f.id === selectedFacultyForNewDept)?.name}.`});
     setShowAddDepartmentDialog(false);
     setNewDepartmentName('');
@@ -79,8 +84,35 @@ export default function UniversityStructurePage() {
         toast({ title: "Error", description: "Faculty name cannot be empty.", variant: "destructive"});
     }
   };
+
+  const openEditDepartmentDialog = (department: EditableDepartment) => {
+    setEditingDepartment({ ...department, newName: department.name, newFacultyId: department.facultyId });
+    setShowEditDepartmentDialog(true);
+  };
+
+  const handleUpdateDepartment = () => {
+    if (!editingDepartment || !editingDepartment.newName?.trim() || !editingDepartment.newFacultyId) {
+        toast({ title: "Error", description: "Department Name and assigned Faculty are required.", variant: "destructive" });
+        return;
+    }
+    setDepartments(prev => prev.map(d => 
+        d.id === editingDepartment.id 
+        ? { ...d, name: editingDepartment.newName!, facultyId: editingDepartment.newFacultyId!, isEditing: false } 
+        : d
+    ));
+    toast({ title: "Department Updated", description: `Department "${editingDepartment.newName}" updated successfully.` });
+    setShowEditDepartmentDialog(false);
+    setEditingDepartment(null);
+  };
   
-  // Similar functions for departments would be needed for full CRUD.
+  const simulateArchive = (type: 'Faculty' | 'Department', name: string) => {
+    toast({
+        title: `Archive ${type} (Simulated)`,
+        description: `${type} "${name}" would be archived. This action requires careful consideration of associated students, lecturers, and internships. A full implementation would include confirmation steps and impact analysis.`,
+        duration: 7000,
+        variant: 'default'
+    });
+  };
 
   return (
     <div className="space-y-8 p-4 md:p-6">
@@ -112,7 +144,7 @@ export default function UniversityStructurePage() {
                 {faculty.isEditing ? (
                     <div className="flex items-center gap-2">
                         <Input value={faculty.newName} onChange={(e) => handleFacultyNameChange(faculty.id, e.target.value)} className="h-8 rounded-md"/>
-                        <Button size="sm" onClick={() => saveFacultyName(faculty.id)} className="h-8 rounded-md">Save</Button>
+                        <Button size="sm" onClick={() => saveFacultyName(faculty.id)} className="h-8 rounded-md"><Save className="mr-1 h-3 w-3"/>Save</Button>
                         <Button size="sm" variant="ghost" onClick={() => toggleEditFaculty(faculty.id)} className="h-8 rounded-md">Cancel</Button>
                     </div>
                 ) : (
@@ -123,7 +155,7 @@ export default function UniversityStructurePage() {
                         </div>
                         <div className="flex gap-1">
                             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => toggleEditFaculty(faculty.id)}><Edit className="h-4 w-4" /></Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive/80" onClick={() => toast({title: "Archive/Deactivate (Simulated)", description: `Faculty ${faculty.name} would be archived. This needs careful implementation.`})}><Trash2 className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive/80" onClick={() => simulateArchive('Faculty', faculty.name)}><Trash2 className="h-4 w-4" /></Button>
                         </div>
                     </div>
                 )}
@@ -151,8 +183,8 @@ export default function UniversityStructurePage() {
                             <p className="text-xs text-muted-foreground">ID: {dept.id}</p>
                         </div>
                          <div className="flex gap-1">
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => toast({title: "Edit Department (Simulated)", description: `Editing ${dept.name} would be similar to faculty editing.`})}><Edit className="h-4 w-4" /></Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive/80" onClick={() => toast({title: "Archive/Deactivate (Simulated)", description: `Department ${dept.name} would be archived.`})}><Trash2 className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditDepartmentDialog(dept)}><Edit className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive/80" onClick={() => simulateArchive('Department', dept.name)}><Trash2 className="h-4 w-4" /></Button>
                         </div>
                     </div>
                   </Card>
@@ -200,10 +232,15 @@ export default function UniversityStructurePage() {
                 <div className="grid gap-4 py-4">
                     <div className="space-y-2">
                         <Label htmlFor="select-faculty-for-dept">Assign to Faculty</Label>
-                        <select id="select-faculty-for-dept" value={selectedFacultyForNewDept} onChange={(e) => setSelectedFacultyForNewDept(e.target.value)} className="w-full h-10 px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring">
-                            <option value="" disabled>Select a Faculty</option>
-                            {faculties.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
-                        </select>
+                        <Select value={selectedFacultyForNewDept} onValueChange={setSelectedFacultyForNewDept}>
+                            <SelectTrigger id="select-faculty-for-dept" className="w-full rounded-lg">
+                                <SelectValue placeholder="Select a Faculty" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="" disabled>Select a Faculty</SelectItem>
+                                {faculties.map(f => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="new-dept-id">Department ID (Unique)</Label>
@@ -221,6 +258,54 @@ export default function UniversityStructurePage() {
             </DialogContent>
         </Dialog>
 
+        {/* Edit Department Dialog */}
+        <Dialog open={showEditDepartmentDialog} onOpenChange={(isOpen) => { setShowEditDepartmentDialog(isOpen); if (!isOpen) setEditingDepartment(null); }}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Edit Department: {editingDepartment?.name}</DialogTitle>
+                    <DialogDescription>Update the details for this department.</DialogDescription>
+                </DialogHeader>
+                {editingDepartment && (
+                <div className="grid gap-4 py-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="edit-dept-faculty">Assign to Faculty</Label>
+                        <Select 
+                            value={editingDepartment.newFacultyId || ''} 
+                            onValueChange={(value) => setEditingDepartment(d => d ? {...d, newFacultyId: value} : null)}
+                        >
+                            <SelectTrigger id="edit-dept-faculty" className="w-full rounded-lg">
+                                <SelectValue placeholder="Select a Faculty" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {faculties.map(f => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="edit-dept-name">Department Name</Label>
+                        <Input 
+                            id="edit-dept-name" 
+                            value={editingDepartment.newName || ''} 
+                            onChange={(e) => setEditingDepartment(d => d ? {...d, newName: e.target.value} : null)} 
+                            placeholder="e.g., Department of Computer Science" 
+                            className="rounded-lg"
+                        />
+                    </div>
+                     <div className="space-y-1">
+                        <Label htmlFor="edit-dept-id">Department ID (Read-only)</Label>
+                        <Input id="edit-dept-id" value={editingDepartment.id} className="rounded-lg bg-muted" readOnly />
+                    </div>
+                </div>
+                )}
+                <DialogFooter>
+                    <DialogClose asChild><Button variant="outline" className="rounded-lg">Cancel</Button></DialogClose>
+                    <Button onClick={handleUpdateDepartment} className="rounded-lg">Save Changes</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
     </div>
   );
 }
+
+    
