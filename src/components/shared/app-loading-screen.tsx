@@ -5,7 +5,7 @@ import { GraduationCap } from 'lucide-react';
 
 export default function AppLoadingScreen() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-background text-primary">
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background text-primary">
       <div className="flex flex-col items-center animate-pulse">
         <GraduationCap className="h-24 w-24 sm:h-28 sm:w-28 mb-6" />
         <h1 className="text-3xl sm:text-4xl font-headline font-bold">
