@@ -1,3 +1,4 @@
+
 'use client';
 import * as React from 'react';
 import PageHeader from '@/components/shared/page-header';
@@ -9,6 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
 import type { DailyReport } from '@/types'; // Assuming DailyReport type
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 // Dummy report data - replace with actual data fetching
 const DUMMY_REPORT_DETAIL: DailyReport & { title?: string; challengesFaced?: string; learnings?: string; securePhotoUrl?: string } = {
