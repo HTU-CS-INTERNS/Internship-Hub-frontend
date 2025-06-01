@@ -2,12 +2,15 @@
 'use client';
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { MapPin, LocateFixed, AlertTriangle, CheckCircle, Camera, XCircle, Info, Image as ImageIcon, TrendingUp, Clock, CalendarCheck2 } from 'lucide-react';
-import Image from 'next/image';
+import { MapPin, LocateFixed, AlertTriangle, CheckCircle, Camera, XCircle, Info, Image as ImageIconLucide, TrendingUp, Clock, CalendarCheck2 } from 'lucide-react';
+import Image from 'next/image'; // Using Next.js Image
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'; // For camera permission
+
 
 type CheckinStep = 'initial' | 'gpsPrompt' | 'manualReason' | 'geofenceWarning' | 'success';
 
@@ -23,16 +26,16 @@ export default function CheckInPage() {
   const [manualReason, setManualReason] = React.useState('');
   const [checkinTime, setCheckinTime] = React.useState('');
   const [checkinLocation, setCheckinLocation] = React.useState('');
-  const [securePhoto, setSecurePhoto] = React.useState<File | null>(null);
+  const [securePhotoFile, setSecurePhotoFile] = React.useState<File | null>(null);
   const [securePhotoPreview, setSecurePhotoPreview] = React.useState<string | null>(null);
   const securePhotoInputRef = React.useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  const getTodayDateString = () => format(new Date(), 'yyyy-MM-dd');
+  const getTodayDateString = React.useCallback(() => format(new Date(), 'yyyy-MM-dd'), []);
 
   const loadCheckinFromStorage = React.useCallback(() => {
     const todayDateStr = getTodayDateString();
-    const storedCheckinRaw = localStorage.getItem('internshipTrack_checkin');
+    const storedCheckinRaw = typeof window !== "undefined" ? localStorage.getItem('internshipTrack_checkin') : null;
     if (storedCheckinRaw) {
       try {
         const storedCheckin: StoredCheckinData = JSON.parse(storedCheckinRaw);
@@ -43,8 +46,7 @@ export default function CheckInPage() {
           setStep('success');
           return true; // Found valid check-in for today
         } else {
-          // Clear old check-in data from previous days
-          localStorage.removeItem('internshipTrack_checkin');
+          localStorage.removeItem('internshipTrack_checkin'); // Clear old check-in
         }
       } catch (e) {
         console.error("Failed to parse stored check-in data", e);
@@ -52,47 +54,42 @@ export default function CheckInPage() {
       }
     }
     return false; // No valid check-in for today
-  }, []);
-
+  }, [getTodayDateString]);
 
   React.useEffect(() => {
     if (!loadCheckinFromStorage()) {
-      setStep('initial'); // Default to initial if no valid check-in
+      setStep('initial'); 
     }
   }, [loadCheckinFromStorage]);
 
-  const saveCheckinToLocalStorage = (time: string, location: string, photoPreview?: string | null) => {
+  const saveCheckinToLocalStorage = (time: string, location: string, photoPreviewUrl?: string | null) => {
     const todayDateStr = getTodayDateString();
-    const checkinData: StoredCheckinData = { time, location, date: todayDateStr, photoPreview };
+    const checkinData: StoredCheckinData = { time, location, date: todayDateStr, photoPreview: photoPreviewUrl };
     localStorage.setItem('internshipTrack_checkin', JSON.stringify(checkinData));
   };
 
-  const resetFlow = () => {
+  const resetFlowAndCheckStorage = () => {
     setManualReason('');
-    setSecurePhoto(null);
-    // We don't clear securePhotoPreview here immediately if it was loaded from storage
+    setSecurePhotoFile(null);
+    // Don't clear securePhotoPreview if it's from localStorage for today's check-in.
     // loadCheckinFromStorage will handle repopulating or clearing it.
     if (securePhotoInputRef.current) {
       securePhotoInputRef.current.value = "";
     }
 
-    if (!loadCheckinFromStorage()) {
+    if (!loadCheckinFromStorage()) { // If no valid check-in is loaded (e.g., next day)
       setStep('initial');
-      setSecurePhotoPreview(null); // Fully clear preview if going to initial (no stored check-in)
+      setSecurePhotoPreview(null); // Fully clear preview if going to initial state
     }
   };
 
-  const handleCheckIn = () => {
-    setStep('gpsPrompt');
-  };
+  const handleCheckIn = () => setStep('gpsPrompt');
 
   const handleAllowGps = async () => {
     toast({ title: 'Requesting Location', description: 'Please wait...' });
     try {
-      // Simulate GPS access - in a real app, use navigator.geolocation
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      // Simulate geofence check - 80% chance of being within geofence
-      const withinGeofence = Math.random() < 0.8; 
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate GPS access
+      const withinGeofence = Math.random() < 0.8; // Simulate geofence check
 
       if (withinGeofence) {
         const now = new Date();
@@ -100,7 +97,7 @@ export default function CheckInPage() {
         const currentLocation = 'Acme Corp HQ (Verified)';
         setCheckinTime(currentTime);
         setCheckinLocation(currentLocation);
-        saveCheckinToLocalStorage(currentTime, currentLocation, securePhotoPreview);
+        saveCheckinToLocalStorage(currentTime, currentLocation, securePhotoPreview); // Pass existing preview if any
         setStep('success');
         toast({ title: 'Success', description: 'Location verified within geofence.' });
       } else {
@@ -110,22 +107,20 @@ export default function CheckInPage() {
     } catch (error) {
       console.error("GPS Error:", error);
       toast({ variant: 'destructive', title: 'Error', description: 'Could not retrieve location.' });
-      setStep('manualReason'); // Fallback to manual if GPS fails
+      setStep('manualReason');
     }
   };
 
-  const handleDenyGps = () => {
-    setStep('manualReason');
-  };
+  const handleDenyGps = () => setStep('manualReason');
 
   const handleSubmitManual = () => {
-    if (!manualReason.trim() && !securePhoto) {
+    if (!manualReason.trim() && !securePhotoFile) {
       toast({ variant: 'destructive', title: 'Missing Information', description: 'Please provide a reason or a secure photo for manual check-in.' });
       return;
     }
     const now = new Date();
     const currentTime = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
-    const currentLocation = `Manual: ${manualReason.substring(0,30) || 'Photo Submitted'}`;
+    const currentLocation = `Manual: ${manualReason.substring(0, 30) || 'Photo Submitted'}`;
     setCheckinTime(currentTime);
     setCheckinLocation(currentLocation);
     saveCheckinToLocalStorage(currentTime, currentLocation, securePhotoPreview);
@@ -136,7 +131,7 @@ export default function CheckInPage() {
   const handleSecurePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       const file = event.target.files[0];
-      setSecurePhoto(file);
+      setSecurePhotoFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setSecurePhotoPreview(reader.result as string);
@@ -146,7 +141,7 @@ export default function CheckInPage() {
   };
 
   const clearSecurePhoto = () => {
-    setSecurePhoto(null);
+    setSecurePhotoFile(null);
     setSecurePhotoPreview(null);
     if (securePhotoInputRef.current) {
       securePhotoInputRef.current.value = "";
@@ -168,7 +163,6 @@ export default function CheckInPage() {
       </CardContent>
     </Card>
   );
-
 
   const renderStepContent = () => {
     switch (step) {
@@ -222,7 +216,7 @@ export default function CheckInPage() {
                 <div className="flex flex-col items-center justify-center w-full">
                      <label htmlFor="secure-photo-manual-input" className="flex flex-col items-center justify-center w-full h-40 border-2 border-input border-dashed rounded-lg cursor-pointer bg-muted hover:bg-muted/80 relative overflow-hidden">
                         {securePhotoPreview ? (
-                             <Image src={securePhotoPreview} alt="Secure photo preview" layout="fill" objectFit="contain" data-ai-hint="workplace person"/>
+                             <Image src={securePhotoPreview} alt="Secure photo preview" layout="fill" objectFit="contain" data-ai-hint="workplace person" />
                         ) : (
                             <div className="flex flex-col items-center justify-center">
                                 <Camera className="w-10 h-10 mb-2 text-muted-foreground" />
@@ -248,7 +242,7 @@ export default function CheckInPage() {
                 )}
             </div>
             <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 mt-4">
-              <Button onClick={resetFlow} variant="outline" className="flex-1 py-3 rounded-lg text-base border-input hover:bg-muted">Cancel</Button>
+              <Button onClick={resetFlowAndCheckStorage} variant="outline" className="flex-1 py-3 rounded-lg text-base border-input hover:bg-muted">Cancel</Button>
               <Button onClick={handleSubmitManual} className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground py-3 rounded-lg text-base">Submit Manual Check-in</Button>
             </div>
           </div>
@@ -265,7 +259,7 @@ export default function CheckInPage() {
               <Button onClick={() => setStep('manualReason')} variant="outline" className="flex-1 py-3 rounded-lg text-base border-input hover:bg-muted">Check-in Manually</Button>
               <Button onClick={handleAllowGps} className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground py-3 rounded-lg text-base">Retry GPS</Button>
             </div>
-             <Button onClick={() => {toast({title: "Supervisor Notified (Simulated)", description: "Your supervisor has been informed about the location mismatch."}); resetFlow();}} variant="ghost" className="w-full mt-4 text-primary hover:text-primary/80">Notify Supervisor</Button>
+             <Button onClick={() => {toast({title: "Supervisor Notified (Simulated)", description: "Your supervisor has been informed."}); resetFlowAndCheckStorage();}} variant="ghost" className="w-full mt-4 text-primary hover:text-primary/80">Notify Supervisor</Button>
           </div>
         );
       case 'success':
@@ -293,7 +287,7 @@ export default function CheckInPage() {
                 <div className="mt-3">
                     <p className="text-sm text-muted-foreground mb-1">Approximate Location:</p>
                     <div className="relative w-full aspect-[16/9] rounded-lg overflow-hidden border border-input bg-gray-200">
-                        <Image src="https://placehold.co/600x300.png" alt="Map placeholder showing general location" layout="fill" objectFit="cover" data-ai-hint="map location snippet" />
+                        <Image src="https://placehold.co/600x300.png" alt="Map placeholder" layout="fill" objectFit="cover" data-ai-hint="map location snippet" />
                          <div className="absolute inset-0 flex items-center justify-center bg-black/20">
                             <MapPin className="h-8 w-8 text-white/80" />
                         </div>
@@ -305,7 +299,7 @@ export default function CheckInPage() {
                    <div className="mt-4">
                       <p className="text-sm text-muted-foreground mb-1">Secure Photo Submitted:</p>
                       <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-input">
-                          <Image src={securePhotoPreview} alt="Secure photo submitted" layout="fill" objectFit="cover" data-ai-hint="workplace id person"/>
+                          <Image src={securePhotoPreview} alt="Secure photo submitted" layout="fill" objectFit="cover" data-ai-hint="workplace id person" />
                       </div>
                   </div>
                 )}
@@ -318,7 +312,7 @@ export default function CheckInPage() {
                 <AnalyticsStatCard title="Monthly Check-ins" value="18" icon={CalendarCheck2} description={`In ${format(new Date(), 'MMMM')}`} iconBgColor="bg-purple-500/10"/>
             </div>
 
-            <Button onClick={resetFlow} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 rounded-lg text-lg mt-2">
+            <Button onClick={resetFlowAndCheckStorage} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 rounded-lg text-lg mt-2">
               Done
             </Button>
           </div>
@@ -335,7 +329,7 @@ export default function CheckInPage() {
            <div className="flex items-center justify-between">
             <CardTitle className="font-headline text-xl">Daily Check-in</CardTitle>
             <div className="flex items-center space-x-1.5">
-                <div className={`w-3 h-3 rounded-full ${step === 'success' ? 'bg-green-500 animate-pulse' : 'bg-muted'}`}></div>
+                <div className={cn("w-3 h-3 rounded-full", step === 'success' ? 'bg-green-500 animate-pulse' : 'bg-muted')}></div>
                 <span className="text-xs text-muted-foreground">{step === 'success' ? 'Checked In' : 'Awaiting Check-in'}</span>
             </div>
            </div>
@@ -347,6 +341,3 @@ export default function CheckInPage() {
     </div>
   );
 }
-
-
-    
