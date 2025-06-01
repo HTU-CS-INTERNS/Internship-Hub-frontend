@@ -9,6 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
 import type { DailyTask } from '@/types';
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 // Dummy task data - replace with actual data fetching
 const DUMMY_TASK_DETAIL: DailyTask = {
