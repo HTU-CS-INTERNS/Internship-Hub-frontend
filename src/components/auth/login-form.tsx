@@ -26,7 +26,7 @@ import { Loader2 } from 'lucide-react';
 const loginSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
-  role: z.enum(['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], {
+  role: z.enum(['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD', 'ADMIN'], { // Added ADMIN
     required_error: "You need to select a role."
   }),
 });
@@ -64,7 +64,8 @@ export function LoginForm() {
 
       let currentUserName = localStorage.getItem('userName');
       const defaultNameForRole = values.role === 'STUDENT' ? 'New Student' 
-                                : values.role === 'SUPERVISOR' ? 'New Supervisor' 
+                                : values.role === 'SUPERVISOR' ? 'New Supervisor'
+                                : values.role === 'ADMIN' ? 'Admin User' 
                                 : USER_ROLES[values.role as UserRole];
 
       if (!currentUserName || currentUserName === 'New User' || currentUserName === 'User' || currentUserName === 'New Supervisor' || currentUserName === 'New Student') {
@@ -74,7 +75,11 @@ export function LoginForm() {
       }
     }
     
-    router.push('/dashboard');
+    if (values.role === 'ADMIN') {
+      router.push('/admin/dashboard');
+    } else {
+      router.push('/dashboard');
+    }
   }
 
   return (
@@ -116,7 +121,7 @@ export function LoginForm() {
                 <RadioGroup
                   onValueChange={field.onChange}
                   defaultValue={field.value}
-                  className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-4"
+                  className="flex flex-col space-y-2 sm:flex-row sm:flex-wrap sm:space-y-0 sm:gap-x-4 sm:gap-y-2" // Adjusted for better wrapping
                 >
                   {(Object.keys(USER_ROLES) as UserRole[]).map((roleKey) => (
                     <FormItem key={roleKey} className="flex items-center space-x-2 space-y-0">

@@ -25,7 +25,10 @@ import {
   Palette,
   ShieldCheck,
   BookOpen,
-  TrendingUp
+  TrendingUp,
+  Landmark, // For University Structure
+  UsersCog, // For User Management
+  School // For Admin Dashboard
 } from 'lucide-react';
 import type { UserRole, ScoringMetric, Faculty as AppFaculty, Department as AppDepartment } from '@/types'; // Renamed to avoid conflict
 
@@ -44,6 +47,7 @@ export const USER_ROLES: Record<UserRole, string> = {
   LECTURER: 'Lecturer',
   SUPERVISOR: 'Company Supervisor',
   HOD: 'Head of Department',
+  ADMIN: 'Administrator',
 };
 
 export const NAV_LINKS: NavItem[] = [
@@ -96,12 +100,17 @@ export const NAV_LINKS: NavItem[] = [
     roles: ['HOD'],
     section: "Management"
   },
-  { href: '/analytics', label: 'Analytics', icon: BarChart3, roles: ['LECTURER', 'SUPERVISOR', 'HOD'], section: "Management" },
+  { href: '/analytics', label: 'Analytics', icon: BarChart3, roles: ['LECTURER', 'SUPERVISOR', 'HOD', 'ADMIN'], section: "Management" }, // Admin can also view analytics
+
+  // Admin Section
+  { href: '/admin/dashboard', label: 'Admin Dashboard', icon: School, roles: ['ADMIN'], section: "Administration" },
+  { href: '/admin/university-structure', label: 'University Structure', icon: Landmark, roles: ['ADMIN'], section: "Administration" },
+  { href: '/admin/user-management', label: 'User Management', icon: UsersCog, roles: ['ADMIN'], section: "Administration" },
 ];
 
 export const BOTTOM_NAV_LINKS: NavItem[] = [
-    { href: '/profile', label: 'Profile', icon: UserCog, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Settings", mobile: true },
-    { href: '/settings', label: 'Settings', icon: Settings, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Settings" },
+    { href: '/profile', label: 'Profile', icon: UserCog, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD', 'ADMIN'], section: "Settings", mobile: true },
+    { href: '/settings', label: 'Settings', icon: Settings, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD', 'ADMIN'], section: "Settings" },
 ];
 
 export const FACULTIES: AppFaculty[] = [
