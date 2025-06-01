@@ -13,6 +13,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -25,12 +26,11 @@ import type { InternshipDetails } from '@/types';
 
 const internshipDetailsSchema = z.object({
   companyName: z.string().min(2, { message: 'Company name is required (min 2 chars).' }).max(100, { message: 'Company name too long (max 100).' }),
-  companyAddress: z.string().min(5, { message: 'Company address is required (min 5 chars).' }).max(200, { message: 'Address too long (max 200).' }).optional(),
+  companyAddress: z.string().min(5, { message: 'Company address is required (min 5 chars).' }).max(200, { message: 'Address too long (max 200).' }),
   supervisorName: z.string().min(2, { message: 'Supervisor name is required (min 2 chars).' }).max(100, { message: 'Supervisor name too long (max 100).' }),
   supervisorEmail: z.string().email({ message: 'Valid supervisor email is required.' }),
   startDate: z.date({ required_error: 'Start date is required.' }),
   endDate: z.date({ required_error: 'End date is required.' }),
-  // location field was present in original type, but companyAddress is more specific from user flow. Keeping location for now.
   location: z.string().min(2, { message: 'Location/Work Arrangement is required (min 2 chars).' }).max(100, { message: 'Location too long (max 100).' }),
 }).refine(data => data.endDate >= data.startDate, {
   message: "End date cannot be before start date.",
@@ -40,7 +40,7 @@ const internshipDetailsSchema = z.object({
 export type InternshipDetailsFormValues = z.infer<typeof internshipDetailsSchema>;
 
 interface InternshipDetailsFormProps {
-  defaultValues?: Partial<InternshipDetails & { companyAddress?: string }>; // Allow companyAddress
+  defaultValues?: Partial<InternshipDetails & { companyAddress?: string }>;
   onSuccess?: (data: InternshipDetailsFormValues) => void;
 }
 
@@ -51,7 +51,6 @@ export default function InternshipDetailsForm({ defaultValues, onSuccess }: Inte
   const parseDate = (dateString?: string): Date | undefined => {
     if (!dateString) return undefined;
     try {
-      // Handles both "YYYY-MM-DD" and full ISO strings
       return parseISO(dateString);
     } catch (e) {
       return undefined;
@@ -62,30 +61,42 @@ export default function InternshipDetailsForm({ defaultValues, onSuccess }: Inte
     resolver: zodResolver(internshipDetailsSchema),
     defaultValues: {
       companyName: defaultValues?.companyName || '',
-      companyAddress: (defaultValues as any)?.companyAddress || '', // From user flow
+      companyAddress: defaultValues?.companyAddress || '',
       supervisorName: defaultValues?.supervisorName || '',
       supervisorEmail: defaultValues?.supervisorEmail || '',
       startDate: parseDate(defaultValues?.startDate),
       endDate: parseDate(defaultValues?.endDate),
-      location: defaultValues?.location || '', // e.g. Remote, On-site, Hybrid
+      location: defaultValues?.location || '', 
     },
   });
+  
+  React.useEffect(() => {
+    form.reset({
+      companyName: defaultValues?.companyName || '',
+      companyAddress: defaultValues?.companyAddress || '',
+      supervisorName: defaultValues?.supervisorName || '',
+      supervisorEmail: defaultValues?.supervisorEmail || '',
+      startDate: parseDate(defaultValues?.startDate),
+      endDate: parseDate(defaultValues?.endDate),
+      location: defaultValues?.location || '',
+    });
+  }, [defaultValues, form, parseDate]);
+
 
   async function onSubmit(values: InternshipDetailsFormValues) {
     setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-
-    // Simulate sending invitation email to supervisor
-    toast({
-      title: 'Supervisor Invitation Sent (Simulated)',
-      description: `An invitation email has been sent to ${values.supervisorEmail}.`,
-    });
+    await new Promise(resolve => setTimeout(resolve, 1000)); 
     
     setIsLoading(false);
     toast({
       title: 'Internship Details Updated!',
       description: 'Your internship information has been saved.',
       variant: "default",
+    });
+    toast({
+      title: 'Supervisor Invitation Sent (Simulated)',
+      description: `An invitation email has been sent to ${values.supervisorEmail} to join InternshipTrack.`,
+      duration: 5000,
     });
     onSuccess?.(values);
   }
@@ -142,6 +153,7 @@ export default function InternshipDetailsForm({ defaultValues, onSuccess }: Inte
                 <FormControl>
                   <Input type="email" placeholder="supervisor@company.com" {...field} className="rounded-lg" />
                 </FormControl>
+                <FormDescription>An invitation will be sent to this email (simulated).</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -222,6 +234,7 @@ export default function InternshipDetailsForm({ defaultValues, onSuccess }: Inte
                 <FormControl>
                   <Input placeholder="e.g., Remote, New York Office, Hybrid" {...field} className="rounded-lg" />
                 </FormControl>
+                <FormDescription>Specify if on-site, remote, or hybrid, and city if applicable.</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -240,5 +253,3 @@ export default function InternshipDetailsForm({ defaultValues, onSuccess }: Inte
     </Form>
   );
 }
-
-    

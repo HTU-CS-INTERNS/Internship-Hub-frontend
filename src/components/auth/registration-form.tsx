@@ -101,7 +101,7 @@ export function RegistrationForm() {
     
     toast({ 
       title: 'School ID Verified!', 
-      description: `Welcome, ${studentData.name}! A (simulated) verification link has been sent to ${values.email}.`,
+      description: `Welcome, ${studentData.name}! A (simulated) verification link has been sent to ${values.email}. Please proceed to set your password.`,
       variant: "default"
     });
     // In a real app, user would click a link in an email. Here we simulate that by moving to step 2.
@@ -119,8 +119,9 @@ export function RegistrationForm() {
       localStorage.setItem('userRole', 'STUDENT');
       localStorage.setItem('userName', userDataFromDB.name);
       localStorage.setItem('userEmail', verifiedEmail);
-      localStorage.setItem('userFaculty', FACULTIES.find(f => f.id === userDataFromDB.facultyId)?.name || 'N/A');
-      localStorage.setItem('userDepartment', DEPARTMENTS.find(d => d.id === userDataFromDB.departmentId)?.name || 'N/A');
+      localStorage.setItem('userFacultyId', userDataFromDB.facultyId); // Store ID
+      localStorage.setItem('userDepartmentId', userDataFromDB.departmentId); // Store ID
+      localStorage.removeItem('onboardingComplete'); // Ensure onboarding starts on profile page
     }
     
     toast({
@@ -129,7 +130,7 @@ export function RegistrationForm() {
       variant: "default",
     });
     setIsLoading(false);
-    router.push('/profile'); // Redirect to profile setup
+    router.push('/profile'); // Redirect to profile page which will handle onboarding steps
   }
 
   const facultyName = userDataFromDB ? FACULTIES.find(f => f.id === userDataFromDB.facultyId)?.name : 'N/A';

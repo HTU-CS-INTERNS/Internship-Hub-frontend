@@ -2,15 +2,16 @@
 'use client';
 import * as React from 'react';
 import PageHeader from '@/components/shared/page-header';
-import { User as UserIcon, Briefcase, BookOpen, Edit3, GraduationCap, Building } from 'lucide-react';
+import { User as UserIcon, Briefcase, BookOpen, Edit3, GraduationCap, Building, Phone as PhoneIcon } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import ProfileSetupForm from '@/components/forms/profile-setup-form';
 import InternshipDetailsForm from '@/components/forms/internship-details-form';
-import type { UserRole } from '@/types';
+import type { UserRole, InternshipDetails } from '@/types';
 import { USER_ROLES, FACULTIES, DEPARTMENTS } from '@/lib/constants';
+import { useRouter } from 'next/navigation'; // Import useRouter
 
 const getInitials = (name: string) => {
     if (!name) return 'U';
@@ -18,25 +19,29 @@ const getInitials = (name: string) => {
 };
 
 export default function ProfilePage() {
+  const router = useRouter(); // Initialize useRouter
   const [userRole, setUserRole] = React.useState<UserRole | null>(null);
   const [isEditingProfile, setIsEditingProfile] = React.useState(false);
   const [isEditingInternship, setIsEditingInternship] = React.useState(false);
   
-  // User data state, to be populated from localStorage or API
   const [userData, setUserData] = React.useState({
     name: 'User',
     email: 'user@example.com',
     avatarUrl: '',
-    faculty: '',
-    department: '',
+    facultyId: '',
+    facultyName: 'Not Set',
+    departmentId: '',
+    departmentName: 'Not Set',
+    contactNumber: '',
     internship: {
       companyName: '',
+      companyAddress: '',
       supervisorName: '',
       supervisorEmail: '',
       startDate: '',
       endDate: '',
       location: ''
-    }
+    } as InternshipDetails & { companyAddress?: string }
   });
 
   React.useEffect(() => {
@@ -45,48 +50,76 @@ export default function ProfilePage() {
 
     const storedName = typeof window !== "undefined" ? localStorage.getItem('userName') || 'New User' : 'New User';
     const storedEmail = typeof window !== "undefined" ? localStorage.getItem('userEmail') || 'email@example.com' : 'email@example.com';
-    // In a real app, faculty/department would be fetched or stored more robustly
-    const storedFaculty = typeof window !== "undefined" ? localStorage.getItem('userFaculty') || 'Not Set' : 'Not Set';
-    const storedDepartment = typeof window !== "undefined" ? localStorage.getItem('userDepartment') || 'Not Set' : 'Not Set';
+    const storedFacultyId = typeof window !== "undefined" ? localStorage.getItem('userFacultyId') || '' : '';
+    const storedDepartmentId = typeof window !== "undefined" ? localStorage.getItem('userDepartmentId') || '' : '';
+    const storedContactNumber = typeof window !== "undefined" ? localStorage.getItem('userContactNumber') || '' : '';
 
+    // Load internship details from localStorage (simulated)
+    const storedInternshipString = typeof window !== "undefined" ? localStorage.getItem('userInternshipDetails') : null;
+    let storedInternship = userData.internship;
+    if (storedInternshipString) {
+        try {
+            storedInternship = JSON.parse(storedInternshipString);
+        } catch (e) { console.error("Error parsing internship details from localStorage", e); }
+    }
+    
     setUserData(prev => ({
-        ...prev, // Keep internship details if already set from a previous edit this session
+        ...prev,
         name: storedName,
         email: storedEmail,
         avatarUrl: `https://placehold.co/150x150.png?text=${getInitials(storedName)}`,
-        faculty: storedFaculty,
-        department: storedDepartment,
+        facultyId: storedFacultyId,
+        facultyName: FACULTIES.find(f => f.id === storedFacultyId)?.name || 'Not Set',
+        departmentId: storedDepartmentId,
+        departmentName: DEPARTMENTS.find(d => d.id === storedDepartmentId && d.facultyId === storedFacultyId)?.name || 'Not Set',
+        contactNumber: storedContactNumber,
+        internship: storedInternship,
     }));
     
-    // If it's the first time after registration, forms might be open by default
-    // For this example, we assume they are closed initially.
-    // You might want to set setIsEditingProfile(true) if faculty/department is 'Not Set'
-    if (storedFaculty === 'Not Set' || storedDepartment === 'Not Set') {
-        setIsEditingProfile(true);
+    const onboardingComplete = typeof window !== "undefined" ? localStorage.getItem('onboardingComplete') === 'true' : false;
+
+    if (!onboardingComplete) {
+        if (!storedFacultyId || !storedDepartmentId || storedFacultyId === 'Not Set' || storedDepartmentId === 'Not Set' || !storedName || !storedEmail ) {
+            setIsEditingProfile(true);
+        } else if (!storedInternship.companyName) { // If profile is good, check internship
+             setIsEditingProfile(false); // Ensure profile form is closed
+             setIsEditingInternship(true);
+        }
     }
 
   }, []);
   
   const handleProfileSaveSuccess = (updatedProfileData: any) => {
+    const faculty = FACULTIES.find(f => f.id === updatedProfileData.facultyId);
+    const department = DEPARTMENTS.find(d => d.id === updatedProfileData.departmentId && d.facultyId === updatedProfileData.facultyId);
+
     setUserData(prev => ({
       ...prev,
       name: updatedProfileData.name,
       email: updatedProfileData.email,
-      faculty: FACULTIES.find(f => f.id === updatedProfileData.facultyId)?.name || prev.faculty,
-      department: DEPARTMENTS.find(d => d.id === updatedProfileData.departmentId)?.name || prev.department,
+      facultyId: faculty?.id || '',
+      facultyName: faculty?.name || 'Not Set',
+      departmentId: department?.id || '',
+      departmentName: department?.name || 'Not Set',
+      contactNumber: updatedProfileData.contactNumber || '',
       avatarUrl: `https://placehold.co/150x150.png?text=${getInitials(updatedProfileData.name)}`,
     }));
-    // Persist to localStorage (simulating backend)
+    
     if (typeof window !== "undefined") {
         localStorage.setItem('userName', updatedProfileData.name);
         localStorage.setItem('userEmail', updatedProfileData.email);
-        localStorage.setItem('userFaculty', FACULTIES.find(f => f.id === updatedProfileData.facultyId)?.name || '');
-        localStorage.setItem('userDepartment', DEPARTMENTS.find(d => d.id === updatedProfileData.departmentId)?.name || '');
+        localStorage.setItem('userFacultyId', faculty?.id || '');
+        localStorage.setItem('userDepartmentId', department?.id || '');
+        localStorage.setItem('userContactNumber', updatedProfileData.contactNumber || '');
     }
     setIsEditingProfile(false);
+    // If internship details are not filled, open that form next
+    if (!userData.internship.companyName) {
+        setIsEditingInternship(true);
+    }
   };
 
-  const handleInternshipSaveSuccess = (updatedInternshipData: any) => {
+  const handleInternshipSaveSuccess = (updatedInternshipData: InternshipDetails & { companyAddress?: string }) => {
     setUserData(prev => ({
         ...prev,
         internship: {
@@ -95,8 +128,12 @@ export default function ProfilePage() {
             endDate: updatedInternshipData.endDate instanceof Date ? updatedInternshipData.endDate.toISOString().split('T')[0] : updatedInternshipData.endDate,
         }
     }));
-    // TODO: Persist internship details to localStorage or backend
+    if (typeof window !== "undefined") {
+        localStorage.setItem('userInternshipDetails', JSON.stringify(updatedInternshipData));
+        localStorage.setItem('onboardingComplete', 'true');
+    }
     setIsEditingInternship(false);
+    router.push('/dashboard'); // Redirect to dashboard after onboarding is complete
   };
 
 
@@ -122,9 +159,14 @@ export default function ProfilePage() {
               {userRole && <p className="text-sm text-primary font-medium">{USER_ROLES[userRole]}</p>}
             </div>
           </div>
-          {!isEditingInternship && ( // Hide profile edit button if internship edit is active
-            <Button variant="outline" onClick={() => setIsEditingProfile(!isEditingProfile)} className="bg-card hover:bg-accent hover:text-accent-foreground rounded-lg">
-              <Edit3 className="mr-2 h-4 w-4" /> {isEditingProfile ? 'Cancel Profile Edit' : 'Edit Profile'}
+          {!isEditingInternship && !isEditingProfile && (
+            <Button variant="outline" onClick={() => setIsEditingProfile(true)} className="bg-card hover:bg-accent hover:text-accent-foreground rounded-lg">
+              <Edit3 className="mr-2 h-4 w-4" /> Edit Profile
+            </Button>
+          )}
+          {isEditingProfile && (
+             <Button variant="outline" onClick={() => { setIsEditingProfile(false); if (!userData.internship.companyName && localStorage.getItem('onboardingComplete') !== 'true') setIsEditingInternship(true);}} className="bg-card hover:bg-accent hover:text-accent-foreground rounded-lg">
+              Cancel Profile Edit
             </Button>
           )}
         </CardHeader>
@@ -134,8 +176,9 @@ export default function ProfilePage() {
               defaultValues={{ 
                 name: userData.name, 
                 email: userData.email, 
-                facultyId: FACULTIES.find(f => f.name === userData.faculty)?.id || '',
-                departmentId: DEPARTMENTS.find(d => d.name === userData.department)?.id || '',
+                facultyId: userData.facultyId,
+                departmentId: userData.departmentId,
+                contactNumber: userData.contactNumber,
               }} 
               onSuccess={handleProfileSaveSuccess} 
             />
@@ -145,14 +188,21 @@ export default function ProfilePage() {
                 <GraduationCap className="h-5 w-5 text-primary"/>
                 <div>
                     <p className="font-medium text-foreground">Faculty:</p>
-                    <p className="text-muted-foreground">{userData.faculty || 'Not set'}</p>
+                    <p className="text-muted-foreground">{userData.facultyName}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <Building className="h-5 w-5 text-primary"/>
                 <div>
                     <p className="font-medium text-foreground">Department:</p>
-                    <p className="text-muted-foreground">{userData.department || 'Not set'}</p>
+                    <p className="text-muted-foreground">{userData.departmentName}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <PhoneIcon className="h-5 w-5 text-primary"/>
+                <div>
+                    <p className="font-medium text-foreground">Contact Number:</p>
+                    <p className="text-muted-foreground">{userData.contactNumber || 'Not set'}</p>
                 </div>
               </div>
             </div>
@@ -169,9 +219,14 @@ export default function ProfilePage() {
                 <Briefcase className="h-6 w-6 text-primary" />
                 <CardTitle className="text-xl font-headline">Internship Details</CardTitle>
               </div>
-               {!isEditingProfile && ( // Hide internship edit button if profile edit is active
-                <Button variant="outline" onClick={() => setIsEditingInternship(!isEditingInternship)} className="bg-card hover:bg-accent hover:text-accent-foreground rounded-lg">
-                    <Edit3 className="mr-2 h-4 w-4" /> {isEditingInternship ? 'Cancel Internship Edit' : 'Edit Internship'}
+               {!isEditingProfile && !isEditingInternship && (
+                <Button variant="outline" onClick={() => setIsEditingInternship(true)} className="bg-card hover:bg-accent hover:text-accent-foreground rounded-lg">
+                    <Edit3 className="mr-2 h-4 w-4" /> Edit Internship
+                </Button>
+               )}
+               {isEditingInternship && (
+                <Button variant="outline" onClick={() => setIsEditingInternship(false)} className="bg-card hover:bg-accent hover:text-accent-foreground rounded-lg">
+                    Cancel Internship Edit
                 </Button>
                )}
             </CardHeader>
@@ -186,6 +241,10 @@ export default function ProfilePage() {
                   <div>
                     <p className="font-medium text-foreground">Company Name:</p>
                     <p className="text-muted-foreground">{userData.internship.companyName || 'Not set'}</p>
+                  </div>
+                   <div>
+                    <p className="font-medium text-foreground">Company Address:</p>
+                    <p className="text-muted-foreground">{userData.internship.companyAddress || 'Not set'}</p>
                   </div>
                   <div>
                     <p className="font-medium text-foreground">Supervisor Name:</p>
@@ -204,7 +263,7 @@ export default function ProfilePage() {
                     <p className="text-muted-foreground">{userData.internship.endDate ? new Date(userData.internship.endDate).toLocaleDateString() : 'Not set'}</p>
                   </div>
                   <div className="md:col-span-2">
-                    <p className="font-medium text-foreground">Location:</p>
+                    <p className="font-medium text-foreground">Location/Work Arrangement:</p>
                     <p className="text-muted-foreground">{userData.internship.location || 'Not set'}</p>
                   </div>
                 </div>
@@ -213,7 +272,6 @@ export default function ProfilePage() {
           </Card>
         </>
       )}
-      {/* Add sections for LECTURER, HOD, etc. based on userRole if needed, similar to STUDENT */}
       {userRole !== 'STUDENT' && userRole !== null && (
          <Card className="shadow-xl rounded-xl">
           <CardHeader className="p-6 border-b">
@@ -228,11 +286,10 @@ export default function ProfilePage() {
               (e.g., For Lecturers: courses supervised, research interests. For HODs: departmental responsibilities.)
               This section is currently a placeholder.
             </p>
+             {isEditingProfile && <p className="mt-4 text-sm text-destructive">Please save your profile information first to proceed.</p>}
           </CardContent>
         </Card>
       )}
     </div>
   );
 }
-
-    

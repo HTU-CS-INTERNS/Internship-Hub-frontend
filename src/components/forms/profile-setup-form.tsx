@@ -27,7 +27,7 @@ const profileSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
   facultyId: z.string().min(1, { message: 'Please select a faculty.' }),
   departmentId: z.string().min(1, { message: 'Please select a department.' }),
-  contactNumber: z.string().optional(), // Added contact number
+  contactNumber: z.string().regex(/^(\+\d{1,3}[- ]?)?\d{10,15}$/, { message: "Invalid contact number format."}).optional().or(z.literal('')),
 });
 
 export type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -64,16 +64,29 @@ export default function ProfileSetupForm({ defaultValues, onSuccess }: ProfileSe
         form.setValue('departmentId', ''); 
       }
     } else {
-      setAvailableDepartments(DEPARTMENTS); // Show all if no faculty selected, or handle as needed
+      setAvailableDepartments(DEPARTMENTS); 
     }
   }, [selectedFacultyId, form]);
 
-  // Ensure departments are loaded based on default faculty on initial render
   React.useEffect(() => {
     if (defaultValues?.facultyId) {
       setAvailableDepartments(DEPARTMENTS.filter(d => d.facultyId === defaultValues.facultyId));
+       // Ensure default department is valid for the default faculty
+      if (defaultValues.departmentId && !DEPARTMENTS.find(d => d.id === defaultValues.departmentId && d.facultyId === defaultValues.facultyId)) {
+        form.setValue('departmentId', '');
+      } else {
+        form.setValue('departmentId', defaultValues.departmentId || '');
+      }
     }
-  }, [defaultValues?.facultyId]);
+     // Reset form with potentially new defaultValues when component re-renders with them
+    form.reset({
+      name: defaultValues?.name || '',
+      email: defaultValues?.email || '',
+      facultyId: defaultValues?.facultyId || '',
+      departmentId: (defaultValues?.facultyId && DEPARTMENTS.find(d => d.id === defaultValues.departmentId && d.facultyId === defaultValues.facultyId)) ? defaultValues.departmentId : '',
+      contactNumber: defaultValues?.contactNumber || '',
+    });
+  }, [defaultValues, form]);
 
 
   async function onSubmit(values: ProfileFormValues) {
@@ -86,7 +99,7 @@ export default function ProfileSetupForm({ defaultValues, onSuccess }: ProfileSe
       description: 'Your profile information has been successfully saved.',
       variant: "default",
     });
-    onSuccess?.(values); // Pass the form values back to the parent
+    onSuccess?.(values); 
   }
 
   return (
@@ -123,10 +136,11 @@ export default function ProfileSetupForm({ defaultValues, onSuccess }: ProfileSe
           name="contactNumber"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Contact Number (Optional)</FormLabel>
+              <FormLabel>Contact Number</FormLabel>
               <FormControl>
                 <Input placeholder="e.g., +1234567890" {...field} className="rounded-lg" />
               </FormControl>
+               <FormDescription>Optional. Used for important communication.</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -137,7 +151,7 @@ export default function ProfileSetupForm({ defaultValues, onSuccess }: ProfileSe
           render={({ field }) => (
             <FormItem>
               <FormLabel>Faculty</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger className="rounded-lg">
                     <SelectValue placeholder="Select your faculty" />
@@ -194,5 +208,3 @@ export default function ProfileSetupForm({ defaultValues, onSuccess }: ProfileSe
     </Form>
   );
 }
-
-    
