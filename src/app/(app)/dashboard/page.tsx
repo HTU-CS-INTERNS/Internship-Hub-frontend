@@ -7,7 +7,7 @@ import {
     LayoutDashboard, User, Briefcase, Building, CalendarCheck, FileText as FileTextLucide, MapPinIcon, StarIcon, ClockIcon, AlertOctagonIcon, UsersIcon, SchoolIcon, CheckCircle2, CircleDot, PlusCircle, CalendarDays, UploadCloud, Edit, MessageSquarePlus, BarChart3, SettingsIcon, UserCheck, FileUp, Users2, Activity, CheckSquare, Contact
 } from 'lucide-react';
 import type { UserRole } from '@/types';
-import { USER_ROLES, FACULTIES, DEPARTMENTS } from '@/lib/constants';
+import { USER_ROLES, FACULTIES, DEPARTMENTS, DUMMY_STUDENTS_DATA } from '@/lib/constants';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -558,21 +558,25 @@ const SupervisorDashboard: React.FC<{ userName: string }> = ({ userName }) => {
 }
 
 const HODDashboard: React.FC<{ userName: string }> = ({ userName }) => {
-    const [selectedFaculty, setSelectedFaculty] = React.useState<string>('');
-    const [selectedDepartment, setSelectedDepartment] = React.useState<string>('');
-    
-    const hodFacultyId = FACULTIES[0]?.id || ''; 
-    const hodDepartmentId = DEPARTMENTS.find(d => d.facultyId === hodFacultyId)?.id || ''; 
+    // Simulate HOD's scope: first faculty and first department in that faculty
+    const hodFacultyId = FACULTIES.length > 0 ? FACULTIES[0].id : '';
+    const hodDepartment = DEPARTMENTS.find(d => d.facultyId === hodFacultyId);
+    const hodDepartmentId = hodDepartment ? hodDepartment.id : '';
+    const hodDepartmentName = hodDepartment ? hodDepartment.name : 'N/A';
 
-    React.useEffect(() => {
-        setSelectedFaculty(hodFacultyId);
-        setSelectedDepartment(hodDepartmentId);
-    }, [hodFacultyId, hodDepartmentId]);
-    
-    const departmentStudents = [ 
-        { id: 'stu1', name: 'Alice Wonderland', faculty: FACULTIES.find(f => f.id === hodFacultyId)?.name, department: DEPARTMENTS.find(d=>d.id === hodDepartmentId)?.name, avatar: 'https://placehold.co/100x100.png', dataAiHint: 'person portrait', compliance: '95%', issues: 0 },
-        { id: 'stu4', name: 'Diana Prince', faculty: FACULTIES.find(f => f.id === hodFacultyId)?.name, department: DEPARTMENTS.find(d=>d.id === hodDepartmentId)?.name, avatar: 'https://placehold.co/100x100.png', dataAiHint: 'person portrait', compliance: '80%', issues: 2 },
-    ];
+    // Filter DUMMY_STUDENTS_DATA to get students in the HOD's department
+    // This assumes DUMMY_STUDENTS_DATA includes facultyId and departmentId or similar linkage.
+    // For now, we'll use a simplified filter if student data has department name.
+    // If not, this will be a placeholder.
+    const departmentStudents = DUMMY_STUDENTS_DATA.filter(student => 
+        student.department === hodDepartmentName 
+        // In a real app, you'd filter by student.departmentId === hodDepartmentId
+    ).map(student => ({ // Augment with some dummy compliance data
+        ...student,
+        compliance: `${Math.floor(Math.random() * 30) + 70}%`, // Random 70-100%
+        issues: Math.random() > 0.7 ? Math.floor(Math.random() * 3) : 0 // Random 0-2 issues
+    }));
+
 
     return (
         <>
@@ -580,7 +584,7 @@ const HODDashboard: React.FC<{ userName: string }> = ({ userName }) => {
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
                     <div>
                         <h2 className="text-2xl font-bold mb-1">Welcome, {userName.split(' ')[0]}!</h2>
-                        <p className="opacity-90 text-sm">Departmental Internship Overview: {DEPARTMENTS.find(d=>d.id === hodDepartmentId)?.name || 'N/A'}</p>
+                        <p className="opacity-90 text-sm">Departmental Internship Overview: {hodDepartmentName}</p>
                     </div>
                     <Link href="/analytics" passHref>
                         <Button className="mt-3 md:mt-0 bg-primary-foreground text-primary hover:bg-primary-foreground/90 font-medium transition shrink-0 rounded-lg">
@@ -592,12 +596,12 @@ const HODDashboard: React.FC<{ userName: string }> = ({ userName }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <DashboardStatsCard title="Total Interns (Dept.)" value={departmentStudents.length} icon={UsersIcon} iconBgColor="bg-indigo-100 dark:bg-indigo-900" iconColor="text-indigo-500 dark:text-indigo-300" actionLink="/analytics" actionLabel="View Student List"/>
                 <DashboardStatsCard title="Compliance Rate (Dept.)" value="88%" icon={CheckCircle2} detail="Avg. report & check-in" iconBgColor="bg-teal-100 dark:bg-teal-900" iconColor="text-teal-500 dark:text-teal-300" actionLink="/analytics" actionLabel="Detailed Compliance Report"/>
-                <DashboardStatsCard title="Students with Issues" value="1" icon={AlertOctagonIcon} detail="Needs attention" iconBgColor="bg-amber-100 dark:bg-amber-900" iconColor="text-amber-500 dark:text-amber-300" actionLink="/analytics" actionLabel="View Issue Log"/>
+                <DashboardStatsCard title="Students with Issues" value={departmentStudents.filter(s=>s.issues > 0).length} icon={AlertOctagonIcon} detail="Needs attention" iconBgColor="bg-amber-100 dark:bg-amber-900" iconColor="text-amber-500 dark:text-amber-300" actionLink="/analytics" actionLabel="View Issue Log"/>
             </div>
             
             <Card className="shadow-lg rounded-xl mt-6">
                 <CardHeader>
-                    <CardTitle className="font-headline text-lg">{DEPARTMENTS.find(d=>d.id === hodDepartmentId)?.name || 'Department'} Student Overview</CardTitle>
+                    <CardTitle className="font-headline text-lg">{hodDepartmentName} Student Overview</CardTitle>
                     <CardDescription>Summary of student progress within your department.</CardDescription>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -617,16 +621,17 @@ const HODDashboard: React.FC<{ userName: string }> = ({ userName }) => {
                                     <TableCell>
                                         <div className="flex items-center gap-3">
                                             <Avatar className="h-9 w-9">
-                                                <AvatarImage src={student.avatar} alt={student.name} data-ai-hint={student.dataAiHint} />
+                                                <AvatarImage src={student.avatarUrl} alt={student.name} data-ai-hint="person student" />
                                                 <AvatarFallback>{getInitials(student.name)}</AvatarFallback>
                                             </Avatar>
                                             <p className="font-medium">{student.name}</p>
                                         </div>
                                     </TableCell>
-                                    <TableCell>{student.faculty}</TableCell>
+                                    <TableCell>{FACULTIES.find(f => f.id === hodFacultyId)?.name || 'N/A'}</TableCell>
                                     <TableCell><Progress value={parseInt(student.compliance)} className="h-2" /> <span className="text-xs">{student.compliance}</span></TableCell>
                                     <TableCell className="text-center"><Badge variant={student.issues > 0 ? "destructive" : "default"}>{student.issues}</Badge></TableCell>
                                     <TableCell className="text-right">
+                                        {/* This link needs to be dynamic based on how HODs view student details. For now, points to general analytics. */}
                                         <Link href={`/analytics?studentId=${student.id}`} passHref> 
                                             <Button variant="ghost" size="sm">View Details</Button>
                                         </Link>
@@ -637,6 +642,11 @@ const HODDashboard: React.FC<{ userName: string }> = ({ userName }) => {
                     </Table>
                 </CardContent>
                 <CardFooter className="p-4 border-t">
+                     <Link href="/assignments" className="w-full sm:w-auto mr-auto">
+                        <Button variant="outline" className="w-full sm:w-auto rounded-lg">
+                            Manage Assignments
+                        </Button>
+                    </Link>
                      <Link href="/analytics" className="w-full sm:w-auto">
                         <Button className="w-full sm:w-auto bg-accent hover:bg-accent/90 text-accent-foreground rounded-lg">
                             <BarChart3 className="mr-2 h-4 w-4"/> Go to Department Analytics
