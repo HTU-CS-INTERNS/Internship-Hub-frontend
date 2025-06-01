@@ -2,7 +2,7 @@
 'use client';
 import * as React from 'react';
 import PageHeader from '@/components/shared/page-header';
-import { FileText, PlusCircle, Filter, Eye } from 'lucide-react'; // Added Eye for mobile view button
+import { FileText, PlusCircle, Filter, Eye, Archive } from 'lucide-react'; // Added Eye for mobile view button, Archive for compile
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import Link from 'next/link';
@@ -11,7 +11,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { DailyReport } from '@/types';
 import { cn } from '@/lib/utils';
-import { useIsMobile } from '@/hooks/use-mobile'; // Import useIsMobile
+import { useIsMobile } from '@/hooks/use-mobile'; 
+import { useToast } from '@/hooks/use-toast';
 
 const DUMMY_REPORTS: DailyReport[] = [
   { id: 'report1', date: '2024-07-26', description: 'Weekly summary of authentication module progress. Focused on JWT implementation and secure endpoint testing.', outcomes: 'Module 70% complete.', learningObjectives: 'Project management and reporting.', studentId: 'stu1', status: 'APPROVED' },
@@ -36,6 +37,7 @@ export default function ReportsPage() {
     REJECTED: true,
   });
   const isMobile = useIsMobile();
+  const { toast } = useToast();
 
   React.useEffect(() => {
     setFilteredReports(DUMMY_REPORTS.filter(report => statusFilter[report.status]));
@@ -43,6 +45,16 @@ export default function ReportsPage() {
   
   const handleStatusFilterChange = (status: DailyReport['status']) => {
     setStatusFilter(prev => ({ ...prev, [status]: !prev[status] }));
+  };
+
+  const handleCompileReports = () => {
+    toast({
+      title: "Compiling Reports...",
+      description: "Your reports are being compiled. The consolidated file will be available for download shortly (simulated).",
+      duration: 5000, 
+    });
+    // In a real app, this would trigger an API call to a backend service
+    // that generates the compiled file.
   };
 
   const ReportCardMobile: React.FC<{ report: DailyReport }> = ({ report }) => (
@@ -101,6 +113,13 @@ export default function ReportsPage() {
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
+            <Button 
+                variant="outline" 
+                className="bg-card hover:bg-accent hover:text-accent-foreground w-full sm:w-auto rounded-lg" 
+                onClick={handleCompileReports}
+            >
+                <Archive className="mr-2 h-4 w-4" /> Compile All Reports
+            </Button>
             <Link href="/reports/new" passHref className="w-full sm:w-auto">
               <Button className="bg-primary hover:bg-primary/90 text-primary-foreground w-full rounded-lg">
                 <PlusCircle className="mr-2 h-4 w-4" /> Submit New Report
@@ -169,4 +188,3 @@ export default function ReportsPage() {
     </div>
   );
 }
-
