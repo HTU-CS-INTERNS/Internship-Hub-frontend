@@ -118,7 +118,7 @@ export function RegistrationForm() {
 
   async function handleStep2Submit(values: RegistrationStep2Values) {
     setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 700)); // Simulate OTP check
+    await new Promise(resolve => setTimeout(resolve, 700)); 
     
     if (values.otp !== SIMULATED_OTP) {
       toast({
@@ -147,7 +147,7 @@ export function RegistrationForm() {
     if (typeof window !== "undefined" && userDataFromDB) {
       localStorage.setItem('userRole', 'STUDENT');
       localStorage.setItem('userName', userDataFromDB.name);
-      localStorage.setItem('userEmail', verifiedSchoolEmail); // Use the verified school email
+      localStorage.setItem('userEmail', verifiedSchoolEmail); 
       localStorage.setItem('userFacultyId', userDataFromDB.facultyId);
       localStorage.setItem('userDepartmentId', userDataFromDB.departmentId);
       localStorage.removeItem('onboardingComplete');
@@ -167,149 +167,154 @@ export function RegistrationForm() {
 
   if (step === 1) {
     return (
-      <Form {...step1Form}>
-        <form onSubmit={step1Form.handleSubmit(handleStep1Submit)} className="space-y-6">
-          <FormField
-            control={step1Form.control}
-            name="schoolId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>School ID / Matriculation Number</FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter your unique school ID" {...field} className="rounded-lg border-input"/>
-                </FormControl>
-                <FormDescription>This will be used to verify your student status.</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={step1Form.control}
-            name="schoolEmail"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>School Email Address</FormLabel>
-                <FormControl>
-                  <Input type="email" placeholder="your.id@school.domain" {...field} className="rounded-lg border-input"/>
-                </FormControl>
-                <FormDescription>An OTP will be sent to this school email address.</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-base py-3 rounded-lg" disabled={isLoading}>
-            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Verify & Send OTP"}
-          </Button>
-        </form>
-      </Form>
+      <div key="registration-step-1">
+        <Form {...step1Form}>
+          <form onSubmit={step1Form.handleSubmit(handleStep1Submit)} className="space-y-6">
+            <FormField
+              control={step1Form.control}
+              name="schoolId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>School ID / Matriculation Number</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter your unique school ID" {...field} className="rounded-lg border-input"/>
+                  </FormControl>
+                  <FormDescription>This will be used to verify your student status.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={step1Form.control}
+              name="schoolEmail"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>School Email Address</FormLabel>
+                  <FormControl>
+                    <Input type="email" placeholder="your.id@school.domain" {...field} className="rounded-lg border-input"/>
+                  </FormControl>
+                  <FormDescription>An OTP will be sent to this school email address.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-base py-3 rounded-lg" disabled={isLoading}>
+              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Verify & Send OTP"}
+            </Button>
+          </form>
+        </Form>
+      </div>
     );
   }
 
   if (step === 2 && userDataFromDB) {
     return (
-      <Form {...step2Form}>
-        <Card className="bg-muted/50 border-input shadow-inner mb-6">
-            <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center text-primary">
-                    <CheckCircle className="mr-2 h-5 w-5"/> Identity Partially Verified
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm text-foreground space-y-1">
-                <p>An OTP has been sent to: <strong>{verifiedSchoolEmail}</strong></p>
-                <p className="text-xs text-muted-foreground">Please enter the 6-digit code below to confirm your identity.</p>
-                <p className="text-xs text-muted-foreground mt-2">If this is you, please proceed:</p>
-                <ul className="text-xs list-disc list-inside pl-2">
-                    <li><strong>Name:</strong> {userDataFromDB.name}</li>
-                    <li><strong>Faculty:</strong> {facultyName}</li>
-                    <li><strong>Department:</strong> {departmentName}</li>
-                </ul>
-            </CardContent>
-        </Card>
-        <form onSubmit={step2Form.handleSubmit(handleStep2Submit)} className="space-y-6">
-          <FormField
-            control={step2Form.control}
-            name="otp"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Enter OTP Code</FormLabel>
-                <FormControl>
-                  <Input 
-                    placeholder="Enter 6-digit OTP" 
-                    {...field} 
-                    className="rounded-lg border-input text-center tracking-[0.5em]" 
-                    maxLength={6}
-                  />
-                </FormControl>
-                <FormDescription>Check your school email ({verifiedSchoolEmail}) for the code.</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-base py-3 rounded-lg" disabled={isLoading}>
-            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Verify OTP & Continue"}
-          </Button>
-           <Button type="button" variant="link" onClick={() => setStep(1)} className="w-full text-sm" disabled={isLoading}>
-            Back to School ID/Email Entry
-          </Button>
-        </form>
-      </Form>
+      <div key="registration-step-2">
+        <Form {...step2Form}>
+          <Card className="bg-muted/50 border-input shadow-inner mb-6">
+              <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center text-primary">
+                      <CheckCircle className="mr-2 h-5 w-5"/> Identity Partially Verified
+                  </CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm text-foreground space-y-1">
+                  <p>An OTP has been sent to: <strong>{verifiedSchoolEmail}</strong></p>
+                  <p className="text-xs text-muted-foreground">Please enter the 6-digit code below to confirm your identity.</p>
+                  <p className="text-xs text-muted-foreground mt-2">If this is you, please proceed:</p>
+                  <ul className="text-xs list-disc list-inside pl-2">
+                      <li><strong>Name:</strong> {userDataFromDB.name}</li>
+                      <li><strong>Faculty:</strong> {facultyName}</li>
+                      <li><strong>Department:</strong> {departmentName}</li>
+                  </ul>
+              </CardContent>
+          </Card>
+          <form onSubmit={step2Form.handleSubmit(handleStep2Submit)} className="space-y-6">
+            <FormField
+              control={step2Form.control}
+              name="otp"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Enter OTP Code</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="Enter 6-digit OTP" 
+                      {...field} 
+                      className="rounded-lg border-input text-center tracking-[0.5em]" 
+                      maxLength={6}
+                    />
+                  </FormControl>
+                  <FormDescription>Check your school email ({verifiedSchoolEmail}) for the code.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-base py-3 rounded-lg" disabled={isLoading}>
+              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Verify OTP & Continue"}
+            </Button>
+            <Button type="button" variant="link" onClick={() => setStep(1)} className="w-full text-sm" disabled={isLoading}>
+              Back to School ID/Email Entry
+            </Button>
+          </form>
+        </Form>
+      </div>
     );
   }
 
   if (step === 3 && userDataFromDB) {
     return (
-      <Form {...step3Form}>
-         <Card className="bg-green-500/10 border-green-500/30 shadow-inner mb-6">
-            <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center text-green-700 dark:text-green-300">
-                    <KeyRound className="mr-2 h-5 w-5"/> Set Your Password
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm text-green-700/90 dark:text-green-300/90 space-y-1">
-                <p>Welcome, <strong>{userDataFromDB.name}</strong>! Your email <strong>{verifiedSchoolEmail}</strong> and school identity have been verified.</p>
-                <p>Please create a secure password for your InternshipTrack account.</p>
-            </CardContent>
-        </Card>
-        <form onSubmit={step3Form.handleSubmit(handleStep3Submit)} className="space-y-6">
-          <FormField
-            control={step3Form.control}
-            name="password"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Password</FormLabel>
-                <FormControl>
-                  <Input type="password" placeholder="Choose a strong password" {...field} className="rounded-lg border-input"/>
-                </FormControl>
-                <FormDescription>Min. 8 characters, incl. uppercase, lowercase, number, and special character.</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={step3Form.control}
-            name="confirmPassword"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Confirm Password</FormLabel>
-                <FormControl>
-                  <Input type="password" placeholder="Re-enter your password" {...field} className="rounded-lg border-input"/>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-base py-3 rounded-lg" disabled={isLoading}>
-            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Create Account & Proceed to Profile"}
-          </Button>
-        </form>
-      </Form>
+      <div key="registration-step-3">
+        <Form {...step3Form}>
+          <Card className="bg-green-500/10 border-green-500/30 shadow-inner mb-6">
+              <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center text-green-700 dark:text-green-300">
+                      <KeyRound className="mr-2 h-5 w-5"/> Set Your Password
+                  </CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm text-green-700/90 dark:text-green-300/90 space-y-1">
+                  <p>Welcome, <strong>{userDataFromDB.name}</strong>! Your email <strong>{verifiedSchoolEmail}</strong> and school identity have been verified.</p>
+                  <p>Please create a secure password for your InternshipTrack account.</p>
+              </CardContent>
+          </Card>
+          <form onSubmit={step3Form.handleSubmit(handleStep3Submit)} className="space-y-6">
+            <FormField
+              control={step3Form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Password</FormLabel>
+                  <FormControl>
+                    <Input type="password" placeholder="Choose a strong password" {...field} className="rounded-lg border-input"/>
+                  </FormControl>
+                  <FormDescription>Min. 8 characters, incl. uppercase, lowercase, number, and special character.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={step3Form.control}
+              name="confirmPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Confirm Password</FormLabel>
+                  <FormControl>
+                    <Input type="password" placeholder="Re-enter your password" {...field} className="rounded-lg border-input"/>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-base py-3 rounded-lg" disabled={isLoading}>
+              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Create Account & Proceed to Profile"}
+            </Button>
+          </form>
+        </Form>
+      </div>
     );
   }
   
-  // Fallback for unexpected state, e.g. step 2 or 3 without userDataFromDB
   if ((step === 2 || step === 3) && !userDataFromDB) { 
       return (
-          <div className="text-center space-y-4 p-4 border border-destructive/50 rounded-lg bg-destructive/10">
+          <div className="text-center space-y-4 p-4 border border-destructive/50 rounded-lg bg-destructive/10" key="registration-error-fallback">
               <AlertTriangle className="mx-auto h-10 w-10 text-destructive"/>
               <h3 className="text-lg font-semibold text-destructive">Verification Error</h3>
               <p className="text-sm text-destructive-foreground">There was an issue with the verification process. Please start over.</p>
@@ -322,5 +327,4 @@ export function RegistrationForm() {
 
   return null;
 }
-    
     
