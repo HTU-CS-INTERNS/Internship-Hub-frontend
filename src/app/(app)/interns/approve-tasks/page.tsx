@@ -3,11 +3,11 @@
 import * as React from 'react';
 import PageHeader from '@/components/shared/page-header';
 import { CheckSquare, AlertTriangle, Loader2 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import type { DailyTask } from '@/types';
-import { DUMMY_TASKS as ALL_DUMMY_TASKS } from '@/app/(app)/tasks/page'; // Assuming tasks are similar to reports for now
+import { DUMMY_TASKS as ALL_DUMMY_TASKS } from '@/app/(app)/tasks/page'; 
 import { DUMMY_INTERNS } from '@/app/(app)/interns/page';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -128,3 +128,4 @@ export default function ApproveTasksPage() {
     </div>
   );
 }
+
