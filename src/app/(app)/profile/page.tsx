@@ -2,7 +2,7 @@
 'use client';
 import * as React from 'react';
 import PageHeader from '@/components/shared/page-header';
-import { User as UserIcon, Briefcase, BookOpen, Edit3, GraduationCap, Building, Phone as PhoneIcon, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
+import { User as UserIcon, Briefcase, BookOpen, Edit3, GraduationCap, Building, Phone as PhoneIcon, AlertTriangle, CheckCircle, Clock, Landmark } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -35,16 +35,13 @@ export default function ProfilePage() {
   const [isEditingProfile, setIsEditingProfile] = React.useState(false);
   const [isEditingInternship, setIsEditingInternship] = React.useState(false);
   
-  const [userData, setUserData] = React.useState<{
-    name: string;
-    email: string;
+  const [userData, setUserData] = React.useState<ProfileFormValues & {
     avatarUrl: string;
-    facultyId: string;
     facultyName: string;
-    departmentId: string;
     departmentName: string;
-    contactNumber: string;
     internship: InternshipDetails;
+    supervisorCompanyName?: string;
+    supervisorCompanyAddress?: string;
   }>({
     name: 'User',
     email: 'user@example.com',
@@ -54,6 +51,8 @@ export default function ProfilePage() {
     departmentId: '',
     departmentName: 'Not Set',
     contactNumber: '',
+    supervisorCompanyName: '',
+    supervisorCompanyAddress: '',
     internship: {
       companyName: '',
       companyAddress: '',
@@ -76,6 +75,8 @@ export default function ProfilePage() {
     const storedFacultyId = typeof window !== "undefined" ? localStorage.getItem('userFacultyId') || '' : '';
     const storedDepartmentId = typeof window !== "undefined" ? localStorage.getItem('userDepartmentId') || '' : '';
     const storedContactNumber = typeof window !== "undefined" ? localStorage.getItem('userContactNumber') || '' : '';
+    const storedSupervisorCompanyName = typeof window !== "undefined" ? localStorage.getItem('supervisorCompanyName') || '' : '';
+    const storedSupervisorCompanyAddress = typeof window !== "undefined" ? localStorage.getItem('supervisorCompanyAddress') || '' : '';
 
     let storedInternship: InternshipDetails = {
         companyName: '', companyAddress: '', supervisorName: '', supervisorEmail: '',
@@ -102,7 +103,9 @@ export default function ProfilePage() {
         departmentId: storedRole === 'STUDENT' ? (department?.id || '') : '',
         departmentName: storedRole === 'STUDENT' ? (department?.name || 'Not Set') : '',
         contactNumber: storedContactNumber,
-        internship: storedRole === 'STUDENT' ? storedInternship : prev.internship, // Only students have internships
+        supervisorCompanyName: storedRole === 'SUPERVISOR' ? storedSupervisorCompanyName : '',
+        supervisorCompanyAddress: storedRole === 'SUPERVISOR' ? storedSupervisorCompanyAddress : '',
+        internship: storedRole === 'STUDENT' ? storedInternship : prev.internship,
     }));
     
     const onboardingComplete = typeof window !== "undefined" ? localStorage.getItem('onboardingComplete') === 'true' : false;
@@ -121,7 +124,7 @@ export default function ProfilePage() {
             setIsEditingInternship(false);
         }
     } else if (storedRole === 'SUPERVISOR' && !supervisorProfileComplete) {
-        if (storedName === 'New Supervisor' || !storedContactNumber) {
+        if (storedName === 'New Supervisor' || !storedContactNumber || !storedSupervisorCompanyName) {
             setIsEditingProfile(true);
         } else {
             localStorage.setItem('supervisorProfileComplete', 'true');
@@ -143,6 +146,8 @@ export default function ProfilePage() {
       departmentId: userRole === 'STUDENT' ? (department?.id || '') : '',
       departmentName: userRole === 'STUDENT' ? (department?.name || 'Not Set') : '',
       contactNumber: updatedProfileData.contactNumber || '',
+      supervisorCompanyName: userRole === 'SUPERVISOR' ? updatedProfileData.supervisorCompanyName || '' : '',
+      supervisorCompanyAddress: userRole === 'SUPERVISOR' ? updatedProfileData.supervisorCompanyAddress || '' : '',
       avatarUrl: `https://placehold.co/150x150.png?text=${getInitials(updatedProfileData.name)}`,
     };
     setUserData(newUserData);
@@ -155,6 +160,10 @@ export default function ProfilePage() {
             localStorage.setItem('userFacultyId', newUserData.facultyId);
             localStorage.setItem('userDepartmentId', newUserData.departmentId);
         }
+        if (userRole === 'SUPERVISOR') {
+            localStorage.setItem('supervisorCompanyName', newUserData.supervisorCompanyName || '');
+            localStorage.setItem('supervisorCompanyAddress', newUserData.supervisorCompanyAddress || '');
+        }
     }
     setIsEditingProfile(false);
     
@@ -162,9 +171,8 @@ export default function ProfilePage() {
         setIsEditingInternship(true);
     } else if (userRole === 'STUDENT' && userData.internship.status === 'APPROVED') {
         localStorage.setItem('onboardingComplete', 'true');
-    } else if (userRole === 'SUPERVISOR') {
+    } else if (userRole === 'SUPERVISOR' && newUserData.supervisorCompanyName && newUserData.name !== 'New Supervisor') {
         localStorage.setItem('supervisorProfileComplete', 'true');
-         // router.push('/dashboard'); // Optionally redirect supervisor after profile completion
     }
   };
 
@@ -243,6 +251,8 @@ export default function ProfilePage() {
                 facultyId: userData.facultyId,
                 departmentId: userData.departmentId,
                 contactNumber: userData.contactNumber,
+                supervisorCompanyName: userData.supervisorCompanyName,
+                supervisorCompanyAddress: userData.supervisorCompanyAddress,
               }} 
               onSuccess={handleProfileSaveSuccess} 
             />
@@ -273,6 +283,24 @@ export default function ProfilePage() {
                     <p className="text-muted-foreground">{userData.contactNumber || 'Not set'}</p>
                 </div>
               </div>
+               {userRole === 'SUPERVISOR' && userData.supervisorCompanyName && (
+                 <>
+                    <div className="flex items-center gap-2">
+                        <Landmark className="h-5 w-5 text-primary"/>
+                        <div>
+                            <p className="font-medium text-foreground">Company Name:</p>
+                            <p className="text-muted-foreground">{userData.supervisorCompanyName}</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Building className="h-5 w-5 text-primary"/>
+                        <div>
+                            <p className="font-medium text-foreground">Company Address:</p>
+                            <p className="text-muted-foreground">{userData.supervisorCompanyAddress || 'Not set'}</p>
+                        </div>
+                    </div>
+                 </>
+               )}
             </div>
           )}
         </CardContent>
@@ -365,8 +393,43 @@ export default function ProfilePage() {
           </Card>
         </>
       )}
+      {userRole === 'SUPERVISOR' && (
+         <Card className="shadow-xl rounded-xl mt-6">
+          <CardHeader className="p-6 border-b">
+            <div className="flex items-center gap-3">
+              <Landmark className="h-6 w-6 text-primary" />
+              <CardTitle className="text-xl font-headline">Company Affiliation</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="p-6">
+            {isEditingProfile ? (
+                <p className="text-muted-foreground text-sm">You can edit your company details in the profile form above.</p>
+            ) : userData.supervisorCompanyName ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 text-sm">
+                     <div>
+                        <p className="font-medium text-foreground">Company Name:</p>
+                        <p className="text-muted-foreground">{userData.supervisorCompanyName}</p>
+                    </div>
+                    <div>
+                        <p className="font-medium text-foreground">Company Address:</p>
+                        <p className="text-muted-foreground">{userData.supervisorCompanyAddress || 'Not set'}</p>
+                    </div>
+                </div>
+            ) : (
+                <div className="text-center py-6">
+                    <Landmark className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
+                    <p className="text-lg font-semibold text-foreground">Company Details Not Set</p>
+                    <p className="text-muted-foreground mb-4">Please add your company affiliation by editing your profile.</p>
+                    <Button onClick={() => setIsEditingProfile(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg">
+                        Edit Profile to Add Company
+                    </Button>
+                </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
       {userRole !== 'STUDENT' && userRole !== null && (
-         <Card className="shadow-xl rounded-xl">
+         <Card className="shadow-xl rounded-xl mt-6">
           <CardHeader className="p-6 border-b">
             <div className="flex items-center gap-3">
               <BookOpen className="h-6 w-6 text-primary" />
@@ -375,8 +438,8 @@ export default function ProfilePage() {
           </CardHeader>
           <CardContent className="p-6">
             <p className="text-muted-foreground">
-              As a {USER_ROLES[userRole]}, your primary role involves overseeing assigned interns, reviewing their tasks and reports, and providing timely feedback.
-              You can manage your assigned interns and their submissions via the 'My Interns' page. Use the 'Feedback Hub' for communication.
+              As a {USER_ROLES[userRole]}, your primary role involves { userRole === 'SUPERVISOR' ? 'overseeing assigned interns, reviewing their tasks and reports, and providing timely feedback.' : userRole === 'LECTURER' ? 'managing student assignments, tracking progress, and facilitating communication.' : 'overseeing departmental internship activities, managing assignments, and analyzing overall program performance.' }
+              You can manage relevant aspects via the appropriate sections like '{userRole === 'SUPERVISOR' ? 'My Interns' : 'Assignments'}' and use the 'Feedback Hub' for communication.
             </p>
              {isEditingProfile && <p className="mt-4 text-sm text-destructive">Please save your profile information first to proceed.</p>}
           </CardContent>

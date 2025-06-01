@@ -19,7 +19,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { FACULTIES, DEPARTMENTS } from '@/lib/constants';
-import type { Department, Faculty, UserRole } from '@/types';
+import type { Department, Faculty, UserRole, ProfileFormValues } from '@/types';
 import { Loader2 } from 'lucide-react';
 
 const profileSchema = z.object({
@@ -28,9 +28,12 @@ const profileSchema = z.object({
   facultyId: z.string().optional().or(z.literal('')),
   departmentId: z.string().optional().or(z.literal('')),
   contactNumber: z.string().regex(/^(\+\d{1,3}[- ]?)?\d{10,15}$/, { message: "Invalid contact number format."}).optional().or(z.literal('')),
+  supervisorCompanyName: z.string().min(2, { message: 'Company name must be at least 2 characters.'}).max(100).optional().or(z.literal('')),
+  supervisorCompanyAddress: z.string().min(5, {message: 'Company address must be at least 5 characters.'}).max(200).optional().or(z.literal('')),
 });
 
-export type ProfileFormValues = z.infer<typeof profileSchema>;
+// Use the imported ProfileFormValues type
+// export type ProfileFormValues = z.infer<typeof profileSchema>; 
 
 interface ProfileSetupFormProps {
   defaultValues?: Partial<ProfileFormValues>;
@@ -51,6 +54,8 @@ export default function ProfileSetupForm({ defaultValues, onSuccess, userRole }:
       facultyId: defaultValues?.facultyId || '',
       departmentId: defaultValues?.departmentId || '',
       contactNumber: defaultValues?.contactNumber || '',
+      supervisorCompanyName: defaultValues?.supervisorCompanyName || '',
+      supervisorCompanyAddress: defaultValues?.supervisorCompanyAddress || '',
     },
   });
   
@@ -87,7 +92,6 @@ export default function ProfileSetupForm({ defaultValues, onSuccess, userRole }:
         setAvailableDepartments(DEPARTMENTS);
       }
     } else {
-      
       currentFacultyId = '';
       currentDepartmentId = '';
       setAvailableDepartments([]);
@@ -99,17 +103,24 @@ export default function ProfileSetupForm({ defaultValues, onSuccess, userRole }:
       facultyId: currentFacultyId,
       departmentId: currentDepartmentId,
       contactNumber: defaultValues?.contactNumber || '',
+      supervisorCompanyName: defaultValues?.supervisorCompanyName || '',
+      supervisorCompanyAddress: defaultValues?.supervisorCompanyAddress || '',
     });
   }, [defaultValues, form, userRole]);
 
 
   async function onSubmit(values: ProfileFormValues) {
     setIsLoading(true);
-    const submissionValues = { ...values };
+    const submissionValues: ProfileFormValues = { ...values };
     if (userRole !== 'STUDENT') {
-      delete submissionValues.facultyId;
-      delete submissionValues.departmentId;
+      submissionValues.facultyId = undefined;
+      submissionValues.departmentId = undefined;
     }
+    if (userRole !== 'SUPERVISOR') {
+        submissionValues.supervisorCompanyName = undefined;
+        submissionValues.supervisorCompanyAddress = undefined;
+    }
+
 
     await new Promise(resolve => setTimeout(resolve, 1000)); 
     setIsLoading(false);
@@ -219,6 +230,38 @@ export default function ProfileSetupForm({ defaultValues, onSuccess, userRole }:
             />
           </>
         )}
+
+        {userRole === 'SUPERVISOR' && (
+          <>
+            <FormField
+              control={form.control}
+              name="supervisorCompanyName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Your Company Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Innovatech Solutions Inc." {...field} className="rounded-lg" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="supervisorCompanyAddress"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Your Company Address</FormLabel>
+                  <FormControl>
+                    <Input placeholder="123 Tech Park, Silicon Valley" {...field} className="rounded-lg" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </>
+        )}
+
         <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <Button type="submit" className="w-full sm:w-auto rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isLoading}>
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}

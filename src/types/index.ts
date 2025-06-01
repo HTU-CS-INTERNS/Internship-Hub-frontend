@@ -9,7 +9,9 @@ export interface User {
   avatarUrl?: string;
   faculty?: Faculty;
   department?: Department;
-  // Supervisor specific fields can be added here if needed later e.g. companyId
+  // Supervisor specific company details
+  companyName?: string; 
+  companyAddress?: string;
 }
 
 export interface Faculty {
@@ -53,6 +55,10 @@ export interface DailyTask {
 export interface DailyReport extends DailyTask {
   // Daily reports might have more fields or be a superset of tasks
   // For now, keeping it similar to DailyTask for simplicity
+  title?: string;
+  challengesFaced?: string;
+  learnings?: string; // Alias for learningObjectives if needed
+  securePhotoUrl?: string;
 }
 
 export interface CommunicationMessage {
@@ -70,3 +76,31 @@ export interface Assignment {
   companySupervisorId?: string;
 }
 
+export interface ScoringMetric {
+  id: string;
+  label: string;
+  description?: string;
+}
+
+export interface InternEvaluation {
+  scores: Record<string, number | undefined>; // metricId: score (e.g., 1-5)
+  overallComments: string;
+  evaluationDate?: string;
+}
+
+// For profile form values that might include supervisor-specific company details
+export interface ProfileFormValuesExtended extends ProfileFormValues {
+    supervisorCompanyName?: string;
+    supervisorCompanyAddress?: string;
+}
+
+// From profile-setup-form.tsx, made more generic for reuse if needed
+export interface ProfileFormValues {
+  name: string;
+  email: string;
+  facultyId?: string;
+  departmentId?: string;
+  contactNumber?: string;
+  supervisorCompanyName?: string; // Added for supervisor
+  supervisorCompanyAddress?: string; // Added for supervisor
+}

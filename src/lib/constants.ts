@@ -12,8 +12,8 @@ import {
   BarChart3, 
   Settings, 
   GraduationCap,
-  CheckSquare, // Used for Supervisor: Approve Tasks
-  FileCheck,   // Used for Supervisor: Approve Reports
+  CheckSquare, 
+  FileCheck,   
   Home,
   ListChecks, 
   MapPin, 
@@ -24,9 +24,10 @@ import {
   Mail,
   Palette, 
   ShieldCheck, 
-  BookOpen 
+  BookOpen,
+  TrendingUp // For scoring/evaluation
 } from 'lucide-react';
-import type { UserRole } from '@/types';
+import type { UserRole, ScoringMetric } from '@/types';
 
 export interface NavItem {
   href: string;
@@ -121,4 +122,12 @@ export const DEPARTMENTS = [
   { id: 'D007', name: 'Psychology', facultyId: 'F004' },
   { id: 'D008', name: 'Sociology', facultyId: 'F004' },
   { id: 'D_MOCK', name: 'Department of Mock Data', facultyId: 'F_MOCK' },
+];
+
+export const SCORING_METRICS: ScoringMetric[] = [
+  { id: 'technical_skills', label: 'Technical Skills', description: 'Proficiency in relevant tools and technologies.' },
+  { id: 'communication', label: 'Communication', description: 'Clarity and effectiveness in verbal and written communication.' },
+  { id: 'problem_solving', label: 'Problem Solving', description: 'Ability to identify issues and develop effective solutions.' },
+  { id: 'professionalism', label: 'Professionalism', description: 'Conduct, attitude, and adherence to workplace ethics.' },
+  { id: 'timeliness_initiative', label: 'Timeliness & Initiative', description: 'Punctuality, meeting deadlines, and proactiveness.' },
 ];
