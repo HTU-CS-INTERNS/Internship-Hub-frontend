@@ -5,12 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { MapPin, LocateFixed, AlertTriangle, CheckCircle, Camera, XCircle, Info, Image as ImageIconLucide, TrendingUp, Clock, CalendarCheck2 } from 'lucide-react';
+import { MapPin, LocateFixed, AlertTriangle, CheckCircle, Camera, XCircle, Info, TrendingUp, Clock, CalendarCheck2 } from 'lucide-react';
 import Image from 'next/image'; // Using Next.js Image
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'; // For camera permission
-
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'; 
 
 type CheckinStep = 'initial' | 'gpsPrompt' | 'manualReason' | 'geofenceWarning' | 'success';
 
@@ -44,16 +43,16 @@ export default function CheckInPage() {
           setCheckinLocation(storedCheckin.location);
           setSecurePhotoPreview(storedCheckin.photoPreview || null);
           setStep('success');
-          return true; // Found valid check-in for today
+          return true; 
         } else {
-          localStorage.removeItem('internshipTrack_checkin'); // Clear old check-in
+          localStorage.removeItem('internshipTrack_checkin'); 
         }
       } catch (e) {
         console.error("Failed to parse stored check-in data", e);
         localStorage.removeItem('internshipTrack_checkin');
       }
     }
-    return false; // No valid check-in for today
+    return false; 
   }, [getTodayDateString]);
 
   React.useEffect(() => {
@@ -71,15 +70,14 @@ export default function CheckInPage() {
   const resetFlowAndCheckStorage = () => {
     setManualReason('');
     setSecurePhotoFile(null);
-    // Don't clear securePhotoPreview if it's from localStorage for today's check-in.
-    // loadCheckinFromStorage will handle repopulating or clearing it.
+    
     if (securePhotoInputRef.current) {
       securePhotoInputRef.current.value = "";
     }
 
-    if (!loadCheckinFromStorage()) { // If no valid check-in is loaded (e.g., next day)
+    if (!loadCheckinFromStorage()) { 
       setStep('initial');
-      setSecurePhotoPreview(null); // Fully clear preview if going to initial state
+      setSecurePhotoPreview(null); 
     }
   };
 
@@ -88,8 +86,8 @@ export default function CheckInPage() {
   const handleAllowGps = async () => {
     toast({ title: 'Requesting Location', description: 'Please wait...' });
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate GPS access
-      const withinGeofence = Math.random() < 0.8; // Simulate geofence check
+      await new Promise(resolve => setTimeout(resolve, 1500)); 
+      const withinGeofence = Math.random() < 0.8; 
 
       if (withinGeofence) {
         const now = new Date();
@@ -97,7 +95,7 @@ export default function CheckInPage() {
         const currentLocation = 'Acme Corp HQ (Verified)';
         setCheckinTime(currentTime);
         setCheckinLocation(currentLocation);
-        saveCheckinToLocalStorage(currentTime, currentLocation, securePhotoPreview); // Pass existing preview if any
+        saveCheckinToLocalStorage(currentTime, currentLocation, securePhotoPreview); 
         setStep('success');
         toast({ title: 'Success', description: 'Location verified within geofence.' });
       } else {
@@ -273,43 +271,47 @@ export default function CheckInPage() {
               <p className="text-muted-foreground mb-6">Your attendance for {format(new Date(getTodayDateString()), "PPP")} is recorded.</p>
             </div>
             
-            <Card className="bg-muted/30 p-4 text-left shadow-inner rounded-xl border-input">
-              <CardContent className="space-y-3 p-0">
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Time:</span>
-                  <span className="font-semibold text-foreground text-lg">{checkinTime}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Location:</span>
-                  <span className="font-medium text-foreground text-right">{checkinLocation}</span>
-                </div>
-                
-                <div className="mt-3">
-                    <p className="text-sm text-muted-foreground mb-1">Approximate Location:</p>
-                    <div className="relative w-full aspect-[16/9] rounded-lg overflow-hidden border border-input bg-gray-200">
-                        <Image src="https://placehold.co/600x300.png" alt="Map placeholder" layout="fill" objectFit="cover" data-ai-hint="map location snippet" />
-                         <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                            <MapPin className="h-8 w-8 text-white/80" />
+            <div className="grid grid-cols-1 md:grid-cols-3 md:gap-6">
+                <div className="md:col-span-2 space-y-4">
+                    <Card className="bg-muted/30 p-4 text-left shadow-inner rounded-xl border-input">
+                    <CardContent className="space-y-3 p-0">
+                        <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Time:</span>
+                        <span className="font-semibold text-foreground text-lg">{checkinTime}</span>
                         </div>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1 text-center">Map data is illustrative.</p>
+                        <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Location:</span>
+                        <span className="font-medium text-foreground text-right">{checkinLocation}</span>
+                        </div>
+                        
+                        <div className="mt-3">
+                            <p className="text-sm text-muted-foreground mb-1">Approximate Location:</p>
+                            <div className="relative w-full aspect-[16/9] rounded-lg overflow-hidden border border-input bg-gray-200">
+                                <Image src="https://placehold.co/600x300.png" alt="Map placeholder" layout="fill" objectFit="cover" data-ai-hint="map location snippet" />
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                                    <MapPin className="h-8 w-8 text-white/80" />
+                                </div>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1 text-center">Map data is illustrative.</p>
+                        </div>
+
+                        {securePhotoPreview && (
+                        <div className="mt-4">
+                            <p className="text-sm text-muted-foreground mb-1">Secure Photo Submitted:</p>
+                            <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-input">
+                                <Image src={securePhotoPreview} alt="Secure photo submitted" layout="fill" objectFit="cover" data-ai-hint="workplace id person" />
+                            </div>
+                        </div>
+                        )}
+                    </CardContent>
+                    </Card>
                 </div>
 
-                {securePhotoPreview && (
-                   <div className="mt-4">
-                      <p className="text-sm text-muted-foreground mb-1">Secure Photo Submitted:</p>
-                      <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-input">
-                          <Image src={securePhotoPreview} alt="Secure photo submitted" layout="fill" objectFit="cover" data-ai-hint="workplace id person" />
-                      </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <AnalyticsStatCard title="Check-in Streak" value="5 Days" icon={TrendingUp} description="Consecutive daily check-ins" iconBgColor="bg-green-500/10"/>
-                <AnalyticsStatCard title="Punctuality" value="92%" icon={Clock} description="On-time check-in rate" iconBgColor="bg-blue-500/10"/>
-                <AnalyticsStatCard title="Monthly Check-ins" value="18" icon={CalendarCheck2} description={`In ${format(new Date(), 'MMMM')}`} iconBgColor="bg-purple-500/10"/>
+                <div className="md:col-span-1 space-y-4">
+                    <AnalyticsStatCard title="Check-in Streak" value="5 Days" icon={TrendingUp} description="Consecutive daily check-ins" iconBgColor="bg-green-500/10"/>
+                    <AnalyticsStatCard title="Punctuality" value="92%" icon={Clock} description="On-time check-in rate" iconBgColor="bg-blue-500/10"/>
+                    <AnalyticsStatCard title="Monthly Check-ins" value="18" icon={CalendarCheck2} description={`In ${format(new Date(), 'MMMM')}`} iconBgColor="bg-purple-500/10"/>
+                </div>
             </div>
 
             <Button onClick={resetFlowAndCheckStorage} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 rounded-lg text-lg mt-2">
@@ -324,7 +326,10 @@ export default function CheckInPage() {
 
   return (
     <div className="flex-grow p-4 md:p-6 flex flex-col items-center justify-center">
-       <Card className="w-full max-w-lg shadow-xl rounded-xl flex flex-col bg-card text-card-foreground">
+       <Card className={cn(
+           "w-full shadow-xl rounded-xl flex flex-col bg-card text-card-foreground",
+           step === 'success' ? 'md:max-w-3xl lg:max-w-4xl' : 'max-w-lg' 
+         )}>
          <CardHeader className="border-b border-border p-4">
            <div className="flex items-center justify-between">
             <CardTitle className="font-headline text-xl">Daily Check-in</CardTitle>
@@ -341,3 +346,4 @@ export default function CheckInPage() {
     </div>
   );
 }
+
