@@ -43,6 +43,7 @@ export default function CheckInPage() {
           setStep('success');
           return true; // Found valid check-in for today
         } else {
+          // Clear old check-in data from previous days
           localStorage.removeItem('internshipTrack_checkin');
         }
       } catch (e) {
@@ -69,15 +70,15 @@ export default function CheckInPage() {
   const resetFlow = () => {
     setManualReason('');
     setSecurePhoto(null);
-    // Keep existing securePhotoPreview if loaded from storage for success step
-    // but clear it if we are actually resetting to initial (i.e., no stored check-in)
+    // We don't clear securePhotoPreview here immediately if it was loaded from storage
+    // loadCheckinFromStorage will handle repopulating or clearing it.
     if (securePhotoInputRef.current) {
       securePhotoInputRef.current.value = "";
     }
 
     if (!loadCheckinFromStorage()) {
       setStep('initial');
-      setSecurePhotoPreview(null); // Fully clear preview if going to initial
+      setSecurePhotoPreview(null); // Fully clear preview if going to initial (no stored check-in)
     }
   };
 
@@ -88,7 +89,9 @@ export default function CheckInPage() {
   const handleAllowGps = async () => {
     toast({ title: 'Requesting Location', description: 'Please wait...' });
     try {
+      // Simulate GPS access - in a real app, use navigator.geolocation
       await new Promise(resolve => setTimeout(resolve, 1500));
+      // Simulate geofence check - 80% chance of being within geofence
       const withinGeofence = Math.random() < 0.8; 
 
       if (withinGeofence) {
@@ -107,7 +110,7 @@ export default function CheckInPage() {
     } catch (error) {
       console.error("GPS Error:", error);
       toast({ variant: 'destructive', title: 'Error', description: 'Could not retrieve location.' });
-      setStep('manualReason'); 
+      setStep('manualReason'); // Fallback to manual if GPS fails
     }
   };
 
@@ -326,8 +329,8 @@ export default function CheckInPage() {
   };
 
   return (
-    <div className="p-4 md:pt-6 max-w-lg mx-auto min-h-[calc(100vh-var(--mobile-header-height)-var(--mobile-bottom-nav-height))] md:min-h-0 flex flex-col justify-center">
-       <Card className="shadow-xl rounded-xl flex-grow md:flex-grow-0 flex flex-col bg-card text-card-foreground">
+    <div className="flex-grow p-4 md:p-6 flex flex-col items-center justify-center">
+       <Card className="w-full max-w-lg shadow-xl rounded-xl flex flex-col bg-card text-card-foreground">
          <CardHeader className="border-b border-border p-4">
            <div className="flex items-center justify-between">
             <CardTitle className="font-headline text-xl">Daily Check-in</CardTitle>
@@ -345,3 +348,5 @@ export default function CheckInPage() {
   );
 }
 
+
+    
