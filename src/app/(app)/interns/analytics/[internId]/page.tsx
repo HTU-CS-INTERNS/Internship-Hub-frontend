@@ -76,7 +76,8 @@ export default function InternAnalyticsPage() {
     if (foundIntern) {
       setIntern(foundIntern);
       const reports = ALL_DUMMY_REPORTS.filter(report => {
-        if (foundIntern.id === 'intern1') return report.studentId === 'stu1';
+        if (foundIntern.id === 'intern1') return report.studentId === 'stu1'; // Example mapping
+        // Add other mappings if internId structure differs from studentId in reports
         return false;
       });
       setInternReports(reports);
@@ -165,7 +166,7 @@ export default function InternAnalyticsPage() {
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalReports}</div>
+            <div className="text-xl md:text-2xl font-bold">{totalReports}</div>
             <p className="text-xs text-muted-foreground">{reportStatusCounts.APPROVED} approved</p>
           </CardContent>
         </Card>
@@ -175,7 +176,7 @@ export default function InternAnalyticsPage() {
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{approvalRate.toFixed(1)}%</div>
+            <div className="text-xl md:text-2xl font-bold">{approvalRate.toFixed(1)}%</div>
             <Progress value={approvalRate} className="h-2 mt-1 bg-muted" />
           </CardContent>
         </Card>
@@ -185,7 +186,7 @@ export default function InternAnalyticsPage() {
             <ListChecks className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalTasksCompleted}</div>
+            <div className="text-xl md:text-2xl font-bold">{totalTasksCompleted}</div>
             <p className="text-xs text-muted-foreground">Across {DUMMY_TASK_ANALYTICS.length} months</p>
           </CardContent>
         </Card>
@@ -198,7 +199,7 @@ export default function InternAnalyticsPage() {
             <CardDescription>Monthly trend of task statuses.</CardDescription>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={taskChartConfig} className="h-[300px] w-full">
+            <ChartContainer config={taskChartConfig} className="h-[250px] md:h-[300px] w-full">
               <BarChart data={DUMMY_TASK_ANALYTICS} accessibilityLayer>
                 <CartesianGrid vertical={false} />
                 <XAxis dataKey="month" tickLine={false} tickMargin={10} axisLine={false} />
@@ -220,7 +221,7 @@ export default function InternAnalyticsPage() {
           </CardHeader>
           <CardContent className="flex items-center justify-center">
              {reportStatusChartData.length > 0 ? (
-                <ChartContainer config={reportChartConfig} className="h-[300px] w-full max-w-[400px]">
+                <ChartContainer config={reportChartConfig} className="h-[250px] md:h-[300px] w-full max-w-[400px]">
                 <ResponsiveContainer width="100%" height={300}>
                     <PieChart>
                     <ChartTooltip content={<ChartTooltipContent hideLabel />} />
@@ -250,7 +251,7 @@ export default function InternAnalyticsPage() {
         </CardHeader>
         <CardContent className="p-0">
             {activityLog.length > 0 ? (
-            <ScrollArea className="h-[350px] w-full">
+            <ScrollArea className="h-[300px] w-full">
                 <div className="p-4 space-y-4">
                     {activityLog.map((item) => {
                         const IconComponent = activityIconMap[item.type] || Activity;
