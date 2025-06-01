@@ -5,7 +5,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Bell, Briefcase, Settings, LogOut, UserCircle } from 'lucide-react'; // Added LogOut
+import { Bell, Briefcase, Settings, LogOut, UserCircle, MessageSquare, CalendarDays } from 'lucide-react';
 import type { UserRole } from '@/types';
 import {
   DropdownMenu,
@@ -59,6 +59,18 @@ export default function MobileHeader({ userRole }: MobileHeaderProps) {
         <h1 className="font-bold text-xl font-headline">InternshipTrack</h1>
       </Link>
       <div className="flex items-center space-x-1">
+        <Link href="/schedule" passHref>
+          <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary/80">
+            <CalendarDays className="h-5 w-5" />
+            <span className="sr-only">My Schedule</span>
+          </Button>
+        </Link>
+        <Link href="/communication" passHref>
+          <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary/80">
+            <MessageSquare className="h-5 w-5" />
+            <span className="sr-only">Feedback Hub</span>
+          </Button>
+        </Link>
         <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary/80">
           <Bell className="h-5 w-5" />
           <span className="sr-only">Notifications</span>
