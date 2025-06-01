@@ -2,7 +2,7 @@
 'use client'; 
 
 import * as React from 'react';
-import { SidebarProvider } from '@/components/ui/sidebar'; // Removed useSidebar as it's used in AppHeader/AppSidebar
+import { SidebarProvider } from '@/components/ui/sidebar'; 
 import AppSidebar from '@/components/layout/app-sidebar';
 import AppHeader from '@/components/layout/app-header';
 import MobileHeader from '@/components/layout/mobile-header';
@@ -10,7 +10,7 @@ import MobileBottomNav from '@/components/layout/mobile-bottom-nav';
 import type { UserRole } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useIsMobile } from '@/hooks/use-mobile';
-import AppLoadingScreen from '@/components/shared/app-loading-screen'; // Import the new loading screen
+import AppLoadingScreen from '@/components/shared/app-loading-screen'; 
 
 function AppLayoutContent({ children }: { children: React.ReactNode }) {
   const [userRole, setUserRole] = React.useState<UserRole | null>(null);
@@ -22,19 +22,19 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
     const storedRole = typeof window !== "undefined" ? localStorage.getItem('userRole') as UserRole : null;
     if (storedRole) {
       setUserRole(storedRole);
-      setIsLoading(false); // Set loading to false once role is determined
+      setIsLoading(false); 
     } else {
-      // If no role, still set loading to false before redirecting to avoid infinite load screen
+      
       setIsLoading(false); 
       router.push('/login');
     }
   }, [router]);
 
   if (isLoading) {
-    return <AppLoadingScreen />; // Show the new loading screen
+    return <AppLoadingScreen />; 
   }
   
-  if (!userRole && !isLoading) { // Ensure we don't show redirect message if still loading
+  if (!userRole && !isLoading) { 
      return (
       <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="p-4 rounded-md text-foreground">Redirecting to login...</div>
@@ -42,7 +42,7 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
      );
   }
 
-  // Ensure userRole is not null before rendering main content
+  
   if (!userRole) {
     return null; 
   }
@@ -51,6 +51,12 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
   if (isMobileView) {
     return (
       <div className="flex flex-col min-h-screen bg-background">
+        {/* Define CSS variable for app header height for use in calc() */}
+        <style jsx global>{`
+          :root {
+            --app-header-height: var(--mobile-header-height);
+          }
+        `}</style>
         <MobileHeader userRole={userRole} />
         <main className="flex-1 overflow-y-auto pb-[var(--mobile-bottom-nav-height)] pt-[var(--mobile-header-height)]">
           {children}
@@ -62,10 +68,16 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen bg-background">
+      {/* Define CSS variable for app header height for use in calc() */}
+      <style jsx global>{`
+        :root {
+          --app-header-height: 4rem; /* Standard desktop header height */
+        }
+      `}</style>
       <AppSidebar userRole={userRole} />
       <div className="flex flex-col flex-1 overflow-x-hidden">
         <AppHeader />
-        <main className="flex flex-col flex-1 overflow-y-auto"> {/* Ensured this is a flex column container */}
+        <main className="flex flex-col flex-1 overflow-y-auto"> 
           {children}
         </main>
       </div>
@@ -80,3 +92,5 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     </SidebarProvider>
   );
 }
+
+    
