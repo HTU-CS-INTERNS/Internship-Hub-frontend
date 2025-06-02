@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import PageHeader from '@/components/shared/page-header';
 import { BarChart3, User, Loader2, AlertTriangle, CheckCircle, FileText, ListChecks, Activity, MapPin, MessageSquare, CheckSquare as CheckSquareIcon } from 'lucide-react';
 import { DUMMY_INTERNS } from '@/app/(app)/supervisor/interns/page';
-import { DUMMY_REPORTS as ALL_DUMMY_REPORTS } from '@/app/(app)/reports/page';
+import { DUMMY_REPORTS as ALL_DUMMY_REPORTS } from '@/app/(app)/student/reports/page'; // Updated import
 import type { DailyReport } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -76,8 +76,7 @@ export default function InternAnalyticsPage() {
     if (foundIntern) {
       setIntern(foundIntern);
       const reports = ALL_DUMMY_REPORTS.filter(report => {
-        if (foundIntern.id === 'intern1') return report.studentId === 'stu1'; // Example mapping
-        // Add other mappings if internId structure differs from studentId in reports
+        if (foundIntern.id === 'intern1') return report.studentId === 'stu1'; 
         return false;
       });
       setInternReports(reports);
@@ -292,5 +291,3 @@ export default function InternAnalyticsPage() {
     </div>
   );
 }
-
-    

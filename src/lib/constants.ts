@@ -18,7 +18,7 @@ import {
   ListChecks,
   MapPin,
   CalendarDays,
-  UserCog,
+  UserCog, 
   UserCircle,
   Bell,
   Mail,
@@ -26,10 +26,10 @@ import {
   ShieldCheck,
   BookOpen,
   TrendingUp,
-  Landmark, // For University Structure
-  School // For Admin Dashboard
+  Landmark, 
+  School
 } from 'lucide-react';
-import type { UserRole, ScoringMetric, Faculty as AppFaculty, Department as AppDepartment } from '@/types'; // Renamed to avoid conflict
+import type { UserRole, ScoringMetric, Faculty as AppFaculty, Department as AppDepartment } from '@/types'; 
 
 export interface NavItem {
   href: string;
@@ -53,7 +53,7 @@ export const NAV_LINKS: NavItem[] = [
   // Main Section
   { href: '/dashboard', label: 'Dashboard', icon: Home, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD', 'ADMIN'], section: "Main", mobile: true },
   {
-    href: '/tasks',
+    href: '/student/tasks',
     label: 'Daily Tasks',
     icon: ListChecks,
     roles: ['STUDENT'],
@@ -61,23 +61,23 @@ export const NAV_LINKS: NavItem[] = [
     mobile: true
   },
   {
-    href: '/reports',
+    href: '/student/reports',
     label: 'Reports',
     icon: FileText,
     roles: ['STUDENT'],
     section: "Main",
     mobile: true
   },
-  { href: '/company', label: 'My Company', icon: Building, roles: ['STUDENT'], section: "Main", mobile: false },
+  { href: '/student/company', label: 'My Company', icon: Building, roles: ['STUDENT'], section: "Main", mobile: false },
 
   // Tools Section
-  { href: '/check-in', label: 'Check-in', icon: MapPin, roles: ['STUDENT'], section: "Tools", mobile: true },
+  { href: '/student/check-in', label: 'Check-in', icon: MapPin, roles: ['STUDENT'], section: "Tools", mobile: true },
   { href: '/schedule', label: 'My Schedule', icon: CalendarDays, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Tools", mobile: false },
   { href: '/communication', label: 'Feedback Hub', icon: MessageSquare, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD', 'ADMIN'], section: "Tools", mobile: true },
 
   // Management for other roles
   {
-    href: '/supervisor/interns', // Updated path
+    href: '/supervisor/interns', 
     label: 'My Interns',
     icon: Briefcase,
     roles: ['SUPERVISOR'],
@@ -147,4 +147,3 @@ export const SCORING_METRICS: ScoringMetric[] = [
   { id: 'professionalism', label: 'Professionalism', description: 'Conduct, attitude, and adherence to workplace ethics.' },
   { id: 'timeliness_initiative', label: 'Timeliness & Initiative', description: 'Punctuality, meeting deadlines, and proactiveness.' },
 ];
-

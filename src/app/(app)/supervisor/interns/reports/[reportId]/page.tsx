@@ -12,7 +12,7 @@ import type { DailyReport } from '@/types';
 import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { DUMMY_REPORTS as ALL_DUMMY_REPORTS } from '@/app/(app)/reports/page'; 
+import { DUMMY_REPORTS as ALL_DUMMY_REPORTS } from '@/app/(app)/student/reports/page'; // Updated import
 import { DUMMY_INTERNS } from '@/app/(app)/supervisor/interns/page';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
@@ -66,7 +66,7 @@ export default function SupervisorReportReviewPage() {
     }
 
     if (!foundReport || !foundIntern && (typeof window !== "undefined")){ 
-        // router.push('/supervisor/interns'); // Temporarily disabled for potential page refresh issues
+        // router.push('/supervisor/interns'); 
     }
 
   }, [reportId, internIdQuery, router]);
@@ -107,14 +107,13 @@ export default function SupervisorReportReviewPage() {
     const updatedReportData = {
       ...report,
       supervisorComments: feedbackComment, 
-      // status remains unchanged
     };
     setReport(updatedReportData);
     setInitialComment(feedbackComment); 
 
     const storedReportsFeedback = JSON.parse(localStorage.getItem(`reportsFeedback_${internIdQuery}`) || '{}');
     storedReportsFeedback[report.id] = {
-        status: report.status, // Keep original status
+        status: report.status, 
         supervisorComments: feedbackComment,
     };
     localStorage.setItem(`reportsFeedback_${internIdQuery}`, JSON.stringify(storedReportsFeedback));
@@ -283,4 +282,3 @@ export default function SupervisorReportReviewPage() {
     </div>
   );
 }
-

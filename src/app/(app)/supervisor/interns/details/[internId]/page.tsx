@@ -11,7 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
 import type { DailyReport, InternEvaluation } from '@/types';
 import { DUMMY_INTERNS } from '@/app/(app)/supervisor/interns/page'; 
-import { DUMMY_REPORTS as ALL_DUMMY_REPORTS } from '@/app/(app)/reports/page';
+import { DUMMY_REPORTS as ALL_DUMMY_REPORTS } from '@/app/(app)/student/reports/page'; // Updated import
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
@@ -128,7 +128,7 @@ export default function InternDetailPage() {
   const onEvaluationSubmit = async (data: EvaluationFormValues) => {
     setIsSubmittingEvaluation(true);
     const evaluationData: InternEvaluation = {
-        scores: data.scores as Record<string, number>, // Cast because zod makes it optional if not required.
+        scores: data.scores as Record<string, number>, 
         overallComments: data.overallComments,
         evaluationDate: new Date().toISOString(),
     };
@@ -265,7 +265,7 @@ export default function InternDetailPage() {
                             <div key={metric.id} className="grid grid-cols-3 items-center gap-4">
                                 <Label htmlFor={`score-${metric.id}`} className="col-span-1 text-sm font-medium">{metric.label}</Label>
                                 <Controller
-                                    name={`scores.${metric.id}` as any} // Type assertion for nested field
+                                    name={`scores.${metric.id}` as any} 
                                     control={evaluationMethods.control}
                                     render={({ field, fieldState }) => (
                                         <div className="col-span-2">
@@ -314,7 +314,6 @@ export default function InternDetailPage() {
                 </Card>
             </form>
           </FormProvider>
-
         </div>
       </div>
       

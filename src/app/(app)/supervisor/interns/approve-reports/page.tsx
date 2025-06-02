@@ -7,19 +7,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import type { DailyReport } from '@/types';
-import { DUMMY_REPORTS as ALL_DUMMY_REPORTS } from '@/app/(app)/reports/page';
+import { DUMMY_REPORTS as ALL_DUMMY_REPORTS } from '@/app/(app)/student/reports/page'; // Updated import
 import { DUMMY_INTERNS } from '@/app/(app)/supervisor/interns/page';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 
-// Filter reports to only show those that might be 'SUBMITTED' or 'PENDING' by interns
 const getPendingReportsForSupervisor = () => {
-  // This is a simplified simulation. In a real app, reports would be linked to interns.
-  // We'll assume some reports belong to intern1 (Samuel Green) for demo.
   return ALL_DUMMY_REPORTS.filter(report => 
-    (report.status === 'SUBMITTED' || report.status === 'PENDING') && report.studentId === 'stu1' // stu1 maps to intern1
+    (report.status === 'SUBMITTED' || report.status === 'PENDING') && report.studentId === 'stu1' 
   );
 };
 
@@ -45,7 +42,6 @@ export default function ApproveReportsPage() {
       report.id === reportId ? { ...report, status: 'APPROVED' } : report
     ));
     toast({ title: 'Report Approved', description: `Report ID ${reportId} has been marked as approved.` });
-    // In a real app, an API call would be made here.
   };
 
   const handleRejectReport = (reportId: string) => {
@@ -90,7 +86,7 @@ export default function ApproveReportsPage() {
             {pendingReports.length > 0 ? (
             <div className="space-y-4">
               {pendingReports.map(report => {
-                const intern = DUMMY_INTERNS.find(i => i.id === 'intern1'); // Simplified: assumes tasks belong to intern1 for demo
+                const intern = DUMMY_INTERNS.find(i => i.id === 'intern1'); 
                 return (
                   <Card key={report.id} className="bg-muted/30 shadow-sm rounded-lg">
                     <CardHeader className="pb-3">

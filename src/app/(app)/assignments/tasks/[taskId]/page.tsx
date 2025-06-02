@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import PageHeader from '@/components/shared/page-header';
-import { FileText, Calendar, Edit3, MessageSquare, Paperclip, ThumbsUp, ThumbsDown, User, Briefcase, Loader2, CheckCircle, XCircle, AlertTriangle, Save, ListChecks } from 'lucide-react';
+import { FileText, Calendar, Edit3, MessageSquare, Paperclip, ThumbsUp, ThumbsDown, User, Briefcase, Loader2, CheckCircle, XCircle, AlertTriangle, Save, ListChecks, GraduationCap, Link as LinkIcon } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,7 @@ import type { DailyTask } from '@/types';
 import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { DUMMY_TASKS } from '@/app/(app)/tasks/page'; // Assuming tasks are exported here
+import { DUMMY_TASKS } from '@/app/(app)/student/tasks/page'; // Updated import
 import { DUMMY_STUDENTS_DATA } from '@/lib/constants';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
@@ -158,7 +158,7 @@ export default function LecturerTaskReviewPage() {
                     <div><h3 className="text-base font-semibold text-foreground mb-2 flex items-center"><ListChecks className="mr-2 h-5 w-5 text-primary" />Description</h3><p className="text-muted-foreground whitespace-pre-line leading-relaxed">{task.description}</p></div>
                     <div><h3 className="text-base font-semibold text-foreground mb-2 flex items-center"><ThumbsUp className="mr-2 h-5 w-5 text-primary" />Outcomes/Results</h3><p className="text-muted-foreground whitespace-pre-line leading-relaxed">{task.outcomes}</p></div>
                     <div><h3 className="text-base font-semibold text-foreground mb-2 flex items-center"><GraduationCap className="mr-2 h-5 w-5 text-primary" />Learning Objectives</h3><p className="text-muted-foreground whitespace-pre-line leading-relaxed">{task.learningObjectives}</p></div>
-                    {task.departmentOutcomeLink && (<div><h3 className="text-base font-semibold text-foreground mb-2 flex items-center"><Link className="mr-2 h-5 w-5 text-primary" />Department Outcome Link</h3><p className="text-muted-foreground">{task.departmentOutcomeLink}</p></div>)}
+                    {task.departmentOutcomeLink && (<div><h3 className="text-base font-semibold text-foreground mb-2 flex items-center"><LinkIcon className="mr-2 h-5 w-5 text-primary" />Department Outcome Link</h3><p className="text-muted-foreground">{task.departmentOutcomeLink}</p></div>)}
                     {task.attachments && task.attachments.length > 0 && (<div><h3 className="text-base font-semibold text-foreground mb-2 flex items-center"><Paperclip className="mr-2 h-5 w-5 text-primary" />Attachments</h3><ul className="list-none space-y-2">{task.attachments.map((file, index) => (<li key={index}><Button variant="link" className="p-0 h-auto text-base text-accent hover:text-accent/80 font-normal" asChild><a href={`/placeholder-download/${file}`} target="_blank" rel="noopener noreferrer" data-ai-hint="document file"><Paperclip className="mr-1 h-4 w-4" /> {file}</a></Button></li>))}</ul></div>)}
                     {task.supervisorComments && !task.lecturerComments && (<><Separator /><div className="pt-4"><h3 className="text-base font-semibold text-foreground mb-2 flex items-center"><Briefcase className="mr-2 h-5 w-5 text-primary" />Company Supervisor Comments</h3><Card className="bg-muted/30 p-3 border-l-4 border-primary/50 shadow-inner"><p className="text-sm text-foreground italic">"{task.supervisorComments}"</p></Card></div></>)}
                 </CardContent>

@@ -10,8 +10,8 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { DUMMY_ASSIGNMENTS } from '@/app/(app)/assignments/page';
 import { DUMMY_STUDENTS_DATA, SCORING_METRICS } from '@/lib/constants';
-import { DUMMY_REPORTS } from '@/app/(app)/reports/page';
-import { DUMMY_TASKS } from '@/app/(app)/tasks/page';
+import { DUMMY_REPORTS } from '@/app/(app)/student/reports/page'; // Updated import
+import { DUMMY_TASKS } from '@/app/(app)/student/tasks/page'; // Updated import
 import type { DailyReport, DailyTask, InternEvaluation } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -92,7 +92,7 @@ const reportStatusColors: Record<DailyReport['status'], string> = {
   APPROVED: 'bg-green-100 text-green-700 border-green-500/30 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700/50',
   REJECTED: 'bg-red-100 text-red-700 border-red-500/30 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700/50',
 };
-const taskStatusColors = reportStatusColors; // Assuming same colors for tasks
+const taskStatusColors = reportStatusColors; 
 
 export default function LecturerStudentDetailPage() {
   const params = useParams();
@@ -129,9 +129,8 @@ export default function LecturerStudentDetailPage() {
       setAssignment(foundAssignment);
       visitFormMethods.setValue("location", foundAssignment.companyName ? `${foundAssignment.companyName} (Supervisor: ${foundAssignment.companySupervisor || 'TBD'})` : 'Company Visit Location');
     }
-    // Filter reports and tasks for this student (simulated)
-    setStudentReports(DUMMY_REPORTS.filter(r => r.studentId === studentId).slice(0, 5)); // Show recent 5
-    setStudentTasks(DUMMY_TASKS.filter(t => t.studentId === studentId).slice(0, 5));   // Show recent 5
+    setStudentReports(DUMMY_REPORTS.filter(r => r.studentId === studentId).slice(0, 5)); 
+    setStudentTasks(DUMMY_TASKS.filter(t => t.studentId === studentId).slice(0, 5));   
 
     const storedEvaluation = typeof window !== "undefined" ? localStorage.getItem(`lecturerStudentEvaluation_${studentId}`) : null;
     if (storedEvaluation) {
@@ -145,7 +144,6 @@ export default function LecturerStudentDetailPage() {
   }, [studentId, visitFormMethods, evaluationMethods]);
 
   const handleScheduleVisitSubmit = async (values: ScheduleVisitFormValues) => {
-    // Re-use isLoading state for simplicity, or use a dedicated one
     visitFormMethods.formState.isSubmitting;
     const visitDateTime = setMinutes(setHours(startOfDay(values.visitDate), parseInt(values.visitTime.split(':')[0])), parseInt(values.visitTime.split(':')[1]));
 
@@ -238,7 +236,7 @@ export default function LecturerStudentDetailPage() {
                     </Card>
                 )) : <p className="text-muted-foreground text-sm text-center py-4">No reports submitted by this student yet.</p>}
                 </CardContent>
-                 { DUMMY_REPORTS.filter(r => r.studentId === studentId).length > 5 && <CardFooter><Button variant="link" asChild className="mx-auto"><Link href={`/reports?studentId=${studentId}`}>View All Reports ({DUMMY_REPORTS.filter(r => r.studentId === studentId).length})</Link></Button></CardFooter>}
+                 { DUMMY_REPORTS.filter(r => r.studentId === studentId).length > 5 && <CardFooter><Button variant="link" asChild className="mx-auto"><Link href={`/student/reports?studentId=${studentId}`}>View All Reports ({DUMMY_REPORTS.filter(r => r.studentId === studentId).length})</Link></Button></CardFooter>}
             </Card>
              <Card className="shadow-xl rounded-xl">
                 <CardHeader><CardTitle className="font-headline text-lg flex items-center"><ListChecks className="mr-2 h-5 w-5 text-primary"/>Student Tasks</CardTitle><CardDescription>Review declared tasks. ({studentTasks.length} recent shown)</CardDescription></CardHeader>
@@ -251,7 +249,7 @@ export default function LecturerStudentDetailPage() {
                     </Card>
                 )) : <p className="text-muted-foreground text-sm text-center py-4">No tasks declared by this student yet.</p>}
                 </CardContent>
-                 { DUMMY_TASKS.filter(t => t.studentId === studentId).length > 5 && <CardFooter><Button variant="link" asChild className="mx-auto"><Link href={`/tasks?studentId=${studentId}`}>View All Tasks ({DUMMY_TASKS.filter(t => t.studentId === studentId).length})</Link></Button></CardFooter>}
+                 { DUMMY_TASKS.filter(t => t.studentId === studentId).length > 5 && <CardFooter><Button variant="link" asChild className="mx-auto"><Link href={`/student/tasks?studentId=${studentId}`}>View All Tasks ({DUMMY_TASKS.filter(t => t.studentId === studentId).length})</Link></Button></CardFooter>}
             </Card>
 
             <FormProvider {...evaluationMethods}><form onSubmit={evaluationMethods.handleSubmit(onEvaluationSubmit)}>

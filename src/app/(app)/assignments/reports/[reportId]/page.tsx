@@ -13,7 +13,7 @@ import type { DailyReport } from '@/types';
 import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { DUMMY_REPORTS } from '@/app/(app)/reports/page';
+import { DUMMY_REPORTS } from '@/app/(app)/student/reports/page'; // Updated import
 import { DUMMY_STUDENTS_DATA } from '@/lib/constants';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
@@ -30,7 +30,7 @@ type ExtendedDailyReport = DailyReport & {
   title?: string;
   challengesFaced?: string;
   securePhotoUrl?: string;
-  lecturerComments?: string; // Separate from supervisorComments
+  lecturerComments?: string; 
 };
 
 export default function LecturerReportReviewPage() {
@@ -88,7 +88,6 @@ export default function LecturerReportReviewPage() {
     const feedbackStorageKey = `lecturerReportFeedback_${student.id}_${report.id}`;
     localStorage.setItem(feedbackStorageKey, JSON.stringify({ status: newStatus, comment: feedbackComment }));
 
-    // Also update the main DUMMY_REPORTS for this session (simulates backend update)
     const reportIndex = DUMMY_REPORTS.findIndex(r => r.id === report.id);
     if (reportIndex !== -1) {
         DUMMY_REPORTS[reportIndex] = { ...DUMMY_REPORTS[reportIndex], status: newStatus, lecturerComments: feedbackComment };
@@ -118,7 +117,7 @@ export default function LecturerReportReviewPage() {
     
     const reportIndex = DUMMY_REPORTS.findIndex(r => r.id === report.id);
     if (reportIndex !== -1) {
-        DUMMY_REPORTS[reportIndex].lecturerComments = feedbackComment;
+        (DUMMY_REPORTS[reportIndex] as ExtendedDailyReport).lecturerComments = feedbackComment;
     }
 
     setIsSubmitting(false);

@@ -219,7 +219,7 @@ const StudentDashboard: React.FC<{ userName: string }> = ({ userName }) => {
                     <h2 className="text-2xl font-bold mb-1">Welcome back, {userName.split(' ')[0]}!</h2>
                     <p className="opacity-90 text-sm">You have 2 pending tasks and 1 report to submit today.</p>
                 </div>
-                <Link href="/tasks" passHref>
+                <Link href="/student/tasks" passHref>
                     <Button className="mt-3 md:mt-0 bg-primary-foreground text-primary hover:bg-primary-foreground/90 font-medium transition shrink-0 rounded-lg">
                     View Tasks
                     </Button>
@@ -243,7 +243,7 @@ const StudentDashboard: React.FC<{ userName: string }> = ({ userName }) => {
                 <Card className="shadow-lg rounded-xl overflow-hidden bg-card text-card-foreground">
                     <CardHeader className="border-b border-border flex flex-row justify-between items-center">
                     <CardTitle className="font-headline text-lg">Today&apos;s Tasks</CardTitle>
-                    <Link href="/tasks" passHref>
+                    <Link href="/student/tasks" passHref>
                         <Button variant="link" className="text-primary hover:text-primary/80 font-medium">View All</Button>
                     </Link>
                     </CardHeader>
@@ -253,7 +253,7 @@ const StudentDashboard: React.FC<{ userName: string }> = ({ userName }) => {
                     <StudentTaskItem title="Submit daily report" description="Include all completed tasks" status="Overdue" dueDate="Today 12:00 PM" />
                     </CardContent>
                     <CardFooter className="bg-muted/30 p-4 border-t border-border">
-                        <Link href="/tasks/new" className="w-full">
+                        <Link href="/student/tasks/new" className="w-full">
                             <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground rounded-lg">
                                 <PlusCircle className="mr-2 h-4 w-4"/> Add New Task
                             </Button>
@@ -305,7 +305,7 @@ const StudentDashboard: React.FC<{ userName: string }> = ({ userName }) => {
                                 Submit Quick Report
                             </Button>
                         </div>
-                        <p className="text-xs text-muted-foreground text-center">For a detailed submission, go to <Link href="/reports/new" className="text-primary hover:underline">Full Report Page</Link>.</p>
+                        <p className="text-xs text-muted-foreground text-center">For a detailed submission, go to <Link href="/student/reports/new" className="text-primary hover:underline">Full Report Page</Link>.</p>
                     </CardContent>
                 </Card>
                 </div>
@@ -339,7 +339,7 @@ const StudentDashboard: React.FC<{ userName: string }> = ({ userName }) => {
                                      <p className="text-muted-foreground text-xs mt-0.5">Verify your location for attendance.</p>
                                 )}
                                 </div>
-                                <Link href="/check-in" className="w-full">
+                                <Link href="/student/check-in" className="w-full">
                                     <Button className="mt-4 w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg">
                                         {isCheckedInToday ? "View Check-in" : "Check-in Now"}
                                     </Button>
@@ -558,23 +558,17 @@ const SupervisorDashboard: React.FC<{ userName: string }> = ({ userName }) => {
 }
 
 const HODDashboard: React.FC<{ userName: string }> = ({ userName }) => {
-    // Simulate HOD's scope: first faculty and first department in that faculty
     const hodFacultyId = FACULTIES.length > 0 ? FACULTIES[0].id : '';
     const hodDepartment = DEPARTMENTS.find(d => d.facultyId === hodFacultyId);
     const hodDepartmentId = hodDepartment ? hodDepartment.id : '';
     const hodDepartmentName = hodDepartment ? hodDepartment.name : 'N/A';
 
-    // Filter DUMMY_STUDENTS_DATA to get students in the HOD's department
-    // This assumes DUMMY_STUDENTS_DATA includes facultyId and departmentId or similar linkage.
-    // For now, we'll use a simplified filter if student data has department name.
-    // If not, this will be a placeholder.
     const departmentStudents = DUMMY_STUDENTS_DATA.filter(student => 
         student.department === hodDepartmentName 
-        // In a real app, you'd filter by student.departmentId === hodDepartmentId
-    ).map(student => ({ // Augment with some dummy compliance data
+    ).map(student => ({ 
         ...student,
-        compliance: `${Math.floor(Math.random() * 30) + 70}%`, // Random 70-100%
-        issues: Math.random() > 0.7 ? Math.floor(Math.random() * 3) : 0 // Random 0-2 issues
+        compliance: `${Math.floor(Math.random() * 30) + 70}%`, 
+        issues: Math.random() > 0.7 ? Math.floor(Math.random() * 3) : 0 
     }));
 
 
@@ -631,7 +625,6 @@ const HODDashboard: React.FC<{ userName: string }> = ({ userName }) => {
                                     <TableCell><Progress value={parseInt(student.compliance)} className="h-2" /> <span className="text-xs">{student.compliance}</span></TableCell>
                                     <TableCell className="text-center"><Badge variant={student.issues > 0 ? "destructive" : "default"}>{student.issues}</Badge></TableCell>
                                     <TableCell className="text-right">
-                                        {/* This link needs to be dynamic based on how HODs view student details. For now, points to general analytics. */}
                                         <Link href={`/analytics?studentId=${student.id}`} passHref> 
                                             <Button variant="ghost" size="sm">View Details</Button>
                                         </Link>
@@ -702,4 +695,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-

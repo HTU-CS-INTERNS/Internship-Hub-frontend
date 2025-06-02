@@ -7,19 +7,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import type { DailyTask } from '@/types';
-import { DUMMY_TASKS as ALL_DUMMY_TASKS } from '@/app/(app)/tasks/page'; 
+import { DUMMY_TASKS as ALL_DUMMY_TASKS } from '@/app/(app)/student/tasks/page'; // Updated import
 import { DUMMY_INTERNS } from '@/app/(app)/supervisor/interns/page';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 
-// Filter tasks to only show those that might be 'SUBMITTED' or 'PENDING' by interns
 const getPendingTasksForSupervisor = () => {
-  // This is a simplified simulation. In a real app, tasks would be linked to interns.
-  // We'll assume some tasks belong to intern1 (Samuel Green) for demo.
   return ALL_DUMMY_TASKS.filter(task => 
-    (task.status === 'SUBMITTED' || task.status === 'PENDING') && task.studentId === 'stu1' // stu1 maps to intern1
+    (task.status === 'SUBMITTED' || task.status === 'PENDING') && task.studentId === 'stu1' 
   );
 };
 
@@ -46,7 +43,6 @@ export default function ApproveTasksPage() {
       task.id === taskId ? { ...task, status: 'APPROVED' } : task
     ));
     toast({ title: 'Task Approved', description: `Task ID ${taskId} has been marked as approved.` });
-    // In a real app, an API call would be made here.
   };
 
   const handleRejectTask = (taskId: string) => {
@@ -91,7 +87,7 @@ export default function ApproveTasksPage() {
           {pendingTasks.length > 0 ? (
             <div className="space-y-4">
               {pendingTasks.map(task => {
-                const intern = DUMMY_INTERNS.find(i => i.id === 'intern1'); // Simplified: assumes tasks belong to intern1 for demo
+                const intern = DUMMY_INTERNS.find(i => i.id === 'intern1'); 
                 return (
                   <Card key={task.id} className="bg-muted/30 shadow-sm rounded-lg">
                     <CardHeader className="pb-3">
@@ -109,7 +105,7 @@ export default function ApproveTasksPage() {
                     <CardFooter className="justify-end gap-2 pt-2">
                       <Button variant="outline" size="sm" onClick={() => handleRejectTask(task.id)} className="border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive">Reject</Button>
                       <Button variant="default" size="sm" onClick={() => handleApproveTask(task.id)} className="bg-green-600 hover:bg-green-700 text-white">Approve</Button>
-                       <Link href={`/tasks/${task.id}?internView=true`} passHref> {/* Assuming a student task view page exists */}
+                       <Link href={`/student/tasks/${task.id}?internView=true`} passHref> 
                            <Button variant="ghost" size="sm">View Details</Button>
                        </Link>
                     </CardFooter>
@@ -128,4 +124,3 @@ export default function ApproveTasksPage() {
     </div>
   );
 }
-
