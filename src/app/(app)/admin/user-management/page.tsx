@@ -2,7 +2,7 @@
 'use client';
 import * as React from 'react';
 import PageHeader from '@/components/shared/page-header';
-import { UsersCog, UserPlus, Search, Filter, UserCheck, UserX, CaseUpper, CalendarX2 } from 'lucide-react';
+import { UserCog, UserPlus, Search, Filter, UserCheck, UserX, CaseUpper, CalendarX2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -96,7 +96,7 @@ export default function UserManagementPage() {
       <PageHeader
         title="User Management"
         description="Oversee all user accounts across the university internship program."
-        icon={UsersCog}
+        icon={UserCog}
         breadcrumbs={[
             { href: "/admin/dashboard", label: "Admin Dashboard" },
             { label: "User Management" }
@@ -232,7 +232,7 @@ export default function UserManagementPage() {
                 </Table>
             ) : (
                  <div className="text-center py-12 text-muted-foreground p-6">
-                    <UsersCog className="mx-auto h-12 w-12 mb-4 opacity-50" />
+                    <UserCog className="mx-auto h-12 w-12 mb-4 opacity-50" />
                     <p className="text-lg font-semibold">No users found.</p>
                     <p>Try adjusting your search or filter criteria.</p>
                 </div>
