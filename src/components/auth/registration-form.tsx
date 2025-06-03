@@ -21,11 +21,19 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, CheckCircle, AlertTriangle, KeyRound } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
-import { FACULTIES, DEPARTMENTS } from '@/lib/constants';
+import { FACULTIES, DEPARTMENTS, USER_ROLES } from '@/lib/constants';
+import { auth, db } from '@/lib/firebase';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import type { UserRole } from '@/types';
+
 
 const registrationStep1Schema = z.object({
   schoolId: z.string().min(3, { message: 'School ID must be at least 3 characters.' }).max(20, { message: 'School ID too long.'}),
-  schoolEmail: z.string().email({ message: 'Please enter a valid school email address.' }),
+  schoolEmail: z.string().email({ message: 'Please enter a valid school email address.' })
+    .refine(email => email.endsWith('@htu.edu.gh'), {
+      message: 'Email must be a valid @htu.edu.gh address.'
+    }),
 });
 
 const registrationStep2Schema = z.object({
@@ -57,7 +65,7 @@ const fetchStudentDataFromSchoolDB = async (schoolId: string): Promise<{name: st
   const department = DEPARTMENTS.find(d => d.facultyId === faculty.id) || DEPARTMENTS.find(d => d.id === "D005");
   
   return { 
-    name: `Student ${schoolId.substring(0,5)}`,
+    name: `Student ${schoolId.substring(0,5)}`, // Simulated name
     facultyId: faculty.id, 
     departmentId: department?.id || DEPARTMENTS[0].id 
   };
@@ -142,24 +150,59 @@ export function RegistrationForm() {
 
   async function handleStep3Submit(values: RegistrationStep3Values) {
     setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    if (typeof window !== "undefined" && userDataFromDB) {
-      localStorage.setItem('userRole', 'STUDENT');
-      localStorage.setItem('userName', userDataFromDB.name);
-      localStorage.setItem('userEmail', verifiedSchoolEmail); 
-      localStorage.setItem('userFacultyId', userDataFromDB.facultyId);
-      localStorage.setItem('userDepartmentId', userDataFromDB.departmentId);
-      localStorage.removeItem('onboardingComplete');
+    if (!userDataFromDB) {
+        toast({ title: "Error", description: "User data not found. Please restart registration.", variant: "destructive"});
+        setIsLoading(false);
+        setStep(1);
+        return;
     }
-    
-    toast({
-      title: "Registration Successful!",
-      description: `Welcome, ${userDataFromDB?.name || 'Student'}! Your account is created. Please complete your profile.`,
-      variant: "default",
-    });
-    setIsLoading(false);
-    router.push('/profile');
+
+    try {
+        const userCredential = await createUserWithEmailAndPassword(auth, verifiedSchoolEmail, values.password);
+        const firebaseUser = userCredential.user;
+        await updateProfile(firebaseUser, { displayName: userDataFromDB.name });
+
+        const userDocData = {
+            uid: firebaseUser.uid,
+            name: userDataFromDB.name,
+            email: verifiedSchoolEmail,
+            role: 'STUDENT' as UserRole,
+            facultyId: userDataFromDB.facultyId,
+            departmentId: userDataFromDB.departmentId,
+            contactNumber: '', // Student can fill this in profile setup
+            createdAt: serverTimestamp(),
+            status: 'ACTIVE',
+        };
+        await setDoc(doc(db, "users", firebaseUser.uid), userDocData);
+        
+        if (typeof window !== "undefined") {
+          localStorage.setItem('userRole', 'STUDENT');
+          localStorage.setItem('userName', userDataFromDB.name);
+          localStorage.setItem('userEmail', verifiedSchoolEmail); 
+          localStorage.setItem('userFacultyId', userDataFromDB.facultyId);
+          localStorage.setItem('userDepartmentId', userDataFromDB.departmentId);
+          localStorage.removeItem('onboardingComplete'); 
+        }
+        
+        toast({
+          title: "Registration Successful!",
+          description: `Welcome, ${userDataFromDB.name}! Your account is created. Please complete your profile.`,
+          variant: "default",
+        });
+        router.push('/profile');
+
+    } catch (error: any) {
+        console.error("Firebase registration error:", error);
+        let errorMessage = "Registration failed. Please try again.";
+        if (error.code === 'auth/email-already-in-use') {
+            errorMessage = "This email is already registered. Please login or use a different email.";
+        } else if (error.code === 'auth/weak-password') {
+            errorMessage = "The password is too weak.";
+        }
+        toast({ title: 'Registration Error', description: errorMessage, variant: 'destructive'});
+    } finally {
+        setIsLoading(false);
+    }
   }
 
   const facultyName = userDataFromDB ? FACULTIES.find(f => f.id === userDataFromDB.facultyId)?.name : 'N/A';
@@ -191,9 +234,9 @@ export function RegistrationForm() {
                 <FormItem>
                   <FormLabel>School Email Address</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="your.id@school.domain" {...field} className="rounded-lg border-input"/>
+                    <Input type="email" placeholder="your.id@htu.edu.gh" {...field} className="rounded-lg border-input"/>
                   </FormControl>
-                  <FormDescription>An OTP will be sent to this school email address.</FormDescription>
+                  <FormDescription>Must be your official @htu.edu.gh email. An OTP will be sent here.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
