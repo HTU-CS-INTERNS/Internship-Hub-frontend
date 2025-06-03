@@ -23,6 +23,8 @@ import { cn } from '@/lib/utils';
 import { format, parseISO, isValid } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import type { InternshipDetails, InternshipStatus, HODApprovalQueueItem } from '@/types';
+import { auth, db } from '@/lib/firebase';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 const internshipDetailsSchema = z.object({
   companyName: z.string().min(2, { message: 'Company name is required (min 2 chars).' }).max(100, { message: 'Company name too long (max 100).' }),
@@ -93,49 +95,64 @@ export default function InternshipDetailsForm({ defaultValues, onSuccess, isResu
 
   async function onSubmit(values: InternshipDetailsFormValues) {
     setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1000)); 
-    
-    const studentEmail = localStorage.getItem('userEmail') || 'unknown_student@example.com';
-    const studentName = localStorage.getItem('userName') || 'Unknown Student';
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      toast({ title: "Error", description: "You must be logged in to submit.", variant: "destructive" });
+      setIsLoading(false);
+      return;
+    }
 
-    const submissionDataForStudent: InternshipDetails = {
-        ...values,
-        startDate: format(values.startDate, 'yyyy-MM-dd'),
-        endDate: format(values.endDate, 'yyyy-MM-dd'),
-        status: 'PENDING_APPROVAL',
-    };
-    
-    // Save full details for the student's profile page
-    localStorage.setItem(`userInternshipDetails_${studentEmail}`, JSON.stringify(submissionDataForStudent));
+    const studentId = currentUser.uid;
+    const studentName = localStorage.getItem('userName') || currentUser.displayName || 'Unknown Student';
 
-    // Add to HOD approval queue
-    const hodQueueItem: HODApprovalQueueItem = {
-        studentId: studentEmail, // Using email as studentId for this simulation
-        studentName: studentName,
-        companyName: values.companyName,
-        supervisorName: values.supervisorName,
-        supervisorEmail: values.supervisorEmail,
-        submissionDate: new Date().toISOString(),
-        status: 'PENDING_APPROVAL',
+    const submissionDataForFirestore: InternshipDetails & { studentId: string; submittedAt: any } = {
+      ...values,
+      startDate: format(values.startDate, 'yyyy-MM-dd'),
+      endDate: format(values.endDate, 'yyyy-MM-dd'),
+      status: 'PENDING_APPROVAL',
+      studentId: studentId,
+      submittedAt: serverTimestamp(), // For Firestore
+      rejectionReason: values.status === 'REJECTED' ? values.rejectionReason : undefined, // Clear rejection reason if not rejected previously
     };
 
-    const currentQueueRaw = localStorage.getItem('hodCompanyApprovalQueue');
-    let currentQueue: HODApprovalQueueItem[] = currentQueueRaw ? JSON.parse(currentQueueRaw) : [];
-    // Remove any previous pending submission from this student to avoid duplicates
-    currentQueue = currentQueue.filter(item => item.studentId !== studentEmail || item.status !== 'PENDING_APPROVAL');
-    currentQueue.push(hodQueueItem);
-    localStorage.setItem('hodCompanyApprovalQueue', JSON.stringify(currentQueue));
-    
-    localStorage.removeItem('onboardingComplete'); // Ensure onboarding isn't marked complete until HOD approves
+    try {
+      await setDoc(doc(db, "internshipPlacements", studentId), submissionDataForFirestore);
 
-    setIsLoading(false);
-    toast({
-      title: isResubmitting ? 'Internship Details Resubmitted!' : 'Internship Details Submitted!',
-      description: 'Your internship information has been sent for HOD approval.',
-      variant: "default",
-    });
-    // Supervisor invitation toast can be triggered by HOD approval later
-    onSuccess?.(submissionDataForStudent);
+      // Add to HOD approval queue (still localStorage for now to keep HOD page working)
+      const hodQueueItem: HODApprovalQueueItem = {
+          studentId: studentId,
+          studentName: studentName,
+          companyName: values.companyName,
+          supervisorName: values.supervisorName,
+          supervisorEmail: values.supervisorEmail,
+          submissionDate: new Date().toISOString(), // For localStorage queue
+          status: 'PENDING_APPROVAL',
+      };
+
+      const currentQueueRaw = localStorage.getItem('hodCompanyApprovalQueue');
+      let currentQueue: HODApprovalQueueItem[] = currentQueueRaw ? JSON.parse(currentQueueRaw) : [];
+      currentQueue = currentQueue.filter(item => item.studentId !== studentId || item.status !== 'PENDING_APPROVAL');
+      currentQueue.push(hodQueueItem);
+      localStorage.setItem('hodCompanyApprovalQueue', JSON.stringify(currentQueue));
+      
+      localStorage.removeItem('onboardingComplete'); 
+
+      toast({
+        title: isResubmitting ? 'Internship Details Resubmitted!' : 'Internship Details Submitted!',
+        description: 'Your internship information has been sent for HOD approval.',
+        variant: "default",
+      });
+      onSuccess?.(submissionDataForFirestore);
+    } catch (error) {
+      console.error("Error saving internship details to Firestore: ", error);
+      toast({
+        title: "Submission Failed",
+        description: "Could not save internship details. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (

@@ -15,8 +15,8 @@ import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from '@/lib/utils';
 import { format, parseISO, isValid } from 'date-fns';
-// import { db } from '@/lib/firebase'; // To be used for actual Firestore fetching
-// import { doc, getDoc } from 'firebase/firestore'; // To be used for actual Firestore fetching
+import { auth, db } from '@/lib/firebase';
+import { doc, getDoc, DocumentData } from 'firebase/firestore';
 
 const getInitials = (name: string) => {
     if (!name) return 'U';
@@ -44,7 +44,7 @@ export default function ProfilePage() {
     departmentName: string;
     internship: InternshipDetails;
   }>({
-    name: '', // Initial empty state
+    name: '', 
     email: '',
     avatarUrl: '',
     facultyId: '',
@@ -55,15 +55,8 @@ export default function ProfilePage() {
     supervisorCompanyName: '',
     supervisorCompanyAddress: '',
     internship: {
-      companyName: '',
-      companyAddress: '',
-      supervisorName: '',
-      supervisorEmail: '',
-      startDate: '',
-      endDate: '',
-      location: '',
-      status: 'NOT_SUBMITTED',
-      rejectionReason: '',
+      companyName: '', companyAddress: '', supervisorName: '', supervisorEmail: '',
+      startDate: '', endDate: '', location: '', status: 'NOT_SUBMITTED', rejectionReason: ''
     }
   });
 
@@ -71,64 +64,75 @@ export default function ProfilePage() {
     const fetchData = async () => {
       setIsLoadingData(true);
       setProfileError(null);
+      const currentUser = auth.currentUser;
+      const storedRoleFromAuth = localStorage.getItem('userRole') as UserRole | null; // Still keep role from login
+      setUserRole(storedRoleFromAuth);
+
+
+      if (!currentUser || !storedRoleFromAuth) {
+        router.push('/login');
+        return;
+      }
+
       try {
-        const storedRole = localStorage.getItem('userRole') as UserRole | null;
-        setUserRole(storedRole);
+        const userDocRef = doc(db, "users", currentUser.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        let fetchedUserData: ProfileFormValues = { name: '', email: ''};
 
-        if (!storedRole) {
-          router.push('/login'); // Should be handled by layout, but good fallback
-          return;
+        if (userDocSnap.exists()) {
+          const firestoreData = userDocSnap.data() as DocumentData;
+          fetchedUserData = {
+            name: firestoreData.name || currentUser.displayName || 'User',
+            email: firestoreData.email || currentUser.email || 'email@example.com',
+            facultyId: firestoreData.facultyId || '',
+            departmentId: firestoreData.departmentId || '',
+            contactNumber: firestoreData.contactNumber || '',
+            supervisorCompanyName: firestoreData.supervisorCompanyName || '',
+            supervisorCompanyAddress: firestoreData.supervisorCompanyAddress || '',
+          };
+        } else {
+            // Fallback if no user doc, though registration should create it
+            fetchedUserData = {
+                name: localStorage.getItem('userName') || currentUser.displayName || 'User',
+                email: currentUser.email || 'email@example.com',
+                facultyId: localStorage.getItem('userFacultyId') || '',
+                departmentId: localStorage.getItem('userDepartmentId') || '',
+                contactNumber: localStorage.getItem('userContactNumber') || '',
+                supervisorCompanyName: localStorage.getItem('supervisorCompanyName') || '',
+                supervisorCompanyAddress: localStorage.getItem('supervisorCompanyAddress') || '',
+            };
+             setProfileError("User profile data not fully loaded from database. Some information might be from local cache.");
         }
-
-        // Simulate fetching data from Firestore (replace with actual calls later)
-        // For now, we'll continue to populate from localStorage for demonstration within this "fetch"
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate network delay
-
-        const storedName = localStorage.getItem('userName') || (storedRole === 'SUPERVISOR' ? 'New Supervisor' : 'New User');
-        const storedEmail = localStorage.getItem('userEmail') || 'email@example.com';
-        const storedFacultyId = localStorage.getItem('userFacultyId') || '';
-        const storedDepartmentId = localStorage.getItem('userDepartmentId') || '';
-        const storedContactNumber = localStorage.getItem('userContactNumber') || '';
-        const storedSupervisorCompanyName = localStorage.getItem('supervisorCompanyName') || '';
-        const storedSupervisorCompanyAddress = localStorage.getItem('supervisorCompanyAddress') || '';
-
+        
         let fetchedInternship: InternshipDetails = {
             companyName: '', companyAddress: '', supervisorName: '', supervisorEmail: '',
             startDate: '', endDate: '', location: '', status: 'NOT_SUBMITTED', rejectionReason: ''
         };
-        if (storedRole === 'STUDENT' && storedEmail) {
-            const studentInternshipKey = `userInternshipDetails_${storedEmail}`;
-            const studentInternshipString = localStorage.getItem(studentInternshipKey);
-            if (studentInternshipString) {
-                try {
-                    const parsed = JSON.parse(studentInternshipString);
-                    fetchedInternship = { ...fetchedInternship, ...parsed }; 
-                } catch (e) { console.error("Error parsing internship details from localStorage", e); }
+
+        if (storedRoleFromAuth === 'STUDENT') {
+            const internshipDocRef = doc(db, "internshipPlacements", currentUser.uid);
+            const internshipDocSnap = await getDoc(internshipDocRef);
+            if (internshipDocSnap.exists()) {
+                fetchedInternship = internshipDocSnap.data() as InternshipDetails;
             }
         }
         
-        const faculty = FACULTIES.find(f => f.id === storedFacultyId);
-        const department = DEPARTMENTS.find(d => d.id === storedDepartmentId && d.facultyId === storedFacultyId);
+        const faculty = FACULTIES.find(f => f.id === fetchedUserData.facultyId);
+        const department = DEPARTMENTS.find(d => d.id === fetchedUserData.departmentId && d.facultyId === fetchedUserData.facultyId);
 
         setUserData({
-            name: storedName,
-            email: storedEmail,
-            avatarUrl: `https://placehold.co/150x150.png?text=${getInitials(storedName)}`,
-            facultyId: storedRole === 'STUDENT' ? (faculty?.id || '') : '',
-            facultyName: storedRole === 'STUDENT' ? (faculty?.name || 'Not Set') : '',
-            departmentId: storedRole === 'STUDENT' ? (department?.id || '') : '',
-            departmentName: storedRole === 'STUDENT' ? (department?.name || 'Not Set') : '',
-            contactNumber: storedContactNumber,
-            supervisorCompanyName: storedRole === 'SUPERVISOR' ? storedSupervisorCompanyName : '',
-            supervisorCompanyAddress: storedRole === 'SUPERVISOR' ? storedSupervisorCompanyAddress : '',
-            internship: storedRole === 'STUDENT' ? fetchedInternship : userData.internship,
+            ...fetchedUserData,
+            avatarUrl: `https://placehold.co/150x150.png?text=${getInitials(fetchedUserData.name)}`,
+            facultyName: storedRoleFromAuth === 'STUDENT' ? (faculty?.name || 'Not Set') : '',
+            departmentName: storedRoleFromAuth === 'STUDENT' ? (department?.name || 'Not Set') : '',
+            internship: storedRoleFromAuth === 'STUDENT' ? fetchedInternship : userData.internship,
         });
         
         const onboardingComplete = localStorage.getItem('onboardingComplete') === 'true';
         const supervisorProfileComplete = localStorage.getItem('supervisorProfileComplete') === 'true';
 
-        if (storedRole === 'STUDENT' && !onboardingComplete) {
-            if (!storedFacultyId || !storedDepartmentId || storedFacultyId === 'Not Set' || storedDepartmentId === 'Not Set' || !storedName || storedName === 'New User' || !storedEmail || !storedContactNumber) {
+        if (storedRoleFromAuth === 'STUDENT' && !onboardingComplete) {
+            if (!fetchedUserData.facultyId || !fetchedUserData.departmentId || fetchedUserData.facultyId === 'Not Set' || fetchedUserData.departmentId === 'Not Set' || !fetchedUserData.name || fetchedUserData.name === 'New User' || !fetchedUserData.email || !fetchedUserData.contactNumber) {
                 setIsEditingProfile(true);
                 setIsEditingInternship(false);
             } else if (fetchedInternship.status === 'NOT_SUBMITTED' || fetchedInternship.status === 'REJECTED') {
@@ -139,8 +143,8 @@ export default function ProfilePage() {
                 setIsEditingProfile(false);
                 setIsEditingInternship(false);
             }
-        } else if (storedRole === 'SUPERVISOR' && !supervisorProfileComplete) {
-            if (storedName === 'New Supervisor' || !storedContactNumber || !storedSupervisorCompanyName) {
+        } else if (storedRoleFromAuth === 'SUPERVISOR' && !supervisorProfileComplete) {
+            if (fetchedUserData.name === 'New Supervisor' || !fetchedUserData.contactNumber || !fetchedUserData.supervisorCompanyName) {
                 setIsEditingProfile(true);
             } else {
                 localStorage.setItem('supervisorProfileComplete', 'true');
@@ -153,16 +157,24 @@ export default function ProfilePage() {
         setIsLoadingData(false);
       }
     };
-
-    fetchData();
-  }, [router, userData.internship]); // Re-check on userData.internship change for status updates
+    
+    const unsubscribe = auth.onAuthStateChanged(user => {
+        if (user) {
+            fetchData();
+        } else {
+            router.push('/login');
+        }
+    });
+    return () => unsubscribe();
+  }, [router, userData.internship.status]); // Re-run if internship status changes (e.g., after submission)
   
   const handleProfileSaveSuccess = (updatedProfileData: ProfileFormValues) => {
+    // Firestore save is now handled in ProfileSetupForm
     const faculty = FACULTIES.find(f => f.id === updatedProfileData.facultyId);
     const department = DEPARTMENTS.find(d => d.id === updatedProfileData.departmentId && d.facultyId === updatedProfileData.facultyId);
 
-    const newUserData = {
-      ...userData,
+    setUserData(prev => ({
+      ...prev,
       name: updatedProfileData.name,
       email: updatedProfileData.email,
       facultyId: userRole === 'STUDENT' ? (faculty?.id || '') : '',
@@ -173,25 +185,8 @@ export default function ProfilePage() {
       supervisorCompanyName: userRole === 'SUPERVISOR' ? updatedProfileData.supervisorCompanyName || '' : '',
       supervisorCompanyAddress: userRole === 'SUPERVISOR' ? updatedProfileData.supervisorCompanyAddress || '' : '',
       avatarUrl: `https://placehold.co/150x150.png?text=${getInitials(updatedProfileData.name)}`,
-    };
-    setUserData(newUserData);
+    }));
     
-    if (typeof window !== "undefined") {
-        localStorage.setItem('userName', newUserData.name);
-        localStorage.setItem('userEmail', newUserData.email);
-        localStorage.setItem('userContactNumber', newUserData.contactNumber);
-        if (userRole === 'STUDENT') {
-            localStorage.setItem('userFacultyId', newUserData.facultyId);
-            localStorage.setItem('userDepartmentId', newUserData.departmentId);
-        }
-        if (userRole === 'SUPERVISOR') {
-            localStorage.setItem('supervisorCompanyName', newUserData.supervisorCompanyName || '');
-            localStorage.setItem('supervisorCompanyAddress', newUserData.supervisorCompanyAddress || '');
-            if (newUserData.supervisorCompanyName && newUserData.name !== 'New Supervisor') {
-                localStorage.setItem('supervisorProfileComplete', 'true');
-            }
-        }
-    }
     setIsEditingProfile(false);
     
     if (userRole === 'STUDENT' && (userData.internship.status === 'NOT_SUBMITTED' || userData.internship.status === 'REJECTED')) {
@@ -202,22 +197,18 @@ export default function ProfilePage() {
   };
 
   const handleInternshipSaveSuccess = (updatedInternshipData: InternshipDetails) => {
+    // Firestore save is handled in InternshipDetailsForm
     setUserData(prev => ({
         ...prev,
         internship: updatedInternshipData
     }));
-
-    if (typeof window !== "undefined" && userData.email) {
-        const studentInternshipKey = `userInternshipDetails_${userData.email}`;
-        localStorage.setItem(studentInternshipKey, JSON.stringify(updatedInternshipData));
-        if (updatedInternshipData.status === 'APPROVED') {
-            localStorage.setItem('onboardingComplete', 'true');
-            router.push('/dashboard'); 
-        } else if (updatedInternshipData.status === 'PENDING_APPROVAL') {
-             localStorage.removeItem('onboardingComplete'); 
-        }
-    }
     setIsEditingInternship(false);
+    // Status will be PENDING_APPROVAL, so onboarding is not yet complete
+    if (updatedInternshipData.status === 'APPROVED') {
+        localStorage.setItem('onboardingComplete', 'true');
+    } else {
+        localStorage.removeItem('onboardingComplete');
+    }
   };
   
   if (isLoadingData) {
@@ -229,7 +220,7 @@ export default function ProfilePage() {
     );
   }
 
-  if (profileError) {
+  if (profileError && !isEditingProfile && !isEditingInternship) { // Only show full page error if not in editing mode
     return <div className="p-6 text-center text-destructive">{profileError}</div>;
   }
 
@@ -244,6 +235,13 @@ export default function ProfilePage() {
         icon={UserIcon}
         breadcrumbs={[{ href: "/dashboard", label: "Dashboard" }, { label: "Profile" }]}
       />
+      {profileError && (isEditingProfile || isEditingInternship) && (
+        <Alert variant="destructive" className="mb-4">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Loading Error</AlertTitle>
+            <AlertDescription>{profileError} Some information might be outdated. Proceed with caution or refresh.</AlertDescription>
+        </Alert>
+      )}
 
       <Card className="shadow-xl rounded-xl">
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 border-b">
@@ -279,15 +277,7 @@ export default function ProfilePage() {
           {isEditingProfile ? (
             <ProfileSetupForm 
               userRole={userRole}
-              defaultValues={{ 
-                name: userData.name, 
-                email: userData.email, 
-                facultyId: userData.facultyId,
-                departmentId: userData.departmentId,
-                contactNumber: userData.contactNumber,
-                supervisorCompanyName: userData.supervisorCompanyName,
-                supervisorCompanyAddress: userData.supervisorCompanyAddress,
-              }} 
+              defaultValues={userData} 
               onSuccess={handleProfileSaveSuccess} 
             />
           ) : (
