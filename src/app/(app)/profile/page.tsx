@@ -2,7 +2,7 @@
 'use client';
 import * as React from 'react';
 import PageHeader from '@/components/shared/page-header';
-import { User as UserIcon, Briefcase, BookOpen, Edit3, GraduationCap, Building, Phone as PhoneIcon, AlertTriangle, CheckCircle, Clock, Landmark } from 'lucide-react';
+import { User as UserIcon, Briefcase, BookOpen, Edit3, GraduationCap, Building, Phone as PhoneIcon, AlertTriangle, CheckCircle, Clock, Landmark, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -15,6 +15,8 @@ import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from '@/lib/utils';
 import { format, parseISO, isValid } from 'date-fns';
+// import { db } from '@/lib/firebase'; // To be used for actual Firestore fetching
+// import { doc, getDoc } from 'firebase/firestore'; // To be used for actual Firestore fetching
 
 const getInitials = (name: string) => {
     if (!name) return 'U';
@@ -28,12 +30,13 @@ const statusAlertColors: Record<InternshipStatus, { bg: string, border: string, 
     NOT_SUBMITTED: { bg: "bg-blue-500/10 dark:bg-blue-800/30", border: "border-blue-500/50 dark:border-blue-700/50", iconColor: "text-blue-600 dark:text-blue-400", icon: Edit3 },
 };
 
-
 export default function ProfilePage() {
   const router = useRouter(); 
   const [userRole, setUserRole] = React.useState<UserRole | null>(null);
   const [isEditingProfile, setIsEditingProfile] = React.useState(false);
   const [isEditingInternship, setIsEditingInternship] = React.useState(false);
+  const [isLoadingData, setIsLoadingData] = React.useState(true);
+  const [profileError, setProfileError] = React.useState<string | null>(null);
   
   const [userData, setUserData] = React.useState<ProfileFormValues & {
     avatarUrl: string;
@@ -41,13 +44,13 @@ export default function ProfilePage() {
     departmentName: string;
     internship: InternshipDetails;
   }>({
-    name: 'User',
-    email: 'user@example.com',
+    name: '', // Initial empty state
+    email: '',
     avatarUrl: '',
     facultyId: '',
-    facultyName: 'Not Set',
+    facultyName: '',
     departmentId: '',
-    departmentName: 'Not Set',
+    departmentName: '',
     contactNumber: '',
     supervisorCompanyName: '',
     supervisorCompanyAddress: '',
@@ -65,75 +68,94 @@ export default function ProfilePage() {
   });
 
   React.useEffect(() => {
-    const storedRole = typeof window !== "undefined" ? localStorage.getItem('userRole') as UserRole : null;
-    setUserRole(storedRole);
+    const fetchData = async () => {
+      setIsLoadingData(true);
+      setProfileError(null);
+      try {
+        const storedRole = localStorage.getItem('userRole') as UserRole | null;
+        setUserRole(storedRole);
 
-    const storedName = typeof window !== "undefined" ? localStorage.getItem('userName') || (storedRole === 'SUPERVISOR' ? 'New Supervisor' : 'New User') : 'New User';
-    const storedEmail = typeof window !== "undefined" ? localStorage.getItem('userEmail') || 'email@example.com' : 'email@example.com';
-    const storedFacultyId = typeof window !== "undefined" ? localStorage.getItem('userFacultyId') || '' : '';
-    const storedDepartmentId = typeof window !== "undefined" ? localStorage.getItem('userDepartmentId') || '' : '';
-    const storedContactNumber = typeof window !== "undefined" ? localStorage.getItem('userContactNumber') || '' : '';
-    const storedSupervisorCompanyName = typeof window !== "undefined" ? localStorage.getItem('supervisorCompanyName') || '' : '';
-    const storedSupervisorCompanyAddress = typeof window !== "undefined" ? localStorage.getItem('supervisorCompanyAddress') || '' : '';
+        if (!storedRole) {
+          router.push('/login'); // Should be handled by layout, but good fallback
+          return;
+        }
 
-    let storedInternship: InternshipDetails = {
-        companyName: '', companyAddress: '', supervisorName: '', supervisorEmail: '',
-        startDate: '', endDate: '', location: '', status: 'NOT_SUBMITTED', rejectionReason: ''
+        // Simulate fetching data from Firestore (replace with actual calls later)
+        // For now, we'll continue to populate from localStorage for demonstration within this "fetch"
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate network delay
+
+        const storedName = localStorage.getItem('userName') || (storedRole === 'SUPERVISOR' ? 'New Supervisor' : 'New User');
+        const storedEmail = localStorage.getItem('userEmail') || 'email@example.com';
+        const storedFacultyId = localStorage.getItem('userFacultyId') || '';
+        const storedDepartmentId = localStorage.getItem('userDepartmentId') || '';
+        const storedContactNumber = localStorage.getItem('userContactNumber') || '';
+        const storedSupervisorCompanyName = localStorage.getItem('supervisorCompanyName') || '';
+        const storedSupervisorCompanyAddress = localStorage.getItem('supervisorCompanyAddress') || '';
+
+        let fetchedInternship: InternshipDetails = {
+            companyName: '', companyAddress: '', supervisorName: '', supervisorEmail: '',
+            startDate: '', endDate: '', location: '', status: 'NOT_SUBMITTED', rejectionReason: ''
+        };
+        if (storedRole === 'STUDENT' && storedEmail) {
+            const studentInternshipKey = `userInternshipDetails_${storedEmail}`;
+            const studentInternshipString = localStorage.getItem(studentInternshipKey);
+            if (studentInternshipString) {
+                try {
+                    const parsed = JSON.parse(studentInternshipString);
+                    fetchedInternship = { ...fetchedInternship, ...parsed }; 
+                } catch (e) { console.error("Error parsing internship details from localStorage", e); }
+            }
+        }
+        
+        const faculty = FACULTIES.find(f => f.id === storedFacultyId);
+        const department = DEPARTMENTS.find(d => d.id === storedDepartmentId && d.facultyId === storedFacultyId);
+
+        setUserData({
+            name: storedName,
+            email: storedEmail,
+            avatarUrl: `https://placehold.co/150x150.png?text=${getInitials(storedName)}`,
+            facultyId: storedRole === 'STUDENT' ? (faculty?.id || '') : '',
+            facultyName: storedRole === 'STUDENT' ? (faculty?.name || 'Not Set') : '',
+            departmentId: storedRole === 'STUDENT' ? (department?.id || '') : '',
+            departmentName: storedRole === 'STUDENT' ? (department?.name || 'Not Set') : '',
+            contactNumber: storedContactNumber,
+            supervisorCompanyName: storedRole === 'SUPERVISOR' ? storedSupervisorCompanyName : '',
+            supervisorCompanyAddress: storedRole === 'SUPERVISOR' ? storedSupervisorCompanyAddress : '',
+            internship: storedRole === 'STUDENT' ? fetchedInternship : userData.internship,
+        });
+        
+        const onboardingComplete = localStorage.getItem('onboardingComplete') === 'true';
+        const supervisorProfileComplete = localStorage.getItem('supervisorProfileComplete') === 'true';
+
+        if (storedRole === 'STUDENT' && !onboardingComplete) {
+            if (!storedFacultyId || !storedDepartmentId || storedFacultyId === 'Not Set' || storedDepartmentId === 'Not Set' || !storedName || storedName === 'New User' || !storedEmail || !storedContactNumber) {
+                setIsEditingProfile(true);
+                setIsEditingInternship(false);
+            } else if (fetchedInternship.status === 'NOT_SUBMITTED' || fetchedInternship.status === 'REJECTED') {
+                 setIsEditingProfile(false); 
+                 setIsEditingInternship(true);
+            } else if (fetchedInternship.status === 'APPROVED') {
+                localStorage.setItem('onboardingComplete', 'true');
+                setIsEditingProfile(false);
+                setIsEditingInternship(false);
+            }
+        } else if (storedRole === 'SUPERVISOR' && !supervisorProfileComplete) {
+            if (storedName === 'New Supervisor' || !storedContactNumber || !storedSupervisorCompanyName) {
+                setIsEditingProfile(true);
+            } else {
+                localStorage.setItem('supervisorProfileComplete', 'true');
+            }
+        }
+      } catch (err) {
+        console.error("Error fetching profile data:", err);
+        setProfileError("Failed to load profile information. Please try again later.");
+      } finally {
+        setIsLoadingData(false);
+      }
     };
-    // Load student-specific internship details
-    if (storedRole === 'STUDENT' && storedEmail) {
-        const studentInternshipKey = `userInternshipDetails_${storedEmail}`;
-        const studentInternshipString = typeof window !== "undefined" ? localStorage.getItem(studentInternshipKey) : null;
-        if (studentInternshipString) {
-            try {
-                const parsed = JSON.parse(studentInternshipString);
-                storedInternship = { ...storedInternship, ...parsed }; 
-            } catch (e) { console.error("Error parsing internship details from localStorage", e); }
-        }
-    }
-    
-    const faculty = FACULTIES.find(f => f.id === storedFacultyId);
-    const department = DEPARTMENTS.find(d => d.id === storedDepartmentId && d.facultyId === storedFacultyId);
 
-    setUserData(prev => ({
-        ...prev,
-        name: storedName,
-        email: storedEmail,
-        avatarUrl: `https://placehold.co/150x150.png?text=${getInitials(storedName)}`,
-        facultyId: storedRole === 'STUDENT' ? (faculty?.id || '') : '',
-        facultyName: storedRole === 'STUDENT' ? (faculty?.name || 'Not Set') : '',
-        departmentId: storedRole === 'STUDENT' ? (department?.id || '') : '',
-        departmentName: storedRole === 'STUDENT' ? (department?.name || 'Not Set') : '',
-        contactNumber: storedContactNumber,
-        supervisorCompanyName: storedRole === 'SUPERVISOR' ? storedSupervisorCompanyName : '',
-        supervisorCompanyAddress: storedRole === 'SUPERVISOR' ? storedSupervisorCompanyAddress : '',
-        internship: storedRole === 'STUDENT' ? storedInternship : prev.internship,
-    }));
-    
-    const onboardingComplete = typeof window !== "undefined" ? localStorage.getItem('onboardingComplete') === 'true' : false;
-    const supervisorProfileComplete = typeof window !== "undefined" ? localStorage.getItem('supervisorProfileComplete') === 'true' : false;
-
-    if (storedRole === 'STUDENT' && !onboardingComplete) {
-        if (!storedFacultyId || !storedDepartmentId || storedFacultyId === 'Not Set' || storedDepartmentId === 'Not Set' || !storedName || storedName === 'New User' || !storedEmail || !storedContactNumber) {
-            setIsEditingProfile(true);
-            setIsEditingInternship(false);
-        } else if (storedInternship.status === 'NOT_SUBMITTED' || storedInternship.status === 'REJECTED') {
-             setIsEditingProfile(false); 
-             setIsEditingInternship(true);
-        } else if (storedInternship.status === 'APPROVED') {
-            localStorage.setItem('onboardingComplete', 'true');
-            setIsEditingProfile(false);
-            setIsEditingInternship(false);
-        }
-    } else if (storedRole === 'SUPERVISOR' && !supervisorProfileComplete) {
-        if (storedName === 'New Supervisor' || !storedContactNumber || !storedSupervisorCompanyName) {
-            setIsEditingProfile(true);
-        } else {
-            localStorage.setItem('supervisorProfileComplete', 'true');
-        }
-    }
-
-  }, []);
+    fetchData();
+  }, [router, userData.internship]); // Re-check on userData.internship change for status updates
   
   const handleProfileSaveSuccess = (updatedProfileData: ProfileFormValues) => {
     const faculty = FACULTIES.find(f => f.id === updatedProfileData.facultyId);
@@ -165,6 +187,9 @@ export default function ProfilePage() {
         if (userRole === 'SUPERVISOR') {
             localStorage.setItem('supervisorCompanyName', newUserData.supervisorCompanyName || '');
             localStorage.setItem('supervisorCompanyAddress', newUserData.supervisorCompanyAddress || '');
+            if (newUserData.supervisorCompanyName && newUserData.name !== 'New Supervisor') {
+                localStorage.setItem('supervisorProfileComplete', 'true');
+            }
         }
     }
     setIsEditingProfile(false);
@@ -173,8 +198,6 @@ export default function ProfilePage() {
         setIsEditingInternship(true);
     } else if (userRole === 'STUDENT' && userData.internship.status === 'APPROVED') {
         localStorage.setItem('onboardingComplete', 'true');
-    } else if (userRole === 'SUPERVISOR' && newUserData.supervisorCompanyName && newUserData.name !== 'New Supervisor') {
-        localStorage.setItem('supervisorProfileComplete', 'true');
     }
   };
 
@@ -196,6 +219,19 @@ export default function ProfilePage() {
     }
     setIsEditingInternship(false);
   };
+  
+  if (isLoadingData) {
+    return (
+      <div className="flex items-center justify-center h-full p-6">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="ml-2 text-lg">Loading profile...</p>
+      </div>
+    );
+  }
+
+  if (profileError) {
+    return <div className="p-6 text-center text-destructive">{profileError}</div>;
+  }
 
   const currentInternshipStatus = userData.internship.status;
   const StatusIcon = statusAlertColors[currentInternshipStatus]?.icon || Edit3;
@@ -262,14 +298,14 @@ export default function ProfilePage() {
                     <GraduationCap className="h-5 w-5 text-primary"/>
                     <div>
                         <p className="font-medium text-foreground">Faculty:</p>
-                        <p className="text-muted-foreground">{userData.facultyName}</p>
+                        <p className="text-muted-foreground">{userData.facultyName || 'Not Set'}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <Building className="h-5 w-5 text-primary"/>
                     <div>
                         <p className="font-medium text-foreground">Department:</p>
-                        <p className="text-muted-foreground">{userData.departmentName}</p>
+                        <p className="text-muted-foreground">{userData.departmentName || 'Not Set'}</p>
                     </div>
                   </div>
                 </>
@@ -437,8 +473,8 @@ export default function ProfilePage() {
           </CardHeader>
           <CardContent className="p-6">
             <p className="text-muted-foreground">
-              As a {USER_ROLES[userRole]}, your primary role involves { userRole === 'LECTURER' ? 'managing student assignments, tracking progress, and facilitating communication.' : userRole === 'HOD' ? 'overseeing departmental internship activities, managing assignments, and analyzing overall program performance.' : '' }
-              You can manage relevant aspects via the appropriate sections like '{userRole === 'LECTURER' ? 'Assignments' : 'Department Ops'}' and use the 'Feedback Hub' for communication.
+              As a {USER_ROLES[userRole]}, your primary role involves { userRole === 'LECTURER' ? 'managing student assignments, tracking progress, and facilitating communication.' : userRole === 'HOD' ? 'overseeing departmental internship activities, managing assignments, and analyzing overall program performance.' : userRole === 'ADMIN' ? 'managing the entire InternshipTrack platform, including university structure, user accounts, and system settings.' : '' }
+              You can manage relevant aspects via the appropriate sections like '{userRole === 'LECTURER' ? 'Assignments' : userRole === 'HOD' ? 'Department Ops' : 'Admin Dashboard'}' and use the 'Feedback Hub' for communication.
             </p>
              {isEditingProfile && <p className="mt-4 text-sm text-destructive">Please save your profile information first to proceed.</p>}
           </CardContent>

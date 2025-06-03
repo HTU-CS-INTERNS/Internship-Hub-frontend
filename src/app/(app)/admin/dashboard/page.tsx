@@ -6,6 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { School, Users, BarChart3, Landmark, UserCog, Building, UserCheck, TrendingUp, Briefcase, Settings, Loader2 } from 'lucide-react';
+import { db } from '@/lib/firebase'; // Import Firestore instance
+import { collection, getCountFromServer } from 'firebase/firestore';
 
 const AdminDashboardStatCard: React.FC<{ title: string; value: string | number; icon: React.ElementType; description?: string; actionLink?: string; actionLabel?: string; isLoading?: boolean }> = ({ title, value, icon: Icon, description, actionLink, actionLabel, isLoading }) => (
   <Card className="shadow-lg rounded-xl">
@@ -40,35 +42,60 @@ interface UniversityStats {
   totalLecturers: number;
   avgLecturerWorkload: number;
   totalCompanies: number;
+  totalFaculties: number; // New stat
 }
 
 export default function AdminDashboardPage() {
   const [universityStats, setUniversityStats] = React.useState<UniversityStats | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    // Simulate fetching data
     const fetchStats = async () => {
       setIsLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate network delay
-      
-      // Placeholder data - in a real app, this would be fetched from Firestore
-      const fetchedData: UniversityStats = {
-        totalInterns: 782,
-        activeInternships: 715,
-        unassignedInterns: 28,
-        totalLecturers: 85,
-        avgLecturerWorkload: 9.2, 
-        totalCompanies: 125,
-      };
-      setUniversityStats(fetchedData);
-      setIsLoading(false);
+      setError(null);
+      try {
+        // Actual Firestore query for faculties count
+        let facultiesCount = 0;
+        try {
+          const facultiesCollectionRef = collection(db, 'faculties');
+          const snapshot = await getCountFromServer(facultiesCollectionRef);
+          facultiesCount = snapshot.data().count;
+        } catch (firestoreError) {
+          console.error("Error fetching faculties count:", firestoreError);
+          // Keep going with placeholder for faculties if this fails for now
+          // Could set a specific error message for this particular stat
+        }
+
+        // Simulate fetching other data (to be replaced with actual Firestore queries later)
+        await new Promise(resolve => setTimeout(resolve, 1200)); 
+        
+        const fetchedData: UniversityStats = {
+          totalInterns: 782,
+          activeInternships: 715,
+          unassignedInterns: 28,
+          totalLecturers: 85,
+          avgLecturerWorkload: 9.2, 
+          totalCompanies: 125,
+          totalFaculties: facultiesCount, // Use actual count
+        };
+        setUniversityStats(fetchedData);
+      } catch (err) {
+        console.error("Error fetching admin dashboard stats:", err);
+        setError("Failed to load dashboard statistics. Please try again later.");
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     fetchStats();
   }, []);
 
   const engagementPercentage = universityStats ? ((universityStats.activeInternships / universityStats.totalInterns) * 100).toFixed(0) : '0';
+
+  if (error) {
+    return <div className="p-6 text-center text-destructive">{error}</div>;
+  }
 
   return (
     <div className="space-y-8 p-4 md:p-6">
@@ -79,10 +106,11 @@ export default function AdminDashboardPage() {
         breadcrumbs={[{ href: "/admin/dashboard", label: "Admin Dashboard" }]}
       />
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <AdminDashboardStatCard title="Total Faculties" value={universityStats?.totalFaculties ?? '...'} icon={Landmark} description="University academic divisions" isLoading={isLoading} />
         <AdminDashboardStatCard title="Total Interns" value={universityStats?.totalInterns ?? '...'} icon={Users} description="Across all faculties" isLoading={isLoading} />
         <AdminDashboardStatCard title="Active Internships" value={universityStats?.activeInternships ?? '...'} icon={Building} description={!isLoading && universityStats ? `${engagementPercentage}% engagement` : undefined} isLoading={isLoading} />
-        <AdminDashboardStatCard title="Unassigned Interns" value={universityStats?.unassignedInterns ?? '...'} icon={UserCheck} description="Require lecturer assignment" actionLink="/admin/lecturer-assignments" actionLabel="Assign Lecturers" isLoading={isLoading}/>
+        <AdminDashboardStatCard title="Unassigned Interns" value={universityStats?.unassignedInterns ?? '...'} icon={UserCheck} description="Require lecturer assignment" actionLink="/admin/user-management" actionLabel="Assign Lecturers" isLoading={isLoading}/>
         <AdminDashboardStatCard title="Total Lecturers" value={universityStats?.totalLecturers ?? '...'} icon={UserCog} description="Faculty members supervising interns" isLoading={isLoading} />
         <AdminDashboardStatCard title="Avg. Lecturer Workload" value={universityStats ? `${universityStats.avgLecturerWorkload.toFixed(1)} interns` : '...'} icon={TrendingUp} description="University average" isLoading={isLoading} />
         <AdminDashboardStatCard title="Partner Companies" value={universityStats?.totalCompanies ?? '...'} icon={Briefcase} description="Providing internship opportunities" isLoading={isLoading} />
