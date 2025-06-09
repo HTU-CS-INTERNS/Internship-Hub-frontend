@@ -59,18 +59,19 @@ export default function MobileBottomNav({ userRole }: MobileBottomNavProps) {
         return item;
     });
     
+    // Ensure dashboard is first if it exists
     if (userRole !== 'ADMIN') {
         const dashboardIndex = finalItems.findIndex(item => item.href === '/dashboard');
-        if (dashboardIndex > 0) {
+        if (dashboardIndex > 0) { // if dashboard exists and is not already first
             const [dashboardItem] = finalItems.splice(dashboardIndex, 1);
             finalItems.unshift(dashboardItem);
         }
-    } else { 
+    } else { // For ADMIN, prioritize admin dashboard
         const adminDashboardIndex = finalItems.findIndex(item => item.href === '/admin/dashboard');
-        if (adminDashboardIndex > 0) {
+        if (adminDashboardIndex > 0) { // if admin dashboard exists and is not already first
             const [adminDashboardItem] = finalItems.splice(adminDashboardIndex, 1);
             finalItems.unshift(adminDashboardItem);
-        } else if (adminDashboardIndex === -1) { 
+        } else if (adminDashboardIndex === -1) { // If admin dashboard not present and less than 5 items, add it
             const adminDashLink = NAV_LINKS.find(item => item.href === '/admin/dashboard' && item.roles.includes(userRole));
             if (adminDashLink && finalItems.length < 5) {
                 finalItems.unshift({...adminDashLink, icon: School});
@@ -86,33 +87,33 @@ export default function MobileBottomNav({ userRole }: MobileBottomNavProps) {
   const mobileNavItems = getFilteredMobileNavItems();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 flex justify-around items-center h-[var(--mobile-bottom-nav-height)] bg-primary text-primary-foreground shadow-top-md">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 flex justify-around items-center h-[var(--mobile-bottom-nav-height)] bg-card text-card-foreground border-t border-border shadow-top-md">
       {mobileNavItems.map((item) => {
         const isActive = pathname === item.href || 
                          (item.href !== '/' && 
-                          !(item.href === '/dashboard' && pathname.startsWith('/admin')) && 
+                          !(item.href === '/dashboard' && pathname.startsWith('/admin')) && // Prevent student dashboard active when on admin dashboard
                           pathname.startsWith(item.href)
                          );
-        const IconComponent = item.icon || Home; 
+        const IconComponent = item.icon || Home; // Default to Home icon if not specified
 
         return (
           <Link
             key={item.href}
             href={item.href}
             className={cn(
-              "flex flex-col items-center justify-center h-full flex-1 p-1 group focus:outline-none focus:ring-1 focus:ring-primary-foreground/50 focus:rounded-md transition-colors duration-150",
-              isActive ? "text-primary-foreground" : "text-primary-foreground/60 hover:text-primary-foreground"
+              "flex flex-col items-center justify-center h-full flex-1 p-1 group focus:outline-none focus:ring-1 focus:ring-primary/50 focus:rounded-md transition-colors duration-150",
+              isActive ? "text-primary" : "text-muted-foreground hover:text-primary"
             )}
             aria-current={isActive ? "page" : undefined}
           >
             <IconComponent 
               className={cn(
-                  "h-6 w-6 mb-0.5 transition-transform duration-150",
+                  "h-5 w-5 mb-0.5 transition-transform duration-150", // Slightly smaller icons for better label spacing
                   isActive ? "scale-110" : "group-hover:scale-105"
               )} 
             />
             <span className={cn(
-              "text-[10px] truncate w-full text-center leading-tight",
+              "text-[10px] truncate w-full text-center leading-tight", // Adjusted for potentially smaller icons
               isActive ? "font-semibold" : "font-normal"
             )}>
               {item.label}
