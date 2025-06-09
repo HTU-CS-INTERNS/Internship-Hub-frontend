@@ -4,7 +4,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, ListChecks, MapPin, UserCircle, CalendarDays, Briefcase, MessageSquare, Users, GraduationCap, BarChart3, School } from 'lucide-react'; // Added more icons
+import { Home, ListChecks, MapPin, UserCircle, CalendarDays, Briefcase, MessageSquare, Users, GraduationCap, BarChart3, School, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { UserRole, NavItem } from '@/types';
 import { NAV_LINKS, BOTTOM_NAV_LINKS } from '@/lib/constants'; 
@@ -17,13 +17,11 @@ export default function MobileBottomNav({ userRole }: MobileBottomNavProps) {
   const pathname = usePathname();
 
   const getFilteredMobileNavItems = (): NavItem[] => {
-    // Start with items explicitly marked for mobile from NAV_LINKS and all from BOTTOM_NAV_LINKS
     let potentialItems = [
         ...NAV_LINKS.filter(item => item.mobile && item.roles.includes(userRole)),
         ...BOTTOM_NAV_LINKS.filter(item => item.mobile && item.roles.includes(userRole))
     ];
     
-    // Define role-specific primary items. These are preferred.
     const primaryMobileItemsMap: Record<UserRole, string[]> = {
       STUDENT: ['/dashboard', '/student/tasks', '/student/reports', '/student/check-in', '/profile'],
       LECTURER: ['/dashboard', '/assignments', '/communication', '/schedule', '/profile'],
@@ -35,7 +33,6 @@ export default function MobileBottomNav({ userRole }: MobileBottomNavProps) {
     const roleSpecificHrefs = primaryMobileItemsMap[userRole] || ['/dashboard', '/profile'];
     let finalItems: NavItem[] = [];
 
-    // Add items based on roleSpecificHrefs first
     roleSpecificHrefs.forEach(href => {
       if (finalItems.length < 5) {
         const item = [...NAV_LINKS, ...BOTTOM_NAV_LINKS].find(link => link.href === href && link.roles.includes(userRole));
@@ -45,69 +42,84 @@ export default function MobileBottomNav({ userRole }: MobileBottomNavProps) {
       }
     });
 
-    // Fill remaining spots with other potential mobile items if needed, up to 5
     potentialItems.forEach(item => {
       if (finalItems.length < 5 && !finalItems.some(fi => fi.href === item.href)) {
         finalItems.push(item);
       }
     });
     
-    // Ensure Profile has UserCircle icon if it's present
-    // Ensure Dashboard has Home icon if it's present
     finalItems = finalItems.map(item => {
         if (item.href === '/profile') return {...item, icon: UserCircle};
-        if (item.href === '/dashboard' && userRole !== 'ADMIN') return {...item, icon: Home}; // Admin dashboard has its own icon
+        if (item.href === '/dashboard' && userRole !== 'ADMIN') return {...item, icon: Home};
         if (item.href === '/admin/dashboard' && userRole === 'ADMIN') return {...item, icon: School};
+        // Ensuring student specific icons if they make it to the nav
+        if (item.href === '/student/tasks') return {...item, icon: ListChecks};
+        if (item.href === '/student/reports') return {...item, icon: FileText};
+        if (item.href === '/student/check-in') return {...item, icon: MapPin};
         return item;
     });
     
-    // If after prioritization, dashboard isn't first for non-admins, move it there if it exists.
     if (userRole !== 'ADMIN') {
         const dashboardIndex = finalItems.findIndex(item => item.href === '/dashboard');
         if (dashboardIndex > 0) {
             const [dashboardItem] = finalItems.splice(dashboardIndex, 1);
             finalItems.unshift(dashboardItem);
         }
-    } else { // For ADMIN, ensure Admin Dashboard is first
+    } else { 
         const adminDashboardIndex = finalItems.findIndex(item => item.href === '/admin/dashboard');
         if (adminDashboardIndex > 0) {
             const [adminDashboardItem] = finalItems.splice(adminDashboardIndex, 1);
             finalItems.unshift(adminDashboardItem);
-        } else if (adminDashboardIndex === -1) { // If admin dashboard wasn't picked by priority, add it
+        } else if (adminDashboardIndex === -1) { 
             const adminDashLink = NAV_LINKS.find(item => item.href === '/admin/dashboard' && item.roles.includes(userRole));
             if (adminDashLink && finalItems.length < 5) {
                 finalItems.unshift({...adminDashLink, icon: School});
+            } else if (adminDashLink && finalItems.length >=5) { // if full, replace last one
+                 finalItems.pop();
+                 finalItems.unshift({...adminDashLink, icon: School});
             }
         }
     }
-
-
-    return finalItems.slice(0, 5); // Ensure max 5 items
+    return finalItems.slice(0, 5);
   };
   
   const mobileNavItems = getFilteredMobileNavItems();
 
-
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 flex justify-around items-stretch h-[var(--mobile-bottom-nav-height)] bg-card border-t border-border shadow-top-md">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 flex justify-around items-center h-[var(--mobile-bottom-nav-height)] bg-primary text-primary-foreground shadow-top-md">
       {mobileNavItems.map((item) => {
-        const isActive = pathname === item.href || (item.href !== '/' && !(item.href === '/dashboard' && pathname.startsWith('/admin')) && pathname.startsWith(item.href));
+        const isActive = pathname === item.href || 
+                         (item.href !== '/' && 
+                          !(item.href === '/dashboard' && pathname.startsWith('/admin')) && 
+                          pathname.startsWith(item.href)
+                         );
         const IconComponent = item.icon || Home; 
 
         return (
-          <Link key={item.href} href={item.href} passHref>
-            <div className={cn(
-              "flex flex-col items-center justify-center h-full px-1 text-muted-foreground hover:text-primary transition-colors w-full pt-1 pb-0.5 group", 
-              isActive && "text-primary"
+          <Link
+            key={item.href}
+            href={item.href}
+            className={cn(
+              "flex flex-col items-center justify-center h-full flex-1 p-1 group focus:outline-none focus:ring-1 focus:ring-primary-foreground/50 focus:rounded-md transition-colors duration-150",
+              isActive ? "text-primary-foreground" : "text-primary-foreground/60 hover:text-primary-foreground"
+            )}
+            aria-current={isActive ? "page" : undefined}
+          >
+            <IconComponent 
+              className={cn(
+                  "h-6 w-6 mb-0.5 transition-transform duration-150",
+                  isActive ? "scale-110" : "group-hover:scale-105"
+              )} 
+            />
+            <span className={cn(
+              "text-[10px] truncate w-full text-center leading-tight",
+              isActive ? "font-semibold" : "font-normal"
             )}>
-              <IconComponent className="h-5 w-5 mb-0.5 transition-transform group-hover:scale-110" />
-              <span className="text-[10px] font-medium truncate w-full text-center leading-tight">{item.label}</span>
-            </div>
+              {item.label}
+            </span>
           </Link>
         );
       })}
     </nav>
   );
 }
-
-    
