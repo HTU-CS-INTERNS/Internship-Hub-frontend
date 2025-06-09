@@ -2,7 +2,7 @@
 'use client';
 import * as React from 'react';
 import PageHeader from '@/components/shared/page-header';
-import { ClipboardList, PlusCircle, Filter, Eye, Edit3 } from 'lucide-react';
+import { ClipboardList, PlusCircle, Filter, Eye, Edit3, Loader2 } from 'lucide-react'; // Added Loader2
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import Link from 'next/link';
@@ -13,13 +13,7 @@ import type { DailyTask } from '@/types';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { format, parseISO } from 'date-fns';
-
-export const DUMMY_TASKS: DailyTask[] = [
-  { id: 'task1', date: '2024-07-28', description: 'Develop user authentication module.', outcomes: 'Authentication flow completed.', learningObjectives: 'Learned JWT implementation.', studentId: 'stu1', status: 'APPROVED', departmentOutcomeLink: "DO1.2" },
-  { id: 'task2', date: '2024-07-29', description: 'Design database schema for posts.', outcomes: 'Schema designed and reviewed.', learningObjectives: 'Understanding of relational databases.', studentId: 'stu1', status: 'SUBMITTED' },
-  { id: 'task3', date: '2024-07-30', description: 'Write API documentation.', outcomes: 'Initial draft completed.', learningObjectives: 'API documentation best practices.', studentId: 'stu1', status: 'PENDING' },
-  { id: 'task4', date: '2024-07-27', description: 'Refactor old legacy code module for payments.', outcomes: 'Improved performance by 15%.', learningObjectives: 'Code refactoring strategies.', studentId: 'stu1', status: 'REJECTED' },
-];
+import { getTasksByStudent, initializeDefaultTasksIfNeeded } from '@/lib/services/task.service'; // Import service
 
 const statusColors: Record<DailyTask['status'], string> = {
   PENDING: 'bg-[hsl(var(--accent)/0.1)] text-[hsl(var(--accent))] border-[hsl(var(--accent)/0.2)]',
@@ -29,7 +23,9 @@ const statusColors: Record<DailyTask['status'], string> = {
 };
 
 export default function TasksPage() {
-  const [filteredTasks, setFilteredTasks] = React.useState<DailyTask[]>(DUMMY_TASKS);
+  const [allTasks, setAllTasks] = React.useState<DailyTask[]>([]);
+  const [filteredTasks, setFilteredTasks] = React.useState<DailyTask[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
   const [statusFilter, setStatusFilter] = React.useState<Record<DailyTask['status'], boolean>>({
     PENDING: true,
     SUBMITTED: true,
@@ -37,13 +33,34 @@ export default function TasksPage() {
     REJECTED: true,
   });
   const isMobile = useIsMobile();
+  const [studentId, setStudentId] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    setFilteredTasks(DUMMY_TASKS.filter(task => statusFilter[task.status]));
-  }, [statusFilter]);
+    if (typeof window !== "undefined") {
+      const id = localStorage.getItem('userEmail'); // Assuming studentId is stored as email
+      setStudentId(id);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    async function loadTasks() {
+      if (!studentId) return;
+      setIsLoading(true);
+      await initializeDefaultTasksIfNeeded(); // Ensure some data exists for demo
+      const tasksFromService = await getTasksByStudent(studentId);
+      setAllTasks(tasksFromService);
+      setFilteredTasks(tasksFromService.filter(task => statusFilter[task.status]));
+      setIsLoading(false);
+    }
+    loadTasks();
+  }, [studentId, statusFilter]); // Re-fetch if studentId changes or filter changes
   
   const handleStatusFilterChange = (status: DailyTask['status']) => {
-    setStatusFilter(prev => ({ ...prev, [status]: !prev[status] }));
+    setStatusFilter(prev => {
+        const newFilter = { ...prev, [status]: !prev[status] };
+        setFilteredTasks(allTasks.filter(task => newFilter[task.status]));
+        return newFilter;
+    });
   };
 
   const TaskCardMobile: React.FC<{ task: DailyTask }> = ({ task }) => (
@@ -78,6 +95,17 @@ export default function TasksPage() {
     </Card>
   );
 
+  if (isLoading && !studentId) {
+    return <div className="p-6 text-center">Authenticating...</div>;
+  }
+  if (isLoading && studentId) {
+    return (
+        <div className="flex items-center justify-center h-full p-6">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="ml-2 text-lg">Loading tasks...</p>
+        </div>
+      );
+  }
 
   return (
     <div className="space-y-8 p-4 md:p-6">
@@ -173,7 +201,7 @@ export default function TasksPage() {
         </CardContent>
          {!isMobile && filteredTasks.length > 0 && (
           <CardFooter className="justify-end p-4 border-t">
-             <p className="text-sm text-muted-foreground">Showing {filteredTasks.length} of {DUMMY_TASKS.length} tasks</p>
+             <p className="text-sm text-muted-foreground">Showing {filteredTasks.length} of {allTasks.length} tasks</p>
           </CardFooter>
         )}
       </Card>
