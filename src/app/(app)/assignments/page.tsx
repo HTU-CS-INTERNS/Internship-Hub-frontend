@@ -2,7 +2,7 @@
 'use client';
 import * as React from 'react';
 import PageHeader from '@/components/shared/page-header';
-import { Users, UserCheck, ListFilter } from 'lucide-react';
+import { Users, UserCheck, ListFilter, Eye, Briefcase, Landmark, Building as BuildingIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -12,6 +12,7 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLab
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import type { UserRole } from '@/types';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface StudentAssignment {
   id: string;
@@ -19,20 +20,20 @@ interface StudentAssignment {
   studentAvatar: string;
   studentEmail: string;
   department: string;
+  faculty?: string; // Added faculty for better context
   assignedLecturer?: string;
   companySupervisor?: string;
-  companyName?: string; // Added for context
+  companyName?: string; 
   status: 'Assigned' | 'Pending Assignment' | 'In Progress';
 }
 
 export const DUMMY_ASSIGNMENTS: StudentAssignment[] = [
-  { id: 'std1', studentName: 'Alice Wonderland', studentAvatar: 'https://placehold.co/100x100.png', studentEmail: 'alice@example.com', department: 'Software Engineering', assignedLecturer: 'Dr. Elara Vance', companySupervisor: 'Bob The Builder', companyName: 'Acme Innovations', status: 'In Progress' },
-  { id: 'std2', studentName: 'Bob The Intern', studentAvatar: 'https://placehold.co/100x100.png', studentEmail: 'bob@example.com', department: 'Mechanical Engineering', assignedLecturer: 'Dr. Elara Vance', companySupervisor: 'Alice Wonderland', companyName: 'ConstructCo', status: 'Assigned' },
-  { id: 'std3', studentName: 'Charlie Brown', studentAvatar: 'https://placehold.co/100x100.png', studentEmail: 'charlie@example.com', department: 'Marketing', status: 'Pending Assignment', assignedLecturer: 'Dr. Ian Malcolm', companyName: 'MarketGurus' },
-  { id: 'std4', studentName: 'Diana Prince', studentAvatar: 'https://placehold.co/100x100.png', studentEmail: 'diana@example.com', department: 'Software Engineering', assignedLecturer: 'Dr. Ian Malcolm', companySupervisor: 'Carol Danvers', companyName: 'Stark Industries', status: 'In Progress' },
+  { id: 'std1', studentName: 'Alice Wonderland', studentAvatar: 'https://placehold.co/100x100.png', studentEmail: 'alice@example.com', department: 'Software Engineering', faculty: 'Faculty of Engineering', assignedLecturer: 'Dr. Elara Vance', companySupervisor: 'Bob The Builder', companyName: 'Acme Innovations', status: 'In Progress' },
+  { id: 'std2', studentName: 'Bob The Intern', studentAvatar: 'https://placehold.co/100x100.png', studentEmail: 'bob@example.com', department: 'Mechanical Engineering', faculty: 'Faculty of Engineering', assignedLecturer: 'Dr. Elara Vance', companySupervisor: 'Alice Wonderland', companyName: 'ConstructCo', status: 'Assigned' },
+  { id: 'std3', studentName: 'Charlie Brown', studentAvatar: 'https://placehold.co/100x100.png', studentEmail: 'charlie@example.com', department: 'Marketing', faculty: 'Faculty of Business', status: 'Pending Assignment', assignedLecturer: 'Dr. Ian Malcolm', companyName: 'MarketGurus' },
+  { id: 'std4', studentName: 'Diana Prince', studentAvatar: 'https://placehold.co/100x100.png', studentEmail: 'diana@example.com', department: 'Software Engineering', faculty: 'Faculty of Engineering', assignedLecturer: 'Dr. Ian Malcolm', companySupervisor: 'Carol Danvers', companyName: 'Stark Industries', status: 'In Progress' },
 ];
 
-// Simulated current lecturer ID - In a real app, this would come from auth context
 const CURRENT_LECTURER_NAME = 'Dr. Elara Vance'; 
 
 const statusColors: Record<StudentAssignment['status'], string> = {
@@ -51,6 +52,7 @@ export default function AssignmentsPage() {
     'Pending Assignment': true,
     'In Progress': true,
   });
+  const isMobile = useIsMobile();
   
   React.useEffect(() => {
     const storedRole = typeof window !== "undefined" ? localStorage.getItem('userRole') as UserRole : null;
@@ -62,8 +64,6 @@ export default function AssignmentsPage() {
         assignment => assignment.assignedLecturer === CURRENT_LECTURER_NAME
       );
     }
-    // HOD sees all, other roles might have different views in a real app
-    
     setAssignmentsToShow(currentAssignments.filter(assignment => statusFilter[assignment.status]));
   }, [statusFilter]);
 
@@ -75,6 +75,42 @@ export default function AssignmentsPage() {
   const pageDescription = userRole === 'LECTURER' 
     ? "View and manage students assigned to you." 
     : "Manage and view all student internship assignments.";
+
+  const AssignmentCardMobile: React.FC<{ assignment: StudentAssignment }> = ({ assignment }) => (
+    <Card className="shadow-md rounded-lg overflow-hidden border-l-4" style={{borderColor: `hsl(var(--${assignment.status === 'In Progress' ? 'chart-3' : assignment.status === 'Assigned' ? 'primary' : 'accent'}))`}}>
+        <CardHeader className="p-3 bg-muted/30">
+            <div className="flex items-center gap-3">
+                <Avatar className="h-10 w-10">
+                    <AvatarImage src={assignment.studentAvatar} alt={assignment.studentName} data-ai-hint="person portrait" />
+                    <AvatarFallback>{getInitials(assignment.studentName)}</AvatarFallback>
+                </Avatar>
+                <div>
+                    <p className="font-semibold text-sm text-foreground">{assignment.studentName}</p>
+                    <p className="text-xs text-muted-foreground">{assignment.studentEmail}</p>
+                </div>
+            </div>
+        </CardHeader>
+      <CardContent className="p-3 space-y-2 text-xs">
+        <div className="flex justify-between items-center">
+          <span className="text-muted-foreground">Status:</span>
+          <Badge variant="outline" className={cn("text-xs px-1.5 py-0.5", statusColors[assignment.status])}>{assignment.status}</Badge>
+        </div>
+         {assignment.faculty && <div className="flex items-center"><Landmark className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" /> Faculty: {assignment.faculty}</div>}
+        <div className="flex items-center"><BuildingIcon className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" /> Department: {assignment.department}</div>
+        {userRole !== 'LECTURER' && assignment.assignedLecturer && <div className="flex items-center"><UserCheck className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" /> Lecturer: {assignment.assignedLecturer}</div>}
+        {assignment.companySupervisor && <div className="flex items-center"><Briefcase className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" /> Supervisor: {assignment.companySupervisor} ({assignment.companyName})</div>}
+        {!assignment.companySupervisor && assignment.companyName && <div className="flex items-center"><Briefcase className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" /> Company: {assignment.companyName}</div>}
+      </CardContent>
+       <CardFooter className="p-3 border-t bg-muted/30">
+          <Link href={`/assignments/student/${assignment.id}`} passHref className="w-full">
+            <Button variant="outline" size="sm" className="w-full rounded-md text-xs">
+              <Eye className="mr-1.5 h-3.5 w-3.5" /> View Details
+            </Button>
+          </Link>
+       </CardFooter>
+    </Card>
+  );
+
 
   return (
     <div className="space-y-8 p-4 md:p-6">
@@ -108,17 +144,24 @@ export default function AssignmentsPage() {
           </div>
         }
       />
-      <Card className="shadow-lg rounded-xl overflow-hidden">
-        <CardHeader>
-          <CardTitle className="font-headline text-lg">{assignmentsToShow.length > 0 ? "Students List" : "No Students Found"}</CardTitle>
-          <CardDescription>
-            {userRole === 'LECTURER' 
-                ? "Overview of students you are supervising." 
-                : "Overview of students and their assignment status."}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-0">
+      <Card className={cn("shadow-lg rounded-xl overflow-hidden", isMobile ? "bg-transparent border-none shadow-none" : "")}>
+        {!isMobile && (
+            <CardHeader>
+            <CardTitle className="font-headline text-lg">{assignmentsToShow.length > 0 ? "Students List" : "No Students Found"}</CardTitle>
+            <CardDescription>
+                {userRole === 'LECTURER' 
+                    ? "Overview of students you are supervising." 
+                    : "Overview of students and their assignment status."}
+            </CardDescription>
+            </CardHeader>
+        )}
+        <CardContent className={cn(isMobile ? "p-0" : "p-0")}>
           {assignmentsToShow.length > 0 ? (
+            isMobile ? (
+                <div className="space-y-4">
+                    {assignmentsToShow.map(item => <AssignmentCardMobile key={item.id} assignment={item} />)}
+                </div>
+            ) : (
           <Table>
             <TableHeader>
               <TableRow>
@@ -160,9 +203,10 @@ export default function AssignmentsPage() {
               ))}
             </TableBody>
           </Table>
+            )
           ) : (
-            <div className="text-center py-12 text-muted-foreground p-6">
-              <Users className="mx-auto h-12 w-12 mb-4" />
+            <div className={cn("text-center py-12 text-muted-foreground", isMobile ? "p-0 pt-8" : "p-6")}>
+              <Users className="mx-auto h-12 w-12 mb-4 opacity-30" />
               <p className="text-lg font-semibold">
                 {userRole === 'LECTURER' ? "No students are currently assigned to you." : "No assignments match your filters."}
               </p>
@@ -170,7 +214,7 @@ export default function AssignmentsPage() {
             </div>
           )}
         </CardContent>
-        {assignmentsToShow.length > 0 && (
+        {!isMobile && assignmentsToShow.length > 0 && (
         <CardFooter className="justify-end p-4 border-t">
             <p className="text-sm text-muted-foreground">
               Showing {assignmentsToShow.length} of {

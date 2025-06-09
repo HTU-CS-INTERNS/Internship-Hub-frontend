@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import PageHeader from '@/components/shared/page-header';
-import { Briefcase, Check, X, AlertTriangle, Loader2 } from 'lucide-react';
+import { Briefcase, Check, X, AlertTriangle, Loader2, User, Mail, CalendarDays } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -17,11 +17,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
-  DialogClose,
 } from "@/components/ui/dialog";
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 
 export default function ApprovePlacementsPage() {
   const { toast } = useToast();
@@ -29,6 +29,7 @@ export default function ApprovePlacementsPage() {
   const [isLoading, setIsLoading] = React.useState(true);
   const [selectedItemForRejection, setSelectedItemForRejection] = React.useState<HODApprovalQueueItem | null>(null);
   const [rejectionReason, setRejectionReason] = React.useState('');
+  const isMobile = useIsMobile();
 
   const fetchQueue = React.useCallback(() => {
     setIsLoading(true);
@@ -67,12 +68,11 @@ export default function ApprovePlacementsPage() {
   const handleApprove = (item: HODApprovalQueueItem) => {
     updateStudentInternshipDetails(item.studentId, 'APPROVED');
     removeFromHODQueue(item.studentId);
-    fetchQueue(); // Refresh the list
+    fetchQueue(); 
     toast({
       title: "Placement Approved!",
       description: `Internship for ${item.studentName} at ${item.companyName} has been approved. Supervisor ${item.supervisorEmail} will receive an invitation (simulated).`,
     });
-    // Simulate sending email to supervisor
     console.log(`Simulating email to supervisor: ${item.supervisorEmail}`);
   };
 
@@ -83,7 +83,7 @@ export default function ApprovePlacementsPage() {
     }
     updateStudentInternshipDetails(selectedItemForRejection.studentId, 'REJECTED', rejectionReason);
     removeFromHODQueue(selectedItemForRejection.studentId);
-    fetchQueue(); // Refresh the list
+    fetchQueue(); 
     toast({
       title: "Placement Rejected",
       description: `Internship for ${selectedItemForRejection.studentName} at ${selectedItemForRejection.companyName} has been rejected. Student will be notified (simulated).`,
@@ -92,6 +92,28 @@ export default function ApprovePlacementsPage() {
     setSelectedItemForRejection(null);
     setRejectionReason('');
   };
+
+  const PlacementCardMobile: React.FC<{ item: HODApprovalQueueItem }> = ({ item }) => (
+    <Card className="shadow-md rounded-lg overflow-hidden border-l-4 border-yellow-500">
+      <CardHeader className="p-3 bg-yellow-500/10">
+        <CardTitle className="text-sm font-semibold text-yellow-700">{item.companyName}</CardTitle>
+        <CardDescription className="text-xs text-yellow-600">Submitted by: {item.studentName}</CardDescription>
+      </CardHeader>
+      <CardContent className="p-3 space-y-1 text-xs">
+        <div className="flex items-center"><User className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />Supervisor: {item.supervisorName}</div>
+        <div className="flex items-center"><Mail className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />Email: {item.supervisorEmail}</div>
+        <div className="flex items-center"><CalendarDays className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />Submitted: {format(parseISO(item.submissionDate), "PPp")}</div>
+      </CardContent>
+      <CardFooter className="p-3 border-t bg-muted/20 flex gap-2">
+        <Button variant="outline" size="sm" className="flex-1 rounded-md border-destructive text-destructive hover:bg-destructive/10 text-xs" onClick={() => setSelectedItemForRejection(item)}>
+          <X className="mr-1 h-3.5 w-3.5" /> Reject
+        </Button>
+        <Button size="sm" className="flex-1 rounded-md bg-green-600 hover:bg-green-700 text-white text-xs" onClick={() => handleApprove(item)}>
+          <Check className="mr-1 h-3.5 w-3.5" /> Approve
+        </Button>
+      </CardFooter>
+    </Card>
+  );
 
   if (isLoading) {
     return (
@@ -114,7 +136,8 @@ export default function ApprovePlacementsPage() {
           { label: "Approve Placements" }
         ]}
       />
-      <Card className="shadow-lg rounded-xl">
+      <Card className={cn("shadow-lg rounded-xl", isMobile ? "bg-transparent border-none shadow-none" : "")}>
+        {!isMobile && (
         <CardHeader>
           <CardTitle className="font-headline text-lg">Pending Placements</CardTitle>
           <CardDescription>
@@ -124,8 +147,12 @@ export default function ApprovePlacementsPage() {
             }
           </CardDescription>
         </CardHeader>
-        <CardContent className="p-0">
+        )}
+        <CardContent className={cn(isMobile && approvalQueue.length > 0 ? "p-0 space-y-4" : "p-0")}>
           {approvalQueue.length > 0 ? (
+            isMobile ? (
+                approvalQueue.map((item) => <PlacementCardMobile key={item.studentId} item={item} />)
+            ) : (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -145,12 +172,12 @@ export default function ApprovePlacementsPage() {
                         <div>{item.supervisorName}</div>
                         <div className="text-xs text-muted-foreground">{item.supervisorEmail}</div>
                     </TableCell>
-                    <TableCell>{format(parseISO(item.submissionDate), "PPP p")}</TableCell>
+                    <TableCell>{format(parseISO(item.submissionDate), "PPp")}</TableCell>
                     <TableCell className="text-right space-x-2">
-                      <Button variant="outline" size="sm" className="border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => setSelectedItemForRejection(item)}>
+                      <Button variant="outline" size="sm" className="border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive rounded-md" onClick={() => setSelectedItemForRejection(item)}>
                         <X className="mr-1 h-4 w-4" /> Reject
                       </Button>
-                      <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={() => handleApprove(item)}>
+                      <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white rounded-md" onClick={() => handleApprove(item)}>
                         <Check className="mr-1 h-4 w-4" /> Approve
                       </Button>
                     </TableCell>
@@ -158,15 +185,16 @@ export default function ApprovePlacementsPage() {
                 ))}
               </TableBody>
             </Table>
+            )
           ) : (
-            <div className="text-center py-12 text-muted-foreground p-6">
+            <div className={cn("text-center py-12 text-muted-foreground", isMobile ? "p-0 pt-8" : "p-6")}>
               <Check className="mx-auto h-12 w-12 mb-4 text-green-500" />
               <p className="text-lg font-semibold">All Clear!</p>
               <p>No pending placements to review at this time.</p>
             </div>
           )}
         </CardContent>
-        {approvalQueue.length > 0 && (
+        {!isMobile && approvalQueue.length > 0 && (
             <CardFooter className="justify-end p-4 border-t">
                 <p className="text-sm text-muted-foreground">Showing {approvalQueue.length} pending placements.</p>
             </CardFooter>
@@ -199,9 +227,7 @@ export default function ApprovePlacementsPage() {
               </div>
             </div>
             <DialogFooter>
-              <DialogClose asChild>
-                <Button type="button" variant="outline" className="rounded-lg">Cancel</Button>
-              </DialogClose>
+                <Button type="button" variant="outline" className="rounded-lg" onClick={() => setSelectedItemForRejection(null)}>Cancel</Button>
               <Button type="button" variant="destructive" onClick={handleRejectSubmit} className="rounded-lg" disabled={!rejectionReason.trim()}>
                 Confirm Rejection
               </Button>

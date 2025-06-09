@@ -2,7 +2,7 @@
 'use client';
 import * as React from 'react';
 import PageHeader from '@/components/shared/page-header';
-import { UserCog, UserPlus, Search, Filter, UserCheck, UserX, CaseUpper, CalendarX2 } from 'lucide-react';
+import { UserCog, UserPlus, Search, Filter, UserCheck, UserX, CaseUpper, CalendarX2, Briefcase, Edit, Mail, Landmark, Building as BuildingIcon, ShieldCheck } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,8 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLab
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { UserRole, Faculty, Department } from '@/types';
 import { USER_ROLES, FACULTIES, DEPARTMENTS } from '@/lib/constants';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 
 type UserStatus = 'Active' | 'Inactive' | 'Pending';
 type AssignmentStatus = 'Assigned' | 'Unassigned';
@@ -22,13 +24,13 @@ interface ManagedUser {
   email: string;
   role: UserRole;
   status: UserStatus;
-  faculty?: string; // Faculty Name
+  faculty?: string; 
   facultyId?: string;
-  department?: string; // Department Name
+  department?: string; 
   departmentId?: string;
-  company?: string; // For supervisors
-  assignedLecturerName?: string; // For students
-  assignmentStatus?: AssignmentStatus; // For students
+  company?: string; 
+  assignedLecturerName?: string; 
+  assignmentStatus?: AssignmentStatus; 
 }
 
 const DUMMY_ALL_USERS: ManagedUser[] = [
@@ -48,6 +50,17 @@ const ALL_ROLES_VALUE = "__ALL_ROLES__";
 const ALL_STATUSES_VALUE = "__ALL_STATUSES__";
 const ALL_ASSIGNMENT_STATUSES_VALUE = "__ALL_ASSIGNMENT_STATUSES__";
 
+const statusBadgeVariant: Record<UserStatus, 'default' | 'outline' | 'destructive'> = {
+    Active: 'default',
+    Inactive: 'outline',
+    Pending: 'destructive',
+};
+const statusIcon: Record<UserStatus, React.ElementType> = {
+    Active: UserCheck,
+    Inactive: UserX,
+    Pending: CalendarX2
+};
+
 export default function UserManagementPage() {
   const [searchTerm, setSearchTerm] = React.useState('');
   const [roleFilter, setRoleFilter] = React.useState<UserRole | typeof ALL_ROLES_VALUE>(ALL_ROLES_VALUE);
@@ -55,6 +68,7 @@ export default function UserManagementPage() {
   const [assignmentFilter, setAssignmentFilter] = React.useState<AssignmentStatus | typeof ALL_ASSIGNMENT_STATUSES_VALUE>(ALL_ASSIGNMENT_STATUSES_VALUE);
   const [facultyFilter, setFacultyFilter] = React.useState<string>(ALL_FACULTIES_VALUE);
   const [departmentFilter, setDepartmentFilter] = React.useState<string>(ALL_DEPARTMENTS_VALUE);
+  const isMobile = useIsMobile();
 
   const availableDepartments = React.useMemo(() => {
     if (facultyFilter === ALL_FACULTIES_VALUE) return DEPARTMENTS;
@@ -62,7 +76,6 @@ export default function UserManagementPage() {
   }, [facultyFilter]);
 
   React.useEffect(() => {
-    // Reset department filter if selected faculty doesn't contain it
     if (!availableDepartments.find(dept => dept.id === departmentFilter) && departmentFilter !== ALL_DEPARTMENTS_VALUE) {
       setDepartmentFilter(ALL_DEPARTMENTS_VALUE);
     }
@@ -81,7 +94,6 @@ export default function UserManagementPage() {
       assignmentMatch = assignmentFilter === ALL_ASSIGNMENT_STATUSES_VALUE || user.assignmentStatus === assignmentFilter;
     }
     
-    // Faculty and Department filters primarily apply to Student, Lecturer, HOD
     if (user.role === 'SUPERVISOR' || user.role === 'ADMIN') {
         return searchMatch && roleMatch && statusMatch;
     }
@@ -90,6 +102,39 @@ export default function UserManagementPage() {
   });
 
   const roleHasOrgStructure = roleFilter === 'STUDENT' || roleFilter === 'LECTURER' || roleFilter === 'HOD';
+  
+  const UserCardMobile: React.FC<{ user: ManagedUser }> = ({ user }) => {
+    const StatusIcon = statusIcon[user.status];
+    return (
+        <Card className="shadow-md rounded-lg overflow-hidden">
+            <CardHeader className="p-4 bg-muted/30 border-b">
+                <div className="flex justify-between items-start">
+                    <div>
+                        <CardTitle className="text-md font-semibold text-foreground">{user.name}</CardTitle>
+                        <CardDescription className="text-xs text-muted-foreground">{user.email}</CardDescription>
+                    </div>
+                    <Badge variant="secondary" className="text-xs whitespace-nowrap">{USER_ROLES[user.role]}</Badge>
+                </div>
+            </CardHeader>
+            <CardContent className="p-4 space-y-2 text-xs">
+                <div className="flex items-center">
+                    <StatusIcon className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
+                    Status: <Badge variant={statusBadgeVariant[user.status]} className="ml-1.5 text-xs px-1.5 py-0.5">{user.status}</Badge>
+                </div>
+                {user.faculty && <div className="flex items-center"><Landmark className="mr-2 h-3.5 w-3.5 text-muted-foreground" /> Faculty: {user.faculty}</div>}
+                {user.department && <div className="flex items-center"><BuildingIcon className="mr-2 h-3.5 w-3.5 text-muted-foreground" /> Department: {user.department}</div>}
+                {user.company && <div className="flex items-center"><Briefcase className="mr-2 h-3.5 w-3.5 text-muted-foreground" /> Company: {user.company}</div>}
+                {user.role === 'STUDENT' && <div className="flex items-center"><UserCheck className="mr-2 h-3.5 w-3.5 text-muted-foreground" /> Lecturer: {user.assignedLecturerName || <Badge variant="outline" className="ml-1 text-xs">Unassigned</Badge>}</div>}
+            </CardContent>
+            <CardFooter className="p-3 border-t bg-muted/30">
+                 <Button variant="outline" size="sm" className="w-full rounded-md text-xs">
+                    <Edit className="mr-1.5 h-3.5 w-3.5" /> Edit User
+                </Button>
+            </CardFooter>
+        </Card>
+    );
+ };
+
 
   return (
     <div className="space-y-8 p-4 md:p-6">
@@ -107,7 +152,7 @@ export default function UserManagementPage() {
             </div>
         }
       />
-      <Card className="shadow-lg rounded-xl">
+      <Card className={cn("shadow-lg rounded-xl", isMobile ? "bg-transparent border-none shadow-none" : "")}>
         <CardHeader>
           <CardTitle className="font-headline text-lg">All System Users</CardTitle>
           <CardDescription>
@@ -191,6 +236,11 @@ export default function UserManagementPage() {
         </CardHeader>
         <CardContent className="p-0">
             {filteredUsers.length > 0 ? (
+                isMobile ? (
+                    <div className="space-y-4 p-4 md:p-0">
+                         {filteredUsers.map(user => <UserCardMobile key={user.id} user={user} />)}
+                    </div>
+                ) : (
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -205,7 +255,9 @@ export default function UserManagementPage() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {filteredUsers.map(user => (
+                        {filteredUsers.map(user => {
+                            const StatusIcon = statusIcon[user.status];
+                            return (
                             <TableRow key={user.id}>
                                 <TableCell className="font-medium">{user.name}</TableCell>
                                 <TableCell>{user.email}</TableCell>
@@ -213,8 +265,8 @@ export default function UserManagementPage() {
                                 <TableCell>{user.role === 'SUPERVISOR' ? user.company : user.faculty || 'N/A'}</TableCell>
                                 <TableCell>{user.department || 'N/A'}</TableCell>
                                 <TableCell>
-                                    <Badge variant={user.status === 'Active' ? 'default' : user.status === 'Inactive' ? 'outline' : 'destructive'}>
-                                      {user.status === 'Active' ? <UserCheck className="mr-1 h-3 w-3"/> : user.status === 'Inactive' ? <UserX className="mr-1 h-3 w-3"/> : <CalendarX2 className="mr-1 h-3 w-3"/>}
+                                    <Badge variant={statusBadgeVariant[user.status]}>
+                                      <StatusIcon className="mr-1 h-3 w-3"/>
                                       {user.status}
                                     </Badge>
                                 </TableCell>
@@ -227,9 +279,10 @@ export default function UserManagementPage() {
                                     <Button variant="ghost" size="sm" className="rounded-md">Edit</Button>
                                 </TableCell>
                             </TableRow>
-                        ))}
+                        )})}
                     </TableBody>
                 </Table>
+                )
             ) : (
                  <div className="text-center py-12 text-muted-foreground p-6">
                     <UserCog className="mx-auto h-12 w-12 mb-4 opacity-50" />
@@ -238,26 +291,27 @@ export default function UserManagementPage() {
                 </div>
             )}
         </CardContent>
-        {filteredUsers.length > 0 && (
+        {filteredUsers.length > 0 && !isMobile && (
             <CardFooter className="justify-between p-4 border-t">
                 <p className="text-sm text-muted-foreground">Showing {filteredUsers.length} of {DUMMY_ALL_USERS.length} users</p>
                 {/* Pagination can be added here */}
             </CardFooter>
         )}
       </Card>
-      <Card className="shadow-lg rounded-xl mt-6">
-        <CardHeader>
-            <CardTitle className="font-headline text-lg">Advanced User Actions (Coming Soon)</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">
-            Detailed forms for user creation, editing, role assignment, activation/deactivation, and password resets will be implemented here based on the user flows.
-            The "Assign Lecturer" flow will also be part of this enhancement.
-          </p>
-        </CardContent>
-      </Card>
+      {!isMobile && (
+        <Card className="shadow-lg rounded-xl mt-6">
+            <CardHeader>
+                <CardTitle className="font-headline text-lg">Advanced User Actions (Coming Soon)</CardTitle>
+            </CardHeader>
+            <CardContent>
+            <p className="text-muted-foreground">
+                Detailed forms for user creation, editing, role assignment, activation/deactivation, and password resets will be implemented here based on the user flows.
+                The "Assign Lecturer" flow will also be part of this enhancement.
+            </p>
+            </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
 
-    
