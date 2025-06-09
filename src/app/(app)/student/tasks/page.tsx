@@ -47,36 +47,34 @@ export default function TasksPage() {
   };
 
   const TaskCardMobile: React.FC<{ task: DailyTask }> = ({ task }) => (
-    <Card className="shadow-md rounded-lg overflow-hidden border-l-4" style={{borderColor: `hsl(var(--${task.status === 'APPROVED' ? 'chart-3' : task.status === 'SUBMITTED' ? 'primary' : task.status === 'REJECTED' ? 'destructive' : 'accent'}))`}}>
-      <CardContent className="p-4 space-y-3">
+    <Card className="shadow-lg rounded-xl overflow-hidden border-l-4" style={{borderColor: `hsl(var(--${task.status === 'APPROVED' ? 'chart-3' : task.status === 'SUBMITTED' ? 'primary' : task.status === 'REJECTED' ? 'destructive' : 'accent'}))`}}>
+      <CardHeader className="p-3 bg-muted/30">
         <div className="flex justify-between items-start">
-          <div>
-            <p className="text-xs text-muted-foreground">Task Date</p>
-            <p className="font-semibold text-foreground text-sm">{format(parseISO(task.date), "PPP")}</p>
-          </div>
+          <CardTitle className="text-sm font-semibold text-foreground">Task: {format(parseISO(task.date), "PPP")}</CardTitle>
           <Badge variant="outline" className={cn("text-xs px-2 py-0.5", statusColors[task.status])}>
             {task.status}
           </Badge>
         </div>
-        <div>
-          <p className="text-xs text-muted-foreground">Description</p>
-          <p className="text-sm text-foreground line-clamp-3">{task.description}</p>
-        </div>
-        <div className="pt-2 flex gap-2">
+        <CardDescription className="text-xs text-muted-foreground">{format(parseISO(task.date), "EEEE")}</CardDescription>
+      </CardHeader>
+      <CardContent className="p-3 text-xs">
+        <p className="text-muted-foreground mb-1">Description:</p>
+        <p className="text-foreground line-clamp-3">{task.description}</p>
+      </CardContent>
+      <CardFooter className="p-3 border-t bg-muted/20 flex gap-2">
           <Link href={`/student/tasks/${task.id}`} passHref className="flex-1">
-            <Button variant="outline" size="sm" className="w-full rounded-md text-xs">
+            <Button variant="outline" size="sm" className="w-full rounded-lg text-xs">
               <Eye className="mr-1.5 h-3.5 w-3.5" /> View Details
             </Button>
           </Link>
           {task.status === 'PENDING' && (
             <Link href={`/student/tasks/edit/${task.id}`} passHref className="flex-1">
-              <Button variant="default" size="sm" className="w-full rounded-md text-xs bg-primary hover:bg-primary/90 text-primary-foreground">
+              <Button variant="default" size="sm" className="w-full rounded-lg text-xs bg-primary hover:bg-primary/90 text-primary-foreground">
                 <Edit3 className="mr-1.5 h-3.5 w-3.5" /> Edit
               </Button>
             </Link>
           )}
-        </div>
-      </CardContent>
+      </CardFooter>
     </Card>
   );
 
@@ -126,12 +124,10 @@ export default function TasksPage() {
             <CardDescription>A log of all your declared daily tasks.</CardDescription>
             </CardHeader>
         )}
-        <CardContent className={cn(isMobile ? "p-0" : "p-0")}>
+        <CardContent className={cn(isMobile && filteredTasks.length > 0 ? "p-0 space-y-4" : "p-0")}>
           {filteredTasks.length > 0 ? (
              isMobile ? (
-                <div className="space-y-4">
-                  {filteredTasks.map((task) => <TaskCardMobile key={task.id} task={task} />)}
-                </div>
+                filteredTasks.map((task) => <TaskCardMobile key={task.id} task={task} />)
               ) : (
             <Table>
               <TableHeader>
@@ -184,3 +180,4 @@ export default function TasksPage() {
     </div>
   );
 }
+    

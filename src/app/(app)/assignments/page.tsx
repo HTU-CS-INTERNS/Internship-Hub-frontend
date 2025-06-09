@@ -20,7 +20,7 @@ interface StudentAssignment {
   studentAvatar: string;
   studentEmail: string;
   department: string;
-  faculty?: string; // Added faculty for better context
+  faculty?: string; 
   assignedLecturer?: string;
   companySupervisor?: string;
   companyName?: string; 
@@ -77,33 +77,30 @@ export default function AssignmentsPage() {
     : "Manage and view all student internship assignments.";
 
   const AssignmentCardMobile: React.FC<{ assignment: StudentAssignment }> = ({ assignment }) => (
-    <Card className="shadow-md rounded-lg overflow-hidden border-l-4" style={{borderColor: `hsl(var(--${assignment.status === 'In Progress' ? 'chart-3' : assignment.status === 'Assigned' ? 'primary' : 'accent'}))`}}>
+    <Card className="shadow-lg rounded-xl overflow-hidden border-l-4" style={{borderColor: `hsl(var(--${assignment.status === 'In Progress' ? 'chart-3' : assignment.status === 'Assigned' ? 'primary' : 'accent'}))`}}>
         <CardHeader className="p-3 bg-muted/30">
             <div className="flex items-center gap-3">
-                <Avatar className="h-10 w-10">
+                <Avatar className="h-10 w-10 border">
                     <AvatarImage src={assignment.studentAvatar} alt={assignment.studentName} data-ai-hint="person portrait" />
-                    <AvatarFallback>{getInitials(assignment.studentName)}</AvatarFallback>
+                    <AvatarFallback className="bg-primary/10 text-primary">{getInitials(assignment.studentName)}</AvatarFallback>
                 </Avatar>
                 <div>
-                    <p className="font-semibold text-sm text-foreground">{assignment.studentName}</p>
-                    <p className="text-xs text-muted-foreground">{assignment.studentEmail}</p>
+                    <CardTitle className="text-sm font-semibold text-foreground">{assignment.studentName}</CardTitle>
+                    <CardDescription className="text-xs text-muted-foreground">{assignment.studentEmail}</CardDescription>
                 </div>
+                 <Badge variant="outline" className={cn("text-xs px-1.5 py-0.5 ml-auto", statusColors[assignment.status])}>{assignment.status}</Badge>
             </div>
         </CardHeader>
-      <CardContent className="p-3 space-y-2 text-xs">
-        <div className="flex justify-between items-center">
-          <span className="text-muted-foreground">Status:</span>
-          <Badge variant="outline" className={cn("text-xs px-1.5 py-0.5", statusColors[assignment.status])}>{assignment.status}</Badge>
-        </div>
-         {assignment.faculty && <div className="flex items-center"><Landmark className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" /> Faculty: {assignment.faculty}</div>}
-        <div className="flex items-center"><BuildingIcon className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" /> Department: {assignment.department}</div>
-        {userRole !== 'LECTURER' && assignment.assignedLecturer && <div className="flex items-center"><UserCheck className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" /> Lecturer: {assignment.assignedLecturer}</div>}
-        {assignment.companySupervisor && <div className="flex items-center"><Briefcase className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" /> Supervisor: {assignment.companySupervisor} ({assignment.companyName})</div>}
-        {!assignment.companySupervisor && assignment.companyName && <div className="flex items-center"><Briefcase className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" /> Company: {assignment.companyName}</div>}
+      <CardContent className="p-3 space-y-1.5 text-xs">
+         {assignment.faculty && <div className="flex items-center gap-1.5"><Landmark className="h-3.5 w-3.5 text-muted-foreground" /> <span className="text-muted-foreground">Faculty:</span> {assignment.faculty}</div>}
+        <div className="flex items-center gap-1.5"><BuildingIcon className="h-3.5 w-3.5 text-muted-foreground" /> <span className="text-muted-foreground">Dept:</span> {assignment.department}</div>
+        {userRole !== 'LECTURER' && assignment.assignedLecturer && <div className="flex items-center gap-1.5"><UserCheck className="h-3.5 w-3.5 text-muted-foreground" /> <span className="text-muted-foreground">Lecturer:</span> {assignment.assignedLecturer}</div>}
+        {assignment.companyName && <div className="flex items-center gap-1.5"><Briefcase className="h-3.5 w-3.5 text-muted-foreground" />  <span className="text-muted-foreground">Company:</span> {assignment.companyName}</div>}
+        {assignment.companySupervisor && <div className="flex items-center gap-1.5"><User className="h-3.5 w-3.5 text-muted-foreground" /> <span className="text-muted-foreground">Supervisor:</span> {assignment.companySupervisor}</div>}
       </CardContent>
-       <CardFooter className="p-3 border-t bg-muted/30">
+       <CardFooter className="p-3 border-t bg-muted/20">
           <Link href={`/assignments/student/${assignment.id}`} passHref className="w-full">
-            <Button variant="outline" size="sm" className="w-full rounded-md text-xs">
+            <Button variant="outline" size="sm" className="w-full rounded-lg text-xs py-2">
               <Eye className="mr-1.5 h-3.5 w-3.5" /> View Details
             </Button>
           </Link>
@@ -155,12 +152,10 @@ export default function AssignmentsPage() {
             </CardDescription>
             </CardHeader>
         )}
-        <CardContent className={cn(isMobile ? "p-0" : "p-0")}>
+        <CardContent className={cn(isMobile && assignmentsToShow.length > 0 ? "p-0 space-y-4" : "p-0")}>
           {assignmentsToShow.length > 0 ? (
             isMobile ? (
-                <div className="space-y-4">
-                    {assignmentsToShow.map(item => <AssignmentCardMobile key={item.id} assignment={item} />)}
-                </div>
+                assignmentsToShow.map(item => <AssignmentCardMobile key={item.id} assignment={item} />)
             ) : (
           <Table>
             <TableHeader>
@@ -230,3 +225,4 @@ export default function AssignmentsPage() {
   );
 }
 
+    

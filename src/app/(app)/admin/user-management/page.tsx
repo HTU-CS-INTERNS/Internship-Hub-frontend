@@ -50,7 +50,7 @@ const ALL_ROLES_VALUE = "__ALL_ROLES__";
 const ALL_STATUSES_VALUE = "__ALL_STATUSES__";
 const ALL_ASSIGNMENT_STATUSES_VALUE = "__ALL_ASSIGNMENT_STATUSES__";
 
-const statusBadgeVariant: Record<UserStatus, 'default' | 'outline' | 'destructive'> = {
+const statusBadgeVariant: Record<UserStatus, 'default' | 'outline' | 'destructive' | 'secondary'> = {
     Active: 'default',
     Inactive: 'outline',
     Pending: 'destructive',
@@ -106,28 +106,29 @@ export default function UserManagementPage() {
   const UserCardMobile: React.FC<{ user: ManagedUser }> = ({ user }) => {
     const StatusIcon = statusIcon[user.status];
     return (
-        <Card className="shadow-md rounded-lg overflow-hidden">
+        <Card className="shadow-lg rounded-xl overflow-hidden">
             <CardHeader className="p-4 bg-muted/30 border-b">
                 <div className="flex justify-between items-start">
                     <div>
-                        <CardTitle className="text-md font-semibold text-foreground">{user.name}</CardTitle>
+                        <CardTitle className="text-base font-semibold text-foreground">{user.name}</CardTitle>
                         <CardDescription className="text-xs text-muted-foreground">{user.email}</CardDescription>
                     </div>
-                    <Badge variant="secondary" className="text-xs whitespace-nowrap">{USER_ROLES[user.role]}</Badge>
+                    <Badge variant="secondary" className="text-xs whitespace-nowrap px-2 py-0.5 rounded-full">{USER_ROLES[user.role]}</Badge>
                 </div>
             </CardHeader>
             <CardContent className="p-4 space-y-2 text-xs">
-                <div className="flex items-center">
-                    <StatusIcon className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
-                    Status: <Badge variant={statusBadgeVariant[user.status]} className="ml-1.5 text-xs px-1.5 py-0.5">{user.status}</Badge>
+                <div className="flex items-center gap-1.5">
+                    <StatusIcon className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">Status:</span>
+                    <Badge variant={statusBadgeVariant[user.status]} className="text-xs px-1.5 py-0.5">{user.status}</Badge>
                 </div>
-                {user.faculty && <div className="flex items-center"><Landmark className="mr-2 h-3.5 w-3.5 text-muted-foreground" /> Faculty: {user.faculty}</div>}
-                {user.department && <div className="flex items-center"><BuildingIcon className="mr-2 h-3.5 w-3.5 text-muted-foreground" /> Department: {user.department}</div>}
-                {user.company && <div className="flex items-center"><Briefcase className="mr-2 h-3.5 w-3.5 text-muted-foreground" /> Company: {user.company}</div>}
-                {user.role === 'STUDENT' && <div className="flex items-center"><UserCheck className="mr-2 h-3.5 w-3.5 text-muted-foreground" /> Lecturer: {user.assignedLecturerName || <Badge variant="outline" className="ml-1 text-xs">Unassigned</Badge>}</div>}
+                {user.faculty && <div className="flex items-center gap-1.5"><Landmark className="h-4 w-4 text-muted-foreground" /> <span className="text-muted-foreground">Faculty:</span> {user.faculty}</div>}
+                {user.department && <div className="flex items-center gap-1.5"><BuildingIcon className="h-4 w-4 text-muted-foreground" /> <span className="text-muted-foreground">Dept:</span> {user.department}</div>}
+                {user.company && <div className="flex items-center gap-1.5"><Briefcase className="h-4 w-4 text-muted-foreground" /> <span className="text-muted-foreground">Company:</span> {user.company}</div>}
+                {user.role === 'STUDENT' && <div className="flex items-center gap-1.5"><UserCheck className="h-4 w-4 text-muted-foreground" /> <span className="text-muted-foreground">Lecturer:</span> {user.assignedLecturerName || <Badge variant="outline" className="ml-1 text-xs px-1.5 py-0.5">Unassigned</Badge>}</div>}
             </CardContent>
-            <CardFooter className="p-3 border-t bg-muted/30">
-                 <Button variant="outline" size="sm" className="w-full rounded-md text-xs">
+            <CardFooter className="p-3 border-t bg-muted/20">
+                 <Button variant="outline" size="sm" className="w-full rounded-lg text-xs py-2">
                     <Edit className="mr-1.5 h-3.5 w-3.5" /> Edit User
                 </Button>
             </CardFooter>
@@ -234,12 +235,10 @@ export default function UserManagementPage() {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="p-0">
+        <CardContent className={cn(isMobile && filteredUsers.length > 0 ? "p-0 space-y-4" : "p-0")}>
             {filteredUsers.length > 0 ? (
                 isMobile ? (
-                    <div className="space-y-4 p-4 md:p-0">
-                         {filteredUsers.map(user => <UserCardMobile key={user.id} user={user} />)}
-                    </div>
+                    filteredUsers.map(user => <UserCardMobile key={user.id} user={user} />)
                 ) : (
                 <Table>
                     <TableHeader>
@@ -284,7 +283,7 @@ export default function UserManagementPage() {
                 </Table>
                 )
             ) : (
-                 <div className="text-center py-12 text-muted-foreground p-6">
+                 <div className={cn("text-center py-12 text-muted-foreground", isMobile ? "p-0 pt-8" : "p-6")}>
                     <UserCog className="mx-auto h-12 w-12 mb-4 opacity-50" />
                     <p className="text-lg font-semibold">No users found.</p>
                     <p>Try adjusting your search or filter criteria.</p>
@@ -315,3 +314,4 @@ export default function UserManagementPage() {
   );
 }
 
+    

@@ -39,28 +39,28 @@ export default function InternsPage() {
   const totalPendingReports = interns.reduce((sum, i) => sum + i.pendingReports, 0);
 
   const InternCardMobile: React.FC<{ intern: InternUnderSupervision }> = ({ intern }) => (
-    <Card className="shadow-md rounded-lg overflow-hidden">
-        <CardHeader className="p-3 bg-muted/30">
+    <Card className="shadow-lg rounded-xl overflow-hidden">
+        <CardHeader className="p-3 bg-muted/30 border-b">
              <div className="flex items-center gap-3">
-                <Avatar className="h-10 w-10">
+                <Avatar className="h-10 w-10 border">
                     <AvatarImage src={intern.avatar} alt={intern.name} data-ai-hint="person portrait" />
-                    <AvatarFallback>{getInitials(intern.name)}</AvatarFallback>
+                    <AvatarFallback className="bg-primary/10 text-primary">{getInitials(intern.name)}</AvatarFallback>
                 </Avatar>
                 <div>
-                    <p className="font-semibold text-sm text-foreground">{intern.name}</p>
-                    <p className="text-xs text-muted-foreground">{intern.email}</p>
+                    <CardTitle className="text-sm font-semibold text-foreground">{intern.name}</CardTitle>
+                    <CardDescription className="text-xs text-muted-foreground">{intern.email}</CardDescription>
                 </div>
             </div>
         </CardHeader>
-      <CardContent className="p-3 space-y-2 text-xs">
-        <div className="flex items-center"><Briefcase className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" /> University: {intern.university}</div>
-        <div className="flex items-center"><CheckSquare className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" /> Pending Tasks: <Badge variant={intern.pendingTasks > 0 ? "destructive" : "secondary"} className="ml-1.5 text-xs px-1.5 py-0.5">{intern.pendingTasks}</Badge></div>
-        <div className="flex items-center"><FileCheck className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" /> Pending Reports: <Badge variant={intern.pendingReports > 0 ? "destructive" : "secondary"} className="ml-1.5 text-xs px-1.5 py-0.5">{intern.pendingReports}</Badge></div>
-        <div className="flex items-center"><TrendingUp className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" /> Last Activity: {intern.lastActivity}</div>
+      <CardContent className="p-3 space-y-1.5 text-xs">
+        <div className="flex items-center gap-1.5"><Briefcase className="h-3.5 w-3.5 text-muted-foreground" /> <span className="text-muted-foreground">University:</span> {intern.university}</div>
+        <div className="flex items-center gap-1.5"><CheckSquare className="h-3.5 w-3.5 text-muted-foreground" /> <span className="text-muted-foreground">Pending Tasks:</span> <Badge variant={intern.pendingTasks > 0 ? "destructive" : "secondary"} className="ml-auto text-xs px-1.5 py-0.5">{intern.pendingTasks}</Badge></div>
+        <div className="flex items-center gap-1.5"><FileCheck className="h-3.5 w-3.5 text-muted-foreground" /> <span className="text-muted-foreground">Pending Reports:</span> <Badge variant={intern.pendingReports > 0 ? "destructive" : "secondary"} className="ml-auto text-xs px-1.5 py-0.5">{intern.pendingReports}</Badge></div>
+        <div className="flex items-center gap-1.5"><TrendingUp className="h-3.5 w-3.5 text-muted-foreground" /> <span className="text-muted-foreground">Last Activity:</span> {intern.lastActivity}</div>
       </CardContent>
-      <CardFooter className="p-3 border-t bg-muted/30">
+      <CardFooter className="p-3 border-t bg-muted/20">
          <Link href={`/supervisor/interns/details/${intern.id}`} passHref className="w-full">
-            <Button variant="outline" size="sm" className="w-full rounded-md text-xs">
+            <Button variant="outline" size="sm" className="w-full rounded-lg text-xs py-2">
               <Eye className="mr-1.5 h-3.5 w-3.5" /> View Profile
             </Button>
           </Link>
@@ -97,12 +97,10 @@ export default function InternsPage() {
           <CardDescription>Overview of interns, their pending items, and recent activity.</CardDescription>
         </CardHeader>
         )}
-        <CardContent className={cn(isMobile ? "p-0" : "p-0")}>
+        <CardContent className={cn(isMobile && interns.length > 0 ? "p-0 space-y-4" : "p-0")}>
           {interns.length > 0 ? (
             isMobile ? (
-                <div className="space-y-4">
-                    {interns.map(intern => <InternCardMobile key={intern.id} intern={intern} />)}
-                </div>
+                interns.map(intern => <InternCardMobile key={intern.id} intern={intern} />)
             ) : (
           <Table>
             <TableHeader>
@@ -168,3 +166,4 @@ export default function InternsPage() {
   );
 }
 
+    

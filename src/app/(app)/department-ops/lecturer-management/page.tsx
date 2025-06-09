@@ -2,7 +2,7 @@
 'use client';
 import * as React from 'react';
 import PageHeader from '@/components/shared/page-header';
-import { Users, UserPlus, ListFilter, Edit, Eye, Mail, Users2 } from 'lucide-react';
+import { Users, UserPlus, ListFilter, Edit, Eye, Mail, Users2, Briefcase } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,19 +47,19 @@ export default function LecturerManagementPage() {
   const LecturerCardMobile: React.FC<{ lecturer: ManagedLecturer }> = ({ lecturer }) => {
     const loadPercentage = (lecturer.assignedStudents / lecturer.maxLoad) * 100;
     return (
-        <Card className="shadow-md rounded-lg overflow-hidden">
-            <CardHeader className="p-3 bg-muted/30">
-                <CardTitle className="text-sm font-semibold text-foreground">{lecturer.name}</CardTitle>
+        <Card className="shadow-lg rounded-xl overflow-hidden">
+            <CardHeader className="p-3 bg-muted/30 border-b">
+                <CardTitle className="text-base font-semibold text-foreground">{lecturer.name}</CardTitle>
                 <CardDescription className="text-xs text-muted-foreground">{lecturer.email}</CardDescription>
             </CardHeader>
-            <CardContent className="p-3 space-y-1 text-xs">
-                <div className="flex items-center"><Users2 className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" /> Department: {lecturer.department}</div>
-                <div className="flex items-center"><UserPlus className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" /> Workload: {lecturer.assignedStudents} / {lecturer.maxLoad} students</div>
-                <Progress value={loadPercentage} className="h-1.5 mt-1" />
+            <CardContent className="p-3 space-y-1.5 text-xs">
+                <div className="flex items-center gap-1.5"><Briefcase className="h-3.5 w-3.5 text-muted-foreground" /> <span className="text-muted-foreground">Department:</span> {lecturer.department}</div>
+                <div className="flex items-center gap-1.5"><Users2 className="h-3.5 w-3.5 text-muted-foreground" /> <span className="text-muted-foreground">Workload:</span> {lecturer.assignedStudents} / {lecturer.maxLoad} students</div>
+                <Progress value={loadPercentage} className="h-2 mt-1.5 rounded-full" />
             </CardContent>
             <CardFooter className="p-3 border-t bg-muted/20 flex gap-2">
-                <Button variant="outline" size="sm" className="flex-1 rounded-md text-xs"><Edit className="mr-1 h-3.5 w-3.5"/>Edit</Button>
-                <Button variant="ghost" size="sm" className="flex-1 rounded-md text-xs text-primary hover:text-primary/80"><Eye className="mr-1 h-3.5 w-3.5"/>View Assignments</Button>
+                <Button variant="outline" size="sm" className="flex-1 rounded-lg text-xs py-2"><Edit className="mr-1.5 h-3.5 w-3.5"/>Edit</Button>
+                <Button variant="default" size="sm" className="flex-1 rounded-lg text-xs py-2 bg-primary hover:bg-primary/90 text-primary-foreground"><Eye className="mr-1.5 h-3.5 w-3.5"/>View Assignments</Button>
             </CardFooter>
         </Card>
     );
@@ -111,12 +111,10 @@ export default function LecturerManagementPage() {
                 className="mt-2 rounded-lg"
             />
         </CardHeader>
-        <CardContent className={cn(isMobile ? "p-0" : "")}>
+        <CardContent className={cn(isMobile && filteredLecturers.length > 0 ? "p-0 space-y-4" : "p-0")}>
           {filteredLecturers.length > 0 ? (
              isMobile ? (
-                <div className="space-y-4">
-                    {filteredLecturers.map(lecturer => <LecturerCardMobile key={lecturer.id} lecturer={lecturer} />)}
-                </div>
+                filteredLecturers.map(lecturer => <LecturerCardMobile key={lecturer.id} lecturer={lecturer} />)
              ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredLecturers.map(lecturer => {
@@ -130,7 +128,7 @@ export default function LecturerManagementPage() {
                         <CardContent className="text-sm space-y-1">
                             <p><strong>Department:</strong> {lecturer.department}</p>
                             <p><strong>Workload:</strong> {lecturer.assignedStudents} / {lecturer.maxLoad} students</p>
-                            <Progress value={loadPercentage} className="h-2" />
+                            <Progress value={loadPercentage} className="h-2 rounded-full" />
                         </CardContent>
                         <CardFooter className="flex justify-end gap-2">
                             <Button variant="outline" size="sm" className="rounded-md">Edit</Button>
@@ -170,3 +168,4 @@ export default function LecturerManagementPage() {
   );
 }
 
+    

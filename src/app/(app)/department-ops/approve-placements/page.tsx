@@ -94,22 +94,22 @@ export default function ApprovePlacementsPage() {
   };
 
   const PlacementCardMobile: React.FC<{ item: HODApprovalQueueItem }> = ({ item }) => (
-    <Card className="shadow-md rounded-lg overflow-hidden border-l-4 border-yellow-500">
+    <Card className="shadow-lg rounded-xl overflow-hidden border-l-4 border-yellow-500">
       <CardHeader className="p-3 bg-yellow-500/10">
-        <CardTitle className="text-sm font-semibold text-yellow-700">{item.companyName}</CardTitle>
-        <CardDescription className="text-xs text-yellow-600">Submitted by: {item.studentName}</CardDescription>
+        <CardTitle className="text-base font-semibold text-yellow-700">{item.companyName}</CardTitle>
+        <CardDescription className="text-xs text-yellow-600">Student: {item.studentName}</CardDescription>
       </CardHeader>
-      <CardContent className="p-3 space-y-1 text-xs">
-        <div className="flex items-center"><User className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />Supervisor: {item.supervisorName}</div>
-        <div className="flex items-center"><Mail className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />Email: {item.supervisorEmail}</div>
-        <div className="flex items-center"><CalendarDays className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />Submitted: {format(parseISO(item.submissionDate), "PPp")}</div>
+      <CardContent className="p-3 space-y-1.5 text-xs">
+        <div className="flex items-center gap-1.5"><User className="h-3.5 w-3.5 text-muted-foreground" /> <span className="text-muted-foreground">Supervisor:</span> {item.supervisorName}</div>
+        <div className="flex items-center gap-1.5"><Mail className="h-3.5 w-3.5 text-muted-foreground" /> <span className="text-muted-foreground">Email:</span> {item.supervisorEmail}</div>
+        <div className="flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5 text-muted-foreground" /> <span className="text-muted-foreground">Submitted:</span> {format(parseISO(item.submissionDate), "PPp")}</div>
       </CardContent>
       <CardFooter className="p-3 border-t bg-muted/20 flex gap-2">
-        <Button variant="outline" size="sm" className="flex-1 rounded-md border-destructive text-destructive hover:bg-destructive/10 text-xs" onClick={() => setSelectedItemForRejection(item)}>
-          <X className="mr-1 h-3.5 w-3.5" /> Reject
+        <Button variant="outline" size="sm" className="flex-1 rounded-lg text-xs py-2 border-destructive text-destructive hover:bg-destructive/10" onClick={() => setSelectedItemForRejection(item)}>
+          <X className="mr-1.5 h-3.5 w-3.5" /> Reject
         </Button>
-        <Button size="sm" className="flex-1 rounded-md bg-green-600 hover:bg-green-700 text-white text-xs" onClick={() => handleApprove(item)}>
-          <Check className="mr-1 h-3.5 w-3.5" /> Approve
+        <Button size="sm" className="flex-1 rounded-lg text-xs py-2 bg-green-600 hover:bg-green-700 text-white" onClick={() => handleApprove(item)}>
+          <Check className="mr-1.5 h-3.5 w-3.5" /> Approve
         </Button>
       </CardFooter>
     </Card>
@@ -238,3 +238,4 @@ export default function ApprovePlacementsPage() {
     </div>
   );
 }
+    

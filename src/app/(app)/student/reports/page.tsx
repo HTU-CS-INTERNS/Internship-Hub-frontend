@@ -104,36 +104,34 @@ export default function ReportsPage() {
   };
 
   const ReportCardMobile: React.FC<{ report: DailyReport & { title?: string} }> = ({ report }) => (
-    <Card className="shadow-md rounded-lg overflow-hidden border-l-4" style={{borderColor: `hsl(var(--${report.status === 'APPROVED' ? 'chart-3' : report.status === 'SUBMITTED' ? 'primary' : report.status === 'REJECTED' ? 'destructive' : 'accent'}))`}}>
-      <CardContent className="p-4 space-y-3">
+    <Card className="shadow-lg rounded-xl overflow-hidden border-l-4" style={{borderColor: `hsl(var(--${report.status === 'APPROVED' ? 'chart-3' : report.status === 'SUBMITTED' ? 'primary' : report.status === 'REJECTED' ? 'destructive' : 'accent'}))`}}>
+      <CardHeader className="p-3 bg-muted/30">
         <div className="flex justify-between items-start">
-          <div>
-            <p className="text-xs text-muted-foreground">{report.title || `Report for ${format(parseISO(report.date), "PPP")}`}</p>
-            <p className="font-semibold text-foreground text-sm">{format(parseISO(report.date), "PPP")}</p>
-          </div>
+          <CardTitle className="text-sm font-semibold text-foreground">{report.title || `Report: ${format(parseISO(report.date), "PPP")}`}</CardTitle>
           <Badge variant="outline" className={cn("text-xs px-2 py-0.5", statusColors[report.status])}>
             {report.status}
           </Badge>
         </div>
-        <div>
-          <p className="text-xs text-muted-foreground">Summary</p>
-          <p className="text-sm text-foreground line-clamp-3">{report.description}</p>
-        </div>
-        <div className="pt-2 flex gap-2">
+        <CardDescription className="text-xs text-muted-foreground">{format(parseISO(report.date), "EEEE, MMMM d, yyyy")}</CardDescription>
+      </CardHeader>
+      <CardContent className="p-3 text-xs">
+        <p className="text-muted-foreground mb-1">Summary:</p>
+        <p className="text-foreground line-clamp-3">{report.description}</p>
+      </CardContent>
+      <CardFooter className="p-3 border-t bg-muted/20 flex gap-2">
           <Link href={`/student/reports/${report.id}`} passHref className="flex-1">
-            <Button variant="outline" size="sm" className="w-full rounded-md text-xs">
+            <Button variant="outline" size="sm" className="w-full rounded-lg text-xs">
               <Eye className="mr-1.5 h-3.5 w-3.5" /> View Details
             </Button>
           </Link>
           {report.status === 'PENDING' && (
              <Link href={`/student/reports/edit/${report.id}`} passHref className="flex-1">
-                <Button variant="default" size="sm" className="w-full rounded-md text-xs bg-primary hover:bg-primary/90 text-primary-foreground">
+                <Button variant="default" size="sm" className="w-full rounded-lg text-xs bg-primary hover:bg-primary/90 text-primary-foreground">
                     <Edit3 className="mr-1.5 h-3.5 w-3.5" /> Edit
                 </Button>
             </Link>
           )}
-        </div>
-      </CardContent>
+      </CardFooter>
     </Card>
   );
 
@@ -188,12 +186,10 @@ export default function ReportsPage() {
             <CardDescription>A log of all your submitted work reports.</CardDescription>
             </CardHeader>
         )}
-        <CardContent className={cn(isMobile ? "p-0" : "p-0")}>
+        <CardContent className={cn(isMobile && filteredReports.length > 0 ? "p-0 space-y-4" : "p-0")}>
           {filteredReports.length > 0 ? (
             isMobile ? (
-              <div className="space-y-4">
-                {filteredReports.map((report) => <ReportCardMobile key={report.id} report={report} />)}
-              </div>
+                filteredReports.map((report) => <ReportCardMobile key={report.id} report={report} />)
             ) : (
             <Table>
               <TableHeader>
@@ -250,3 +246,4 @@ export default function ReportsPage() {
   );
 }
 
+    
