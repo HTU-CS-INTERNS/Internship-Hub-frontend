@@ -6,8 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { School, Users, BarChart3, Landmark, UserCog, Building, UserCheck, TrendingUp, Briefcase, Settings, Loader2 } from 'lucide-react';
-import { db } from '@/lib/firebase'; // Import Firestore instance
-import { collection, getCountFromServer } from 'firebase/firestore';
+// Removed Firestore imports: db, collection, getCountFromServer
 
 const AdminDashboardStatCard: React.FC<{ title: string; value: string | number; icon: React.ElementType; description?: string; actionLink?: string; actionLabel?: string; isLoading?: boolean }> = ({ title, value, icon: Icon, description, actionLink, actionLabel, isLoading }) => (
   <Card className="shadow-lg rounded-xl">
@@ -42,7 +41,7 @@ interface UniversityStats {
   totalLecturers: number;
   avgLecturerWorkload: number;
   totalCompanies: number;
-  totalFaculties: number; // New stat
+  totalFaculties: number;
 }
 
 export default function AdminDashboardPage() {
@@ -55,19 +54,7 @@ export default function AdminDashboardPage() {
       setIsLoading(true);
       setError(null);
       try {
-        // Actual Firestore query for faculties count
-        let facultiesCount = 0;
-        try {
-          const facultiesCollectionRef = collection(db, 'faculties');
-          const snapshot = await getCountFromServer(facultiesCollectionRef);
-          facultiesCount = snapshot.data().count;
-        } catch (firestoreError) {
-          console.error("Error fetching faculties count:", firestoreError);
-          // Keep going with placeholder for faculties if this fails for now
-          // Could set a specific error message for this particular stat
-        }
-
-        // Simulate fetching other data (to be replaced with actual Firestore queries later)
+        // Simulate fetching data (as Firestore is removed)
         await new Promise(resolve => setTimeout(resolve, 1200)); 
         
         const fetchedData: UniversityStats = {
@@ -77,7 +64,7 @@ export default function AdminDashboardPage() {
           totalLecturers: 85,
           avgLecturerWorkload: 9.2, 
           totalCompanies: 125,
-          totalFaculties: facultiesCount, // Use actual count
+          totalFaculties: 5, // Using dummy data for faculties
         };
         setUniversityStats(fetchedData);
       } catch (err) {

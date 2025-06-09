@@ -16,8 +16,9 @@ import {
 import { Bell, Mail, Settings, User, LogOut, Sun, Moon, PanelLeft, ChevronDown, Briefcase } from 'lucide-react';
 import { USER_ROLES } from '@/lib/constants';
 import type { UserRole } from '@/types';
-import { useRouter, usePathname } from 'next/navigation'; // Added usePathname
+import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
+// Removed Firebase Auth import
 
 const getInitials = (name: string) => {
   if (!name) return '';
@@ -29,19 +30,14 @@ export default function AppHeader() {
   const [userRole, setUserRole] = React.useState<UserRole | null>(null);
   const [theme, setTheme] = React.useState<'light' | 'dark'>('light');
   const router = useRouter();
-  const pathname = usePathname(); // For dynamic title
+  const pathname = usePathname();
   const [pageTitle, setPageTitle] = React.useState('Dashboard');
-  const [userName, setUserName] = React.useState('User');
-  const [userEmail, setUserEmail] = React.useState('user@example.com');
-
-
-  // DUMMY_USER structure moved inside useEffect or as state
+  
   const [currentUser, setCurrentUser] = React.useState({
     name: 'User',
     email: 'user@example.com',
     avatarUrl: 'https://placehold.co/100x100.png',
   });
-
 
   React.useEffect(() => {
     const storedRole = typeof window !== "undefined" ? localStorage.getItem('userRole') as UserRole : null;
@@ -67,6 +63,7 @@ export default function AppHeader() {
       localStorage.removeItem('theme');
       localStorage.removeItem('userName');
       localStorage.removeItem('userEmail');
+      localStorage.removeItem('isLoggedIn'); // Clear login status
     }
     document.documentElement.classList.remove('dark');
     router.push('/login');
@@ -81,21 +78,19 @@ export default function AppHeader() {
   
   React.useEffect(() => {
     const pathSegments = pathname.split('/').filter(Boolean);
-    let title = 'Dashboard'; // Default title
+    let title = 'Dashboard'; 
     if (pathSegments.length > 0) {
       const lastSegment = pathSegments[pathSegments.length -1];
-      // Check if last segment is a likely ID (e.g., UUID or numeric), if so, use parent segment
       if (pathSegments.length > 1 && (lastSegment.match(/^[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}$/) || /^\d+$/.test(lastSegment) || lastSegment.startsWith('task') || lastSegment.startsWith('report'))) {
         title = pathSegments[pathSegments.length - 2] || lastSegment;
       } else {
         title = lastSegment;
       }
       title = title.charAt(0).toUpperCase() + title.slice(1).replace('-', ' ');
-      if (title.toLowerCase() === 'app') title = 'Dashboard'; // Specific case for base /app path if any
+      if (title.toLowerCase() === 'app') title = 'Dashboard'; 
     }
     setPageTitle(title);
   }, [pathname]);
-
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-card px-4 md:px-6 shadow-sm">
@@ -169,5 +164,3 @@ export default function AppHeader() {
     </header>
   );
 }
-
-    

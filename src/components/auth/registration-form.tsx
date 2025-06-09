@@ -22,10 +22,9 @@ import { Loader2, CheckCircle, AlertTriangle, KeyRound } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { FACULTIES, DEPARTMENTS, USER_ROLES } from '@/lib/constants';
-import { auth, db } from '@/lib/firebase';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import type { UserRole } from '@/types';
+// Removed Firebase imports: auth, db, createUserWithEmailAndPassword, updateProfile, doc, setDoc, serverTimestamp
+import { sendOtp } from '@/ai/flows/send-otp-flow';
 
 
 const registrationStep1Schema = z.object({
@@ -65,13 +64,11 @@ const fetchStudentDataFromSchoolDB = async (schoolId: string): Promise<{name: st
   const department = DEPARTMENTS.find(d => d.facultyId === faculty.id) || DEPARTMENTS.find(d => d.id === "D005");
   
   return { 
-    name: `Student ${schoolId.substring(0,5)}`, // Simulated name
+    name: `Student ${schoolId.substring(0,5)}`,
     facultyId: faculty.id, 
     departmentId: department?.id || DEPARTMENTS[0].id 
   };
 };
-
-const SIMULATED_OTP = "123456"; // For testing
 
 export function RegistrationForm() {
   const router = useRouter();
@@ -80,6 +77,7 @@ export function RegistrationForm() {
   const [step, setStep] = React.useState(1);
   const [verifiedSchoolEmail, setVerifiedSchoolEmail] = React.useState('');
   const [userDataFromDB, setUserDataFromDB] = React.useState<{name: string, facultyId: string, departmentId: string} | null>(null);
+  const [generatedOtpForVerification, setGeneratedOtpForVerification] = React.useState<string | null>(null);
 
   const step1Form = useForm<RegistrationStep1Values>({
     resolver: zodResolver(registrationStep1Schema),
@@ -114,13 +112,20 @@ export function RegistrationForm() {
     setUserDataFromDB(studentData);
     setVerifiedSchoolEmail(values.schoolEmail);
     
-    toast({ 
-      title: 'OTP Sent!', 
-      description: `An OTP (simulated as ${SIMULATED_OTP}) has been sent to ${values.schoolEmail}. Please enter it below.`,
-      variant: "default",
-      duration: 7000,
-    });
-    setStep(2); 
+    try {
+      const otpResponse = await sendOtp({ email: values.schoolEmail });
+      setGeneratedOtpForVerification(otpResponse.otp);
+      toast({ 
+        title: 'OTP Sent! (Simulated)', 
+        description: `An OTP (simulated as ${otpResponse.otp}) has been 'sent' to ${values.schoolEmail}. Please enter it below.`,
+        variant: "default",
+        duration: 7000,
+      });
+      setStep(2); 
+    } catch (error) {
+      console.error("Error sending OTP:", error);
+      toast({ title: "OTP Error", description: "Could not send OTP. Please try again.", variant: "destructive"});
+    }
     setIsLoading(false);
   }
 
@@ -128,7 +133,7 @@ export function RegistrationForm() {
     setIsLoading(true);
     await new Promise(resolve => setTimeout(resolve, 700)); 
     
-    if (values.otp !== SIMULATED_OTP) {
+    if (values.otp !== generatedOtpForVerification) {
       toast({
         title: 'Invalid OTP',
         description: 'The OTP you entered is incorrect. Please try again.',
@@ -157,52 +162,27 @@ export function RegistrationForm() {
         return;
     }
 
-    try {
-        const userCredential = await createUserWithEmailAndPassword(auth, verifiedSchoolEmail, values.password);
-        const firebaseUser = userCredential.user;
-        await updateProfile(firebaseUser, { displayName: userDataFromDB.name });
-
-        const userDocData = {
-            uid: firebaseUser.uid,
-            name: userDataFromDB.name,
-            email: verifiedSchoolEmail,
-            role: 'STUDENT' as UserRole,
-            facultyId: userDataFromDB.facultyId,
-            departmentId: userDataFromDB.departmentId,
-            contactNumber: '', // Student can fill this in profile setup
-            createdAt: serverTimestamp(),
-            status: 'ACTIVE',
-        };
-        await setDoc(doc(db, "users", firebaseUser.uid), userDocData);
-        
-        if (typeof window !== "undefined") {
-          localStorage.setItem('userRole', 'STUDENT');
-          localStorage.setItem('userName', userDataFromDB.name);
-          localStorage.setItem('userEmail', verifiedSchoolEmail); 
-          localStorage.setItem('userFacultyId', userDataFromDB.facultyId);
-          localStorage.setItem('userDepartmentId', userDataFromDB.departmentId);
-          localStorage.removeItem('onboardingComplete'); 
-        }
-        
-        toast({
-          title: "Registration Successful!",
-          description: `Welcome, ${userDataFromDB.name}! Your account is created. Please complete your profile.`,
-          variant: "default",
-        });
-        router.push('/profile');
-
-    } catch (error: any) {
-        console.error("Firebase registration error:", error);
-        let errorMessage = "Registration failed. Please try again.";
-        if (error.code === 'auth/email-already-in-use') {
-            errorMessage = "This email is already registered. Please login or use a different email.";
-        } else if (error.code === 'auth/weak-password') {
-            errorMessage = "The password is too weak.";
-        }
-        toast({ title: 'Registration Error', description: errorMessage, variant: 'destructive'});
-    } finally {
-        setIsLoading(false);
+    // Simulate backend API call for user registration
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Store basic info in localStorage for prototype
+    if (typeof window !== "undefined") {
+      localStorage.setItem('userRole', 'STUDENT');
+      localStorage.setItem('userName', userDataFromDB.name);
+      localStorage.setItem('userEmail', verifiedSchoolEmail); 
+      localStorage.setItem('userFacultyId', userDataFromDB.facultyId);
+      localStorage.setItem('userDepartmentId', userDataFromDB.departmentId);
+      localStorage.removeItem('onboardingComplete'); 
+      localStorage.setItem('isLoggedIn', 'true');
     }
+    
+    toast({
+      title: "Registration Successful! (Simulated)",
+      description: `Welcome, ${userDataFromDB.name}! Your account is created. Please complete your profile.`,
+      variant: "default",
+    });
+    router.push('/profile');
+    setIsLoading(false);
   }
 
   const facultyName = userDataFromDB ? FACULTIES.find(f => f.id === userDataFromDB.facultyId)?.name : 'N/A';
@@ -261,8 +241,8 @@ export function RegistrationForm() {
                   </CardTitle>
               </CardHeader>
               <CardContent className="text-sm text-foreground space-y-1">
-                  <p>An OTP has been sent to: <strong>{verifiedSchoolEmail}</strong></p>
-                  <p className="text-xs text-muted-foreground">Please enter the 6-digit code below to confirm your identity.</p>
+                  <p>An OTP has been 'sent' to: <strong>{verifiedSchoolEmail}</strong></p>
+                  <p className="text-xs text-muted-foreground">Please enter the 6-digit code below to confirm your identity. (Simulated OTP: {generatedOtpForVerification})</p>
                   <p className="text-xs text-muted-foreground mt-2">If this is you, please proceed:</p>
                   <ul className="text-xs list-disc list-inside pl-2">
                       <li><strong>Name:</strong> {userDataFromDB.name}</li>
@@ -370,4 +350,3 @@ export function RegistrationForm() {
 
   return null;
 }
-    

@@ -23,8 +23,7 @@ import { cn } from '@/lib/utils';
 import { format, parseISO, isValid } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import type { InternshipDetails, InternshipStatus, HODApprovalQueueItem } from '@/types';
-import { auth, db } from '@/lib/firebase';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+// Removed Firebase imports: auth, db, doc, setDoc, serverTimestamp
 
 const internshipDetailsSchema = z.object({
   companyName: z.string().min(2, { message: 'Company name is required (min 2 chars).' }).max(100, { message: 'Company name too long (max 100).' }),
@@ -95,64 +94,49 @@ export default function InternshipDetailsForm({ defaultValues, onSuccess, isResu
 
   async function onSubmit(values: InternshipDetailsFormValues) {
     setIsLoading(true);
-    const currentUser = auth.currentUser;
-    if (!currentUser) {
-      toast({ title: "Error", description: "You must be logged in to submit.", variant: "destructive" });
-      setIsLoading(false);
-      return;
-    }
+    const studentId = localStorage.getItem('userEmail') || 'unknown_student_id'; // Using email as pseudo ID
+    const studentName = localStorage.getItem('userName') || 'Unknown Student';
 
-    const studentId = currentUser.uid;
-    const studentName = localStorage.getItem('userName') || currentUser.displayName || 'Unknown Student';
-
-    const submissionDataForFirestore: InternshipDetails & { studentId: string; submittedAt: any } = {
+    const submissionData: InternshipDetails = {
       ...values,
       startDate: format(values.startDate, 'yyyy-MM-dd'),
       endDate: format(values.endDate, 'yyyy-MM-dd'),
       status: 'PENDING_APPROVAL',
-      studentId: studentId,
-      submittedAt: serverTimestamp(), // For Firestore
-      rejectionReason: values.status === 'REJECTED' ? values.rejectionReason : undefined, // Clear rejection reason if not rejected previously
+      rejectionReason: values.status === 'REJECTED' ? values.rejectionReason : undefined,
+    };
+    
+    // Simulate API call to a custom backend
+    console.log("Simulating internship details submission to backend:", submissionData);
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Save to localStorage for prototype HOD queue
+    localStorage.setItem(`userInternshipDetails_${studentId}`, JSON.stringify(submissionData));
+
+    const hodQueueItem: HODApprovalQueueItem = {
+        studentId: studentId, // Using pseudo ID
+        studentName: studentName,
+        companyName: values.companyName,
+        supervisorName: values.supervisorName,
+        supervisorEmail: values.supervisorEmail,
+        submissionDate: new Date().toISOString(),
+        status: 'PENDING_APPROVAL',
     };
 
-    try {
-      await setDoc(doc(db, "internshipPlacements", studentId), submissionDataForFirestore);
+    const currentQueueRaw = localStorage.getItem('hodCompanyApprovalQueue');
+    let currentQueue: HODApprovalQueueItem[] = currentQueueRaw ? JSON.parse(currentQueueRaw) : [];
+    currentQueue = currentQueue.filter(item => item.studentId !== studentId || item.status !== 'PENDING_APPROVAL');
+    currentQueue.push(hodQueueItem);
+    localStorage.setItem('hodCompanyApprovalQueue', JSON.stringify(currentQueue));
+    
+    localStorage.removeItem('onboardingComplete'); 
 
-      // Add to HOD approval queue (still localStorage for now to keep HOD page working)
-      const hodQueueItem: HODApprovalQueueItem = {
-          studentId: studentId,
-          studentName: studentName,
-          companyName: values.companyName,
-          supervisorName: values.supervisorName,
-          supervisorEmail: values.supervisorEmail,
-          submissionDate: new Date().toISOString(), // For localStorage queue
-          status: 'PENDING_APPROVAL',
-      };
-
-      const currentQueueRaw = localStorage.getItem('hodCompanyApprovalQueue');
-      let currentQueue: HODApprovalQueueItem[] = currentQueueRaw ? JSON.parse(currentQueueRaw) : [];
-      currentQueue = currentQueue.filter(item => item.studentId !== studentId || item.status !== 'PENDING_APPROVAL');
-      currentQueue.push(hodQueueItem);
-      localStorage.setItem('hodCompanyApprovalQueue', JSON.stringify(currentQueue));
-      
-      localStorage.removeItem('onboardingComplete'); 
-
-      toast({
-        title: isResubmitting ? 'Internship Details Resubmitted!' : 'Internship Details Submitted!',
-        description: 'Your internship information has been sent for HOD approval.',
-        variant: "default",
-      });
-      onSuccess?.(submissionDataForFirestore);
-    } catch (error) {
-      console.error("Error saving internship details to Firestore: ", error);
-      toast({
-        title: "Submission Failed",
-        description: "Could not save internship details. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    toast({
+      title: isResubmitting ? 'Internship Details Resubmitted! (Simulated)' : 'Internship Details Submitted! (Simulated)',
+      description: 'Your internship information has been sent for HOD approval.',
+      variant: "default",
+    });
+    onSuccess?.(submissionData);
+    setIsLoading(false);
   }
 
   return (

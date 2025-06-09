@@ -16,6 +16,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useRouter } from 'next/navigation';
+// Removed Firebase Auth import
 
 const getInitials = (name: string) => {
     if (!name) return 'U';
@@ -47,6 +48,7 @@ export default function MobileHeader({ userRole }: MobileHeaderProps) {
       localStorage.removeItem('theme');
       localStorage.removeItem('userName');
       localStorage.removeItem('userEmail');
+      localStorage.removeItem('isLoggedIn'); // Clear login status
     }
     document.documentElement.classList.remove('dark');
     router.push('/login');
@@ -106,5 +108,3 @@ export default function MobileHeader({ userRole }: MobileHeaderProps) {
     </header>
   );
 }
-
-    

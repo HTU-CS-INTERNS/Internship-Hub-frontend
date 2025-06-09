@@ -26,7 +26,7 @@ import { Loader2 } from 'lucide-react';
 const loginSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
-  role: z.enum(['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD', 'ADMIN'], { // Added ADMIN
+  role: z.enum(['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD', 'ADMIN'], {
     required_error: "You need to select a role."
   }),
 });
@@ -43,39 +43,39 @@ export function LoginForm() {
     defaultValues: {
       email: '',
       password: '',
-      role: 'STUDENT', 
+      role: 'STUDENT',
     },
   });
 
   async function onSubmit(values: LoginFormValues) {
     setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    // Simulate API call to a custom backend
+    await new Promise(resolve => setTimeout(resolve, 1000));
     setIsLoading(false);
 
+    // In a real scenario, the backend would verify credentials
+    // and return user data including their actual role.
+    // For now, we'll use the role selected in the form.
+    const selectedRole = values.role as UserRole;
+    const nameFromEmail = values.email.split('@')[0];
+    const capitalizedName = nameFromEmail.charAt(0).toUpperCase() + nameFromEmail.slice(1);
+    const userNameToStore = capitalizedName || USER_ROLES[selectedRole];
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem('userRole', selectedRole);
+      localStorage.setItem('userEmail', values.email);
+      localStorage.setItem('userName', userNameToStore);
+      // Indicate that the user is "logged in" for client-side checks
+      localStorage.setItem('isLoggedIn', 'true'); 
+    }
+
     toast({
-      title: "Login Successful!",
-      description: `Welcome back! You are logged in as a ${USER_ROLES[values.role as UserRole]}.`,
+      title: "Login Successful! (Simulated)",
+      description: `Welcome back, ${userNameToStore}! You are logged in as a ${USER_ROLES[selectedRole]}.`,
       variant: "default",
     });
-    
-    if (typeof window !== "undefined") {
-      localStorage.setItem('userRole', values.role);
-      localStorage.setItem('userEmail', values.email);
 
-      let currentUserName = localStorage.getItem('userName');
-      const defaultNameForRole = values.role === 'STUDENT' ? 'New Student' 
-                                : values.role === 'SUPERVISOR' ? 'New Supervisor'
-                                : values.role === 'ADMIN' ? 'Admin User' 
-                                : USER_ROLES[values.role as UserRole];
-
-      if (!currentUserName || currentUserName === 'New User' || currentUserName === 'User' || currentUserName === 'New Supervisor' || currentUserName === 'New Student') {
-        const nameFromEmail = values.email.split('@')[0];
-        const capitalizedName = nameFromEmail.charAt(0).toUpperCase() + nameFromEmail.slice(1);
-        localStorage.setItem('userName', capitalizedName || defaultNameForRole);
-      }
-    }
-    
-    if (values.role === 'ADMIN') {
+    if (selectedRole === 'ADMIN') {
       router.push('/admin/dashboard');
     } else {
       router.push('/dashboard');
@@ -121,7 +121,7 @@ export function LoginForm() {
                 <RadioGroup
                   onValueChange={field.onChange}
                   defaultValue={field.value}
-                  className="flex flex-col space-y-2 sm:flex-row sm:flex-wrap sm:space-y-0 sm:gap-x-4 sm:gap-y-2" // Adjusted for better wrapping
+                  className="flex flex-col space-y-2 sm:flex-row sm:flex-wrap sm:space-y-0 sm:gap-x-4 sm:gap-y-2"
                 >
                   {(Object.keys(USER_ROLES) as UserRole[]).map((roleKey) => (
                     <FormItem key={roleKey} className="flex items-center space-x-2 space-y-0">
