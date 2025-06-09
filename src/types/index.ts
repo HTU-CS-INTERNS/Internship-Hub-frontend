@@ -37,6 +37,9 @@ export interface InternshipDetails {
   status: InternshipStatus;
   rejectionReason?: string;
   hodComments?: string; // For HOD to add comments if needed during approval
+  companyLatitude?: number;
+  companyLongitude?: number;
+  geofenceRadiusMeters?: number;
 }
 
 export interface HODApprovalQueueItem {
@@ -47,30 +50,30 @@ export interface HODApprovalQueueItem {
   supervisorEmail: string;
   submissionDate: string; // ISO string
   status: 'PENDING_APPROVAL'; // Only pending items are in this queue
-  // Potentially add facultyId and departmentId if HODs are scoped
 }
 
 
 export interface DailyTask {
   id: string;
-  date: string;
+  date: string; // YYYY-MM-DD
   description: string;
   outcomes: string;
   learningObjectives: string;
   studentId: string;
   departmentOutcomeLink?: string;
   status: 'PENDING' | 'SUBMITTED' | 'APPROVED' | 'REJECTED';
-  attachments?: string[];
+  attachments?: string[]; // Array of file names or URLs
   supervisorComments?: string;
   lecturerComments?: string;
 }
 
-export interface DailyReport extends DailyTask {
+export interface DailyReport extends DailyTask { // Reports extend tasks for common fields
   title?: string;
   challengesFaced?: string;
-  learnings?: string;
-  securePhotoUrl?: string;
+  // learnings?: string; // Can use learningObjectives from DailyTask
+  securePhotoUrl?: string; // URL or path to the secure photo
 }
+
 
 export interface CommunicationMessage {
   id: string;
@@ -94,9 +97,9 @@ export interface ScoringMetric {
 }
 
 export interface InternEvaluation {
-  scores: Record<string, number | undefined>;
+  scores: Record<string, number | undefined>; // metric_key: score
   overallComments: string;
-  evaluationDate?: string;
+  evaluationDate?: string; // YYYY-MM-DD
 }
 
 export interface ProfileFormValues {
@@ -107,4 +110,20 @@ export interface ProfileFormValues {
   contactNumber?: string;
   supervisorCompanyName?: string;
   supervisorCompanyAddress?: string;
+}
+
+export interface CheckIn {
+  id: string;
+  student_id: string;
+  check_in_timestamp: string; // ISO string
+  latitude?: number;
+  longitude?: number;
+  address_resolved?: string;
+  manual_reason?: string;
+  is_gps_verified: boolean;
+  is_outside_geofence: boolean;
+  photo_url?: string; // URL or path
+  supervisor_verification_status?: 'PENDING' | 'VERIFIED' | 'FLAGGED';
+  supervisor_comments?: string;
+  created_at: string; // ISO string
 }

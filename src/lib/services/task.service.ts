@@ -28,17 +28,20 @@ async function saveAllTasksToStorage(tasks: DailyTask[]): Promise<void> {
 }
 
 export async function createTask(
-  taskData: Omit<DailyTask, 'id' | 'studentId' | 'status' | 'date'> & { date: Date }
+  taskData: Omit<DailyTask, 'id' | 'studentId' | 'status' | 'date' | 'attachments'> & { date: Date; attachments?: File[] }
 ): Promise<DailyTask> {
   const allTasks = await getAllTasksFromStorage();
   const studentId = getCurrentStudentId();
   const newTask: DailyTask = {
-    ...taskData,
     id: `task_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
     studentId,
-    status: 'PENDING', // Initial status for a newly created task
-    date: format(taskData.date, 'yyyy-MM-dd'), // Ensure date is stored as string
-    attachments: taskData.attachments?.map(file => (file as File).name) || [], // Store file names for simplicity
+    status: 'PENDING',
+    date: format(taskData.date, 'yyyy-MM-dd'),
+    description: taskData.description,
+    outcomes: taskData.outcomes,
+    learningObjectives: taskData.learningObjectives,
+    departmentOutcomeLink: taskData.departmentOutcomeLink,
+    attachments: taskData.attachments?.map(file => file.name) || [],
   };
   allTasks.push(newTask);
   await saveAllTasksToStorage(allTasks);
@@ -56,7 +59,10 @@ export async function getTaskById(taskId: string): Promise<DailyTask | null> {
   return task;
 }
 
-export async function updateTask(taskId: string, updates: Partial<Omit<DailyTask, 'id' | 'studentId' | 'date'> & { date?: Date }>): Promise<DailyTask | null> {
+export async function updateTask(
+    taskId: string, 
+    updates: Partial<Omit<DailyTask, 'id' | 'studentId' | 'status' | 'date' | 'attachments'>> & { date?: Date; attachments?: File[] }
+): Promise<DailyTask | null> {
   const allTasks = await getAllTasksFromStorage();
   const taskIndex = allTasks.findIndex(t => t.id === taskId);
   if (taskIndex === -1) {
@@ -68,12 +74,19 @@ export async function updateTask(taskId: string, updates: Partial<Omit<DailyTask
   if (updates.date) {
     updatedTaskData.date = format(updates.date, 'yyyy-MM-dd');
   }
-  if (updates.description) updatedTaskData.description = updates.description;
-  if (updates.outcomes) updatedTaskData.outcomes = updates.outcomes;
-  if (updates.learningObjectives) updatedTaskData.learningObjectives = updates.learningObjectives;
+  if (updates.description !== undefined) updatedTaskData.description = updates.description;
+  if (updates.outcomes !== undefined) updatedTaskData.outcomes = updates.outcomes;
+  if (updates.learningObjectives !== undefined) updatedTaskData.learningObjectives = updates.learningObjectives;
   if (updates.departmentOutcomeLink !== undefined) updatedTaskData.departmentOutcomeLink = updates.departmentOutcomeLink;
-  if (updates.attachments) updatedTaskData.attachments = updates.attachments.map(file => (file as File).name);
-  // Status updates should be handled by a separate, more specific function if needed for supervisor/lecturer actions
+  
+  // If new attachments are provided, replace old ones. Otherwise, keep existing.
+  if (updates.attachments && updates.attachments.length > 0) {
+    updatedTaskData.attachments = updates.attachments.map(file => file.name);
+  } else if (updates.attachments === undefined && !allTasks[taskIndex].attachments) {
+    // if attachments field is not in updates, and old task had no attachments, ensure it's an empty array
+     updatedTaskData.attachments = [];
+  }
+  // If updates.attachments is undefined and task had attachments, they are preserved from allTasks[taskIndex]
 
   allTasks[taskIndex] = updatedTaskData;
   await saveAllTasksToStorage(allTasks);
@@ -85,7 +98,7 @@ export async function updateTaskStatus(
   taskId: string,
   newStatus: DailyTask['status'],
   comments?: string,
-  commenterRole?: 'supervisor' | 'lecturer' // To distinguish comment types
+  commenterRole?: 'supervisor' | 'lecturer'
 ): Promise<DailyTask | null> {
   const allTasks = await getAllTasksFromStorage();
   const taskIndex = allTasks.findIndex(t => t.id === taskId);
@@ -102,30 +115,23 @@ export async function updateTaskStatus(
     } else if (commenterRole === 'lecturer') {
       allTasks[taskIndex].lecturerComments = comments;
     }
-    // Potentially clear other role's comments or append, based on business logic
   }
 
   await saveAllTasksToStorage(allTasks);
   return allTasks[taskIndex];
 }
 
-// Initialize with DUMMY_TASKS if no tasks are in localStorage (for first-time use)
 export async function initializeDefaultTasksIfNeeded() {
   if (typeof window !== "undefined") {
     const tasksRaw = localStorage.getItem(TASKS_STORAGE_KEY);
     if (!tasksRaw || JSON.parse(tasksRaw).length === 0) {
       const studentId = getCurrentStudentId();
       const defaultTasks: DailyTask[] = [
-        { id: 'task1_default', date: '2024-07-28', description: 'Develop user authentication module.', outcomes: 'Authentication flow completed.', learningObjectives: 'Learned JWT implementation.', studentId: studentId, status: 'APPROVED', departmentOutcomeLink: "DO1.2" },
-        { id: 'task2_default', date: '2024-07-29', description: 'Design database schema for posts.', outcomes: 'Schema designed and reviewed.', learningObjectives: 'Understanding of relational databases.', studentId: studentId, status: 'SUBMITTED' },
+        { id: 'task1_default', date: '2024-07-28', description: 'Develop user authentication module.', outcomes: 'Authentication flow completed.', learningObjectives: 'Learned JWT implementation.', studentId: studentId, status: 'APPROVED', departmentOutcomeLink: "DO1.2", attachments: ["auth_diagram.png"] },
+        { id: 'task2_default', date: '2024-07-29', description: 'Design database schema for posts.', outcomes: 'Schema designed and reviewed.', learningObjectives: 'Understanding of relational databases.', studentId: studentId, status: 'SUBMITTED', attachments: [] },
       ];
       await saveAllTasksToStorage(defaultTasks);
       console.log("Initialized default tasks for student:", studentId);
     }
   }
 }
-// Call this once, perhaps in a main layout or a global context setup, if needed.
-// For simplicity, pages using tasks can call it in their useEffect if they want to ensure data exists.
-// initializeDefaultTasksIfNeeded(); // Auto-init might be too aggressive here, let pages handle it.
-
-    

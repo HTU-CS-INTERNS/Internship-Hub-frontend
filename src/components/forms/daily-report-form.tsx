@@ -25,7 +25,7 @@ import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import type { DailyReport } from '@/types';
 import { useRouter } from 'next/navigation';
-import NextImage from 'next/image'; // Renamed to avoid conflict with Lucide's Image icon
+import NextImage from 'next/image';
 
 const dailyReportSchema = z.object({
   date: z.date({ required_error: 'Report date is required.' }),
@@ -40,17 +40,21 @@ const dailyReportSchema = z.object({
 type DailyReportFormValues = z.infer<typeof dailyReportSchema>;
 
 interface DailyReportFormProps {
-  defaultValues?: Partial<DailyReport>; 
+  defaultValues?: Partial<DailyReport & { summary?: string; learnings?: string }>; // Adjust for potential renaming
+  reportIdToEdit?: string;
   onSuccess?: (reportId: string) => void;
 }
 
-export default function DailyReportForm({ defaultValues, onSuccess }: DailyReportFormProps) {
+export default function DailyReportForm({ defaultValues, reportIdToEdit, onSuccess }: DailyReportFormProps) {
   const { toast } = useToast();
   const router = useRouter();
   const [isLoading, setIsLoading] = React.useState(false);
-  const [selectedFiles, setSelectedFiles] = React.useState<File[]>([]);
-  const [securePhotoPreview, setSecurePhotoPreview] = React.useState<string | null>(null);
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [selectedAttachments, setSelectedAttachments] = React.useState<File[]>([]);
+  const [existingAttachmentNames, setExistingAttachmentNames] = React.useState<string[]>([]);
+  const [securePhotoFile, setSecurePhotoFile] = React.useState<File | null>(null);
+  const [securePhotoPreview, setSecurePhotoPreview] = React.useState<string | null>(defaultValues?.securePhotoUrl || null);
+  
+  const attachmentsInputRef = React.useRef<HTMLInputElement>(null);
   const securePhotoInputRef = React.useRef<HTMLInputElement>(null);
 
   const form = useForm<DailyReportFormValues>({
@@ -58,32 +62,48 @@ export default function DailyReportForm({ defaultValues, onSuccess }: DailyRepor
     defaultValues: {
       date: defaultValues?.date ? new Date(defaultValues.date) : new Date(),
       title: (defaultValues as any)?.title || '',
-      summary: defaultValues?.description || '',
+      summary: defaultValues?.description || (defaultValues as any)?.summary || '',
       challengesFaced: (defaultValues as any)?.challengesFaced || '',
-      learnings: defaultValues?.learningObjectives || '',
+      learnings: defaultValues?.learningObjectives || (defaultValues as any)?.learnings || '',
       attachments: [],
       securePhoto: undefined,
     },
   });
+  
+  React.useEffect(() => {
+    if (reportIdToEdit && defaultValues?.attachments) {
+      setExistingAttachmentNames(defaultValues.attachments);
+    }
+    if (defaultValues?.securePhotoUrl) {
+        setSecurePhotoPreview(defaultValues.securePhotoUrl);
+    }
+  }, [reportIdToEdit, defaultValues]);
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+
+  const handleAttachmentChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
       const filesArray = Array.from(event.target.files);
-      const newFiles = [...selectedFiles, ...filesArray].slice(0, 5); // Max 5 files
-      setSelectedFiles(newFiles);
+      const newFiles = [...selectedAttachments, ...filesArray].slice(0, 5);
+      setSelectedAttachments(newFiles);
       form.setValue("attachments", newFiles, { shouldValidate: true });
     }
   };
 
-  const removeFile = (fileName: string) => {
-    const newFiles = selectedFiles.filter(file => file.name !== fileName);
-    setSelectedFiles(newFiles);
+  const removeAttachment = (fileName: string) => {
+    const newFiles = selectedAttachments.filter(file => file.name !== fileName);
+    setSelectedAttachments(newFiles);
     form.setValue("attachments", newFiles, { shouldValidate: true });
+  };
+
+  const removeExistingAttachment = (fileName: string) => {
+    setExistingAttachmentNames(prev => prev.filter(name => name !== fileName));
+    toast({ title: "Attachment Marked for Removal (Simulated)", description: `${fileName} will be removed upon saving.` });
   };
   
   const handleSecurePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       const file = event.target.files[0];
+      setSecurePhotoFile(file); // Store the File object
       form.setValue("securePhoto", file, { shouldValidate: true });
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -94,6 +114,7 @@ export default function DailyReportForm({ defaultValues, onSuccess }: DailyRepor
   };
 
   const clearSecurePhoto = () => {
+    setSecurePhotoFile(null);
     setSecurePhotoPreview(null); 
     form.setValue("securePhoto", undefined, { shouldValidate: true }); 
     if(securePhotoInputRef.current) securePhotoInputRef.current.value = "";
@@ -101,24 +122,50 @@ export default function DailyReportForm({ defaultValues, onSuccess }: DailyRepor
 
   async function onSubmit(values: DailyReportFormValues) {
     setIsLoading(true);
-    console.log("Submitting report:", values);
-    // Simulate API call
+    // In a real app, attachments and securePhoto (File objects) would be uploaded to storage first.
+    // Then, their URLs would be included in the payload to the backend.
+    // For this mock, the service will just handle file names.
+    
+    const reportPayload = {
+        ...values,
+        // Convert File objects to names for mock service
+        attachments: selectedAttachments.map(f => f.name), 
+        // If editing, and existing attachments were kept, merge them here
+        // For simplicity, this example replaces all attachments if new ones are selected.
+        // If `selectedAttachments` is empty, it means no new files were chosen.
+        // We should then probably send `existingAttachmentNames` if they exist for an update.
+        // This needs careful handling in a real scenario.
+        
+        // securePhoto: securePhotoFile ? securePhotoFile.name : (reportIdToEdit && defaultValues?.securePhotoUrl ? defaultValues.securePhotoUrl : undefined),
+        securePhotoUrl: securePhotoFile ? `uploads/${securePhotoFile.name}` : (reportIdToEdit && securePhotoPreview && !securePhotoFile ? securePhotoPreview : undefined),
+    };
+    
+    if (taskIdToEdit && existingAttachmentNames.length > 0 && selectedAttachments.length === 0) {
+        (reportPayload as any).attachments = existingAttachmentNames; // Keep old if no new ones selected
+    }
+
+
+    console.log("Submitting report payload (mock):", reportPayload);
+    // Simulate API call (service interaction is mocked inside the report page for now)
     await new Promise(resolve => setTimeout(resolve, 1500));
     
-    const newReportId = `report_${Date.now()}`; // Simulated ID
+    const newReportId = reportIdToEdit || `report_${Date.now()}`;
     
+    // Simulate saving to DUMMY_REPORTS or calling a service
+    // This part should be replaced by actual service call in a real app
+    // For now, we'll rely on the calling page to handle the actual data update for the mock.
+
     setIsLoading(false);
     toast({
-      title: defaultValues ? 'Report Updated!' : 'Report Submitted!',
-      description: `Your work report for ${format(values.date, "PPP")} has been ${defaultValues ? 'updated' : 'submitted'}. Supervisor will be notified.`,
+      title: reportIdToEdit ? 'Report Updated!' : 'Report Submitted!',
+      description: `Your work report for ${format(values.date, "PPP")} has been ${reportIdToEdit ? 'updated' : 'submitted'}. Supervisor will be notified.`,
       variant: "default",
     });
     
     if (onSuccess) {
       onSuccess(newReportId);
     } else {
-      // Navigate to the main reports page or the newly created report's detail page
-      router.push('/reports'); 
+      router.push('/student/reports'); 
     }
   }
 
@@ -219,18 +266,35 @@ export default function DailyReportForm({ defaultValues, onSuccess }: DailyRepor
                         <p className="mb-1 text-sm text-muted-foreground"><span className="font-semibold">Click to upload</span> or drag and drop</p>
                         <p className="text-xs text-muted-foreground">Images, PDFs, documents (max 5MB each)</p>
                     </div>
-                    <input ref={fileInputRef} id="dropzone-file-report" type="file" className="hidden" multiple onChange={handleFileChange} accept="image/*,.pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx"/>
+                    <input ref={attachmentsInputRef} id="dropzone-file-report" type="file" className="hidden" multiple onChange={handleAttachmentChange} accept="image/*,.pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx"/>
                 </label>
             </div> 
             </FormControl>
-            {selectedFiles.length > 0 && (
+            {/* Display existing attachments if editing */}
+            {reportIdToEdit && existingAttachmentNames.length > 0 && (
+                <div className="mt-4 space-y-2">
+                    <p className="text-sm font-medium text-foreground">Current attachments:</p>
+                    <ul className="list-none space-y-1">
+                    {existingAttachmentNames.map((name, index) => (
+                        <li key={`existing-att-${index}`} className="text-sm text-muted-foreground flex items-center justify-between bg-muted/50 p-2 rounded-md border border-input">
+                            <span className="flex items-center break-all"><Paperclip className="inline mr-2 h-4 w-4 text-primary flex-shrink-0" />{name}</span>
+                            <Button type="button" variant="ghost" size="icon" onClick={() => removeExistingAttachment(name)} className="text-destructive hover:text-destructive h-6 w-6 ml-2 flex-shrink-0">
+                                <XCircle className="h-4 w-4" />
+                            </Button>
+                        </li>
+                    ))}
+                    </ul>
+                </div>
+            )}
+            {/* Display newly selected attachments */}
+            {selectedAttachments.length > 0 && (
             <div className="mt-4 space-y-2">
-                <p className="text-sm font-medium text-foreground">Selected files:</p>
+                <p className="text-sm font-medium text-foreground">{reportIdToEdit && existingAttachmentNames.length > 0 ? 'New files to upload (will be added/replace):' : 'Selected files:'}</p>
                 <ul className="list-none space-y-1">
-                {selectedFiles.map((file, index) => (
-                    <li key={index} className="text-sm text-muted-foreground flex items-center justify-between bg-muted/50 p-2 rounded-md border border-input">
+                {selectedAttachments.map((file, index) => (
+                    <li key={`new-att-${index}`} className="text-sm text-muted-foreground flex items-center justify-between bg-muted/50 p-2 rounded-md border border-input">
                     <span className="flex items-center break-all"><Paperclip className="inline mr-2 h-4 w-4 text-primary flex-shrink-0" />{file.name} ({(file.size / 1024).toFixed(1)} KB)</span>
-                    <Button type="button" variant="ghost" size="icon" onClick={() => removeFile(file.name)} className="text-destructive hover:text-destructive h-6 w-6 ml-2 flex-shrink-0">
+                    <Button type="button" variant="ghost" size="icon" onClick={() => removeAttachment(file.name)} className="text-destructive hover:text-destructive h-6 w-6 ml-2 flex-shrink-0">
                         <XCircle className="h-4 w-4" />
                     </Button>
                     </li>
@@ -246,7 +310,7 @@ export default function DailyReportForm({ defaultValues, onSuccess }: DailyRepor
              <FormDescription>As per trust model guidelines, upload a secure photo if relevant to your report (e.g., photo of completed work setup).</FormDescription>
             <FormControl>
             <div className="flex flex-col items-center justify-center w-full">
-                <label htmlFor="secure-photo-file" className="flex flex-col items-center justify-center w-full h-48 border-2 border-input border-dashed rounded-lg cursor-pointer bg-muted hover:bg-muted/80 relative overflow-hidden">
+                <label htmlFor="secure-photo-file-report" className="flex flex-col items-center justify-center w-full h-48 border-2 border-input border-dashed rounded-lg cursor-pointer bg-muted hover:bg-muted/80 relative overflow-hidden">
                     {securePhotoPreview ? (
                         <NextImage src={securePhotoPreview} alt="Secure photo preview" layout="fill" objectFit="contain" data-ai-hint="workplace item person"/>
                     ) : (
@@ -256,13 +320,10 @@ export default function DailyReportForm({ defaultValues, onSuccess }: DailyRepor
                             <p className="text-xs text-muted-foreground">E.g., photo of completed work, setup</p>
                         </div>
                     )}
-                    <input ref={securePhotoInputRef} id="secure-photo-file" type="file" className="hidden" onChange={handleSecurePhotoChange} accept="image/*" capture="environment" />
+                    <input ref={securePhotoInputRef} id="secure-photo-file-report" type="file" className="hidden" onChange={handleSecurePhotoChange} accept="image/*" capture="environment" />
                 </label>
             </div> 
             </FormControl>
-            {form.getValues("securePhoto") && !securePhotoPreview && (
-                 <p className="text-sm text-muted-foreground mt-2">Photo selected: {form.getValues("securePhoto")?.name}</p>
-            )}
              {securePhotoPreview && (
                 <Button type="button" variant="outline" size="sm" className="mt-2 rounded-lg border-destructive text-destructive hover:bg-destructive/5 hover:text-destructive" onClick={clearSecurePhoto}>
                     <XCircle className="mr-2 h-4 w-4"/> Clear Photo
@@ -274,7 +335,7 @@ export default function DailyReportForm({ defaultValues, onSuccess }: DailyRepor
         <div className="flex flex-col sm:flex-row gap-3 pt-4">
             <Button type="submit" className="w-full sm:w-auto rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-base py-3" disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isLoading ? (defaultValues ? 'Updating Report...' : 'Submitting Report...') : (defaultValues ? 'Update Report' : 'Submit Report')}
+            {isLoading ? (reportIdToEdit ? 'Updating Report...' : 'Submitting Report...') : (reportIdToEdit ? 'Update Report' : 'Submit Report')}
             </Button>
             <Button type="button" variant="outline" className="w-full sm:w-auto rounded-lg border-input hover:bg-muted text-base py-3" onClick={() => router.back()} disabled={isLoading}>
             Cancel
@@ -284,3 +345,4 @@ export default function DailyReportForm({ defaultValues, onSuccess }: DailyRepor
     </Form>
   );
 }
+

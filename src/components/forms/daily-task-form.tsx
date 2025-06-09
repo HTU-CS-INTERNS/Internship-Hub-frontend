@@ -25,7 +25,7 @@ import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import type { DailyTask } from '@/types';
 import { useRouter } from 'next/navigation';
-import { createTask, updateTask } from '@/lib/services/task.service'; // Import the service
+import { createTask, updateTask } from '@/lib/services/task.service';
 
 const dailyTaskSchema = z.object({
   date: z.date({ required_error: 'Task date is required.' }),
@@ -48,7 +48,9 @@ export default function DailyTaskForm({ defaultValues, taskIdToEdit, onSuccess }
   const { toast } = useToast();
   const router = useRouter();
   const [isLoading, setIsLoading] = React.useState(false);
+  // Store File objects for submission, and string names for display if editing
   const [selectedFiles, setSelectedFiles] = React.useState<File[]>([]);
+  const [existingAttachmentNames, setExistingAttachmentNames] = React.useState<string[]>([]);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const form = useForm<DailyTaskFormValues>({
@@ -59,46 +61,69 @@ export default function DailyTaskForm({ defaultValues, taskIdToEdit, onSuccess }
       outcomes: defaultValues?.outcomes || '',
       learningObjectives: defaultValues?.learningObjectives || '',
       departmentOutcomeLink: defaultValues?.departmentOutcomeLink || '',
-      attachments: [], // Default to empty, files are handled separately if editing
+      attachments: [], // Always initialize with empty array for File objects
     },
   });
 
   React.useEffect(() => {
-    // If editing, defaultValues.attachments would be string array (file names)
-    // We don't repopulate file input for editing, user must re-select if they want to change.
-    // If there's a better way to handle file inputs with react-hook-form for edits, that could be done.
-    // For now, attachments are always "new" if the input is used.
-  }, [defaultValues]);
+    if (taskIdToEdit && defaultValues?.attachments) {
+      // If editing and there are existing attachments (string names from DB)
+      setExistingAttachmentNames(defaultValues.attachments);
+    }
+  }, [taskIdToEdit, defaultValues?.attachments]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
       const filesArray = Array.from(event.target.files);
-      const newFiles = [...selectedFiles, ...filesArray].slice(0, 5); // Max 5 files
-      setSelectedFiles(newFiles);
+      // Keep newly selected files, don't merge with existingAttachmentNames for form value
+      const newFiles = [...filesArray].slice(0, 5); // Max 5 files
+      setSelectedFiles(newFiles); // Store File objects
       form.setValue("attachments", newFiles, { shouldValidate: true });
     }
   };
 
-  const removeFile = (fileName: string) => {
+  const removeNewFile = (fileName: string) => {
     const newFiles = selectedFiles.filter(file => file.name !== fileName);
     setSelectedFiles(newFiles);
     form.setValue("attachments", newFiles, { shouldValidate: true });
     if(fileInputRef.current && newFiles.length === 0) {
-        fileInputRef.current.value = ""; // Clear the input if all files removed
+        fileInputRef.current.value = ""; 
     }
   };
+
+  const removeExistingFile = (fileName: string) => {
+    // This would typically involve an API call to delete the file from storage
+    // For mock, just remove from displayed list
+    setExistingAttachmentNames(prev => prev.filter(name => name !== fileName));
+    toast({ title: "Attachment Removed (Simulated)", description: `${fileName} would be deleted from storage.` });
+  };
+
 
   async function onSubmit(values: DailyTaskFormValues) {
     setIsLoading(true);
     
     try {
       let savedTask: DailyTask | null;
+      // The service will now receive File objects in values.attachments (if any new files selected)
+      // and needs to handle them appropriately (e.g., upload and get URLs, or store names for mock)
       const taskPayload = {
         ...values,
-        attachments: selectedFiles, // Pass File objects to the service
+        // Pass selected File objects. The service is updated to handle this.
+        attachments: selectedFiles, 
+        // If editing and wanting to keep old files, logic to merge old (string names) and new (File objects)
+        // would be needed here or in the service. For simplicity, this form replaces attachments on edit.
+        // If existingAttachmentNames should be preserved and no new files are selected, ensure they are passed.
+        // This mock service for updateTask now expects new File[] or undefined.
+        // If you want to keep existing, you'd need to send existingAttachmentNames too.
       };
 
       if (taskIdToEdit) {
+        // For update, we might want to pass existing names too if no new files are chosen
+        // This part is tricky with mock: updateTask needs to decide if it replaces or merges.
+        // Let's assume `updateTask` in the service will handle this: if `attachments` is empty but
+        // `existingAttachmentNames` (passed separately or part of a more complex payload) is not, it keeps them.
+        // For simplicity, our mock service now just takes the new files.
+        // A real backend would handle this more robustly (e.g. specific "remove" flags).
         savedTask = await updateTask(taskIdToEdit, taskPayload);
       } else {
         savedTask = await createTask(taskPayload);
@@ -234,14 +259,32 @@ export default function DailyTaskForm({ defaultValues, taskIdToEdit, onSuccess }
                 </label>
             </div> 
             </FormControl>
+            {/* Display existing attachments if editing */}
+            {taskIdToEdit && existingAttachmentNames.length > 0 && (
+                <div className="mt-4 space-y-2">
+                    <p className="text-sm font-medium text-foreground">Current attachments:</p>
+                    <ul className="list-none space-y-1">
+                    {existingAttachmentNames.map((name, index) => (
+                        <li key={`existing-${index}`} className="text-sm text-muted-foreground flex items-center justify-between bg-muted/50 p-2 rounded-md border border-input">
+                            <span className="flex items-center break-all"><Paperclip className="inline mr-2 h-4 w-4 text-primary flex-shrink-0" />{name}</span>
+                            <Button type="button" variant="ghost" size="icon" onClick={() => removeExistingFile(name)} className="text-destructive hover:text-destructive h-6 w-6 ml-2 flex-shrink-0">
+                                <XCircle className="h-4 w-4" />
+                            </Button>
+                        </li>
+                    ))}
+                    </ul>
+                    <p className="text-xs text-muted-foreground">Uploading new files will replace these.</p>
+                </div>
+            )}
+            {/* Display newly selected files */}
             {selectedFiles.length > 0 && (
             <div className="mt-4 space-y-2">
-                <p className="text-sm font-medium text-foreground">Selected files:</p>
+                <p className="text-sm font-medium text-foreground">{taskIdToEdit ? 'New files to upload (will replace existing):' : 'Selected files:'}</p>
                 <ul className="list-none space-y-1">
                 {selectedFiles.map((file, index) => (
                     <li key={index} className="text-sm text-muted-foreground flex items-center justify-between bg-muted/50 p-2 rounded-md border border-input">
                       <span className="flex items-center break-all"><Paperclip className="inline mr-2 h-4 w-4 text-primary flex-shrink-0" />{file.name} ({(file.size / 1024).toFixed(1)} KB)</span>
-                      <Button type="button" variant="ghost" size="icon" onClick={() => removeFile(file.name)} className="text-destructive hover:text-destructive h-6 w-6 ml-2 flex-shrink-0">
+                      <Button type="button" variant="ghost" size="icon" onClick={() => removeNewFile(file.name)} className="text-destructive hover:text-destructive h-6 w-6 ml-2 flex-shrink-0">
                           <XCircle className="h-4 w-4" />
                       </Button>
                     </li>
