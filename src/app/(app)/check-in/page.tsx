@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { MapPin, LocateFixed, AlertTriangle, CheckCircle, Camera, XCircle, Info, TrendingUp, Clock, CalendarCheck2 } from 'lucide-react';
-import Image from 'next/image'; // Using Next.js Image
+import Image from 'next/image'; 
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'; 
@@ -16,7 +16,7 @@ type CheckinStep = 'initial' | 'gpsPrompt' | 'manualReason' | 'geofenceWarning' 
 interface StoredCheckinData {
   time: string;
   location: string;
-  date: string; // YYYY-MM-DD
+  date: string; 
   photoPreview?: string | null;
 }
 
@@ -85,16 +85,26 @@ export default function CheckInPage() {
 
   const handleAllowGps = async () => {
     toast({ title: 'Requesting Location', description: 'Please wait...' });
+    // In a real app:
+    // 1. Fetch geofence coordinates for the student's placement from your backend.
+    // 2. Use navigator.geolocation.getCurrentPosition to get user's current lat/lng.
+    // 3. Implement geofence check (e.g., point-in-polygon or distance from center + radius).
+    //    - For a circular geofence: calculate distance between current location and company lat/lng.
+    //    - If distance <= company_geofence_radius_meters, then withinGeofence = true.
+    // 4. Set is_gps_verified = true, and is_outside_geofence based on the check.
+    // 5. Send these (lat, lng, is_gps_verified, is_outside_geofence) to the backend.
+    
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500)); 
-      const withinGeofence = Math.random() < 0.8; 
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate async operation
+      const withinGeofence = Math.random() < 0.8; // Simulate geofence check
 
       if (withinGeofence) {
         const now = new Date();
         const currentTime = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
-        const currentLocation = 'Acme Corp HQ (Verified)';
+        const currentLocation = 'Acme Corp HQ (Verified by GPS)'; // Simulated location
         setCheckinTime(currentTime);
         setCheckinLocation(currentLocation);
+        // The photoPreview here is from manual upload, GPS check might not always involve a photo
         saveCheckinToLocalStorage(currentTime, currentLocation, securePhotoPreview); 
         setStep('success');
         toast({ title: 'Success', description: 'Location verified within geofence.' });
@@ -105,7 +115,7 @@ export default function CheckInPage() {
     } catch (error) {
       console.error("GPS Error:", error);
       toast({ variant: 'destructive', title: 'Error', description: 'Could not retrieve location.' });
-      setStep('manualReason');
+      setStep('manualReason'); // Fallback to manual if GPS fails or permission denied earlier
     }
   };
 
@@ -122,6 +132,7 @@ export default function CheckInPage() {
     setCheckinTime(currentTime);
     setCheckinLocation(currentLocation);
     saveCheckinToLocalStorage(currentTime, currentLocation, securePhotoPreview);
+    // In real app, send to backend: { manual_reason, photo_url (if uploaded), is_gps_verified: false }
     setStep('success');
     toast({ title: 'Manual Check-in Submitted', description: 'Your check-in reason has been recorded.' });
   };
@@ -129,6 +140,8 @@ export default function CheckInPage() {
   const handleSecurePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       const file = event.target.files[0];
+      // In a real app, you would upload this file to Supabase Storage here,
+      // then get the URL to store or send to the backend.
       setSecurePhotoFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -286,6 +299,7 @@ export default function CheckInPage() {
                         
                         <div className="mt-3">
                             <p className="text-sm text-muted-foreground mb-1">Approximate Location:</p>
+                            {/* In a real app, replace this with an actual map component (e.g., Leaflet, Google Maps Embed) */}
                             <div className="relative w-full aspect-[16/9] rounded-lg overflow-hidden border border-input bg-gray-200">
                                 <Image src="https://placehold.co/600x300.png" alt="Map placeholder" layout="fill" objectFit="cover" data-ai-hint="map location snippet" />
                                 <div className="absolute inset-0 flex items-center justify-center bg-black/20">
