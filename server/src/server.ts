@@ -6,6 +6,9 @@ import authRoutes from './routes/authRoutes';
 import taskRoutes from './routes/taskRoutes';
 import placementRoutes from './routes/placementRoutes';
 import userRoutes from './routes/userRoutes';
+import reportRoutes from './routes/reportRoutes'; // Added
+import checkInRoutes from './routes/checkInRoutes'; // Added
+import evaluationRoutes from './routes/evaluationRoutes'; // Added
 // import dataRoutes from './routes/dataRoutes'; // Example for other data
 
 dotenv.config();
@@ -32,6 +35,9 @@ app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/placements', placementRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/reports', reportRoutes); // Added
+app.use('/api/check-ins', checkInRoutes); // Added
+app.use('/api/evaluations', evaluationRoutes); // Added
 // app.use('/api/data', dataRoutes); // Example: app.use('/api/internships', internshipRoutes);
 
 // Health Check Endpoint
@@ -49,4 +55,3 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
 app.listen(port, () => {
   console.log(`Backend server listening on http://localhost:${port}`);
 });
-
