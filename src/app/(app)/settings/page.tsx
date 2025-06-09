@@ -2,7 +2,7 @@
 'use client';
 import * as React from 'react';
 import PageHeader from '@/components/shared/page-header';
-import { Settings as SettingsIcon, Palette, Bell, ShieldCheck, UserCircle } from 'lucide-react';
+import { Settings as SettingsIcon, Palette, Bell, ShieldCheck, UserCircle, RadioTower } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -10,22 +10,31 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+
+// IMPORTANT: Replace this with your own VAPID public key generated for your application
+const VAPID_PUBLIC_KEY = "BNoC_U9XFj_6408ZGJIfc9kRzR9NHDb5c51l_f2FqXQ10f8239F5K8Y8Y8h8h7g7g7g7g7g7g7g7g7g7g7g7g7g7g";
+
 
 export default function SettingsPage() {
   const { toast } = useToast();
   const [theme, setTheme] = React.useState<'light' | 'dark'>('light');
   const [notifications, setNotifications] = React.useState({
     email: true,
-    push: false,
+    push: false, // Default to false, user enables it
     sms: false,
   });
+  const [pushPermissionStatus, setPushPermissionStatus] = React.useState<NotificationPermission | null>(null);
+  const [isPushSubscribing, setIsPushSubscribing] = React.useState(false);
 
   React.useEffect(() => {
     const localTheme = typeof window !== "undefined" ? localStorage.getItem('theme') as 'light' | 'dark' : 'light';
     if (localTheme) {
       setTheme(localTheme);
     }
-    // Load notification preferences from localStorage or API if available
+    if ('Notification' in window) {
+      setPushPermissionStatus(Notification.permission);
+    }
   }, []);
 
   const handleThemeChange = (isDark: boolean) => {
@@ -42,6 +51,67 @@ export default function SettingsPage() {
     setNotifications(prev => ({ ...prev, [type]: value }));
     toast({ title: 'Notification Preference Updated', description: `${type.toUpperCase()} notifications ${value ? 'enabled' : 'disabled'}.` });
   };
+
+  const urlBase64ToUint8Array = (base64String: string) => {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding)
+      .replace(/-/g, '+')
+      .replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  };
+
+  const handleEnablePushNotifications = async () => {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
+      toast({ title: 'Push Not Supported', description: 'Push notifications are not supported by your browser.', variant: 'destructive' });
+      return;
+    }
+
+    setIsPushSubscribing(true);
+    try {
+      let permission = Notification.permission;
+      if (permission === 'default') {
+        permission = await Notification.requestPermission();
+      }
+      setPushPermissionStatus(permission);
+
+      if (permission === 'granted') {
+        toast({ title: 'Permission Granted', description: 'Subscribing to push notifications...' });
+        const registration = await navigator.serviceWorker.ready;
+        const existingSubscription = await registration.pushManager.getSubscription();
+
+        if (existingSubscription) {
+          console.log('User is already subscribed:', existingSubscription);
+          toast({ title: 'Already Subscribed', description: 'You are already subscribed to push notifications.' });
+          setNotifications(prev => ({ ...prev, push: true }));
+        } else {
+          const subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+          });
+          console.log('New push subscription:', subscription);
+          // TODO: Send this subscription to your backend server
+          // For now, we just log it and update UI state
+          toast({ title: 'Subscribed!', description: 'Successfully subscribed to push notifications. (Subscription logged to console)' });
+          setNotifications(prev => ({ ...prev, push: true }));
+        }
+      } else if (permission === 'denied') {
+        toast({ title: 'Permission Denied', description: 'You have blocked push notifications. Please enable them in your browser settings.', variant: 'destructive' });
+      } else {
+        toast({ title: 'Permission Not Granted', description: 'Push notification permission was not granted.' });
+      }
+    } catch (error) {
+      console.error('Error during push subscription:', error);
+      toast({ title: 'Subscription Error', description: 'Failed to subscribe to push notifications.', variant: 'destructive' });
+    } finally {
+      setIsPushSubscribing(false);
+    }
+  };
+
 
   return (
     <div className="space-y-8 p-4 md:p-6">
@@ -98,10 +168,41 @@ export default function SettingsPage() {
               <Label htmlFor="email-notifications" className="font-medium">Email Notifications</Label>
               <Switch id="email-notifications" checked={notifications.email} onCheckedChange={(val) => handleNotificationChange('email', val)} />
             </div>
-            <div className="flex items-center justify-between space-x-2 p-2 rounded-lg border">
-              <Label htmlFor="push-notifications" className="font-medium">Push Notifications</Label>
-              <Switch id="push-notifications" checked={notifications.push} onCheckedChange={(val) => handleNotificationChange('push', val)} />
+            
+            <div className="p-3 rounded-lg border">
+              <div className="flex items-center justify-between space-x-2 mb-2">
+                <Label htmlFor="push-notifications" className="font-medium flex items-center gap-1">
+                  <RadioTower className="h-4 w-4 text-muted-foreground" /> Push Notifications
+                </Label>
+                <Switch id="push-notifications" checked={notifications.push} onCheckedChange={handleEnablePushNotifications} disabled={isPushSubscribing || pushPermissionStatus === 'denied' || pushPermissionStatus === 'granted'}/>
+              </div>
+              {pushPermissionStatus === 'granted' && !notifications.push && (
+                <Button onClick={handleEnablePushNotifications} size="sm" className="w-full rounded-lg mt-1" disabled={isPushSubscribing}>
+                    {isPushSubscribing ? 'Subscribing...' : 'Enable Push Notifications'}
+                </Button>
+              )}
+              {pushPermissionStatus === 'granted' && notifications.push && (
+                 <Alert variant="default" className="bg-green-500/10 border-green-500/30 mt-2">
+                    <AlertTitle className="text-green-700 dark:text-green-300">Subscribed!</AlertTitle>
+                    <AlertDescription className="text-xs text-green-600 dark:text-green-400">Push notifications are active.</AlertDescription>
+                </Alert>
+              )}
+              {pushPermissionStatus === 'denied' && (
+                <Alert variant="destructive" className="mt-2">
+                    <AlertTitle>Permission Denied</AlertTitle>
+                    <AlertDescription className="text-xs">You have blocked push notifications. Please enable them in browser settings.</AlertDescription>
+                </Alert>
+              )}
+               {pushPermissionStatus === 'default' && (
+                <Button onClick={handleEnablePushNotifications} size="sm" className="w-full rounded-lg mt-1" disabled={isPushSubscribing}>
+                    {isPushSubscribing ? 'Subscribing...' : 'Enable Push Notifications'}
+                </Button>
+              )}
+               <p className="text-xs text-muted-foreground mt-2">
+                Real-time updates directly to your device. Current status: {pushPermissionStatus || 'checking...'}
+              </p>
             </div>
+
              <div className="flex items-center justify-between space-x-2 p-2 rounded-lg border">
               <Label htmlFor="sms-notifications" className="font-medium">SMS Alerts</Label>
               <Switch id="sms-notifications" checked={notifications.sms} onCheckedChange={(val) => handleNotificationChange('sms', val)} disabled/>
@@ -126,5 +227,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-
-    

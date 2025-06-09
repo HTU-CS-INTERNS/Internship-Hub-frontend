@@ -10,6 +10,7 @@ const withPWA = withPWAInit({
   disable: process.env.NODE_ENV === 'development', // Disable PWA in development
   workboxOptions: {
     disableDevLogs: true, // Disable Workbox logs in development
+    importScripts: ['/custom-sw.js'], // Import custom service worker
   },
   fallbacks: {
     // You can add fallbacks for specific routes or assets here if needed
@@ -45,3 +46,4 @@ const nextConfig: NextConfig = {
 };
 
 export default withPWA(nextConfig);
+
