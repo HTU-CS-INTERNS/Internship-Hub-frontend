@@ -22,8 +22,8 @@ import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format, parseISO, isValid } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-import type { InternshipDetails, InternshipStatus, HODApprovalQueueItem } from '@/types';
-// Removed Firebase imports: auth, db, doc, setDoc, serverTimestamp
+import type { InternshipDetails, InternshipStatus } from '@/types';
+import { submitPlacementForApproval } from '@/lib/services/hod.service'; // Import the new service
 
 const internshipDetailsSchema = z.object({
   companyName: z.string().min(2, { message: 'Company name is required (min 2 chars).' }).max(100, { message: 'Company name too long (max 100).' }),
@@ -94,49 +94,40 @@ export default function InternshipDetailsForm({ defaultValues, onSuccess, isResu
 
   async function onSubmit(values: InternshipDetailsFormValues) {
     setIsLoading(true);
-    const studentId = localStorage.getItem('userEmail') || 'unknown_student_id'; // Using email as pseudo ID
-    const studentName = localStorage.getItem('userName') || 'Unknown Student';
+    const studentId = typeof window !== "undefined" ? localStorage.getItem('userEmail') || 'unknown_student_id' : 'unknown_student_id';
+    const studentName = typeof window !== "undefined" ? localStorage.getItem('userName') || 'Unknown Student' : 'Unknown Student';
 
-    const submissionData: InternshipDetails = {
+    const submissionDataForService: InternshipDetails = {
       ...values,
       startDate: format(values.startDate, 'yyyy-MM-dd'),
       endDate: format(values.endDate, 'yyyy-MM-dd'),
-      status: 'PENDING_APPROVAL',
+      status: 'PENDING_APPROVAL', // Service will set this
       rejectionReason: values.status === 'REJECTED' ? values.rejectionReason : undefined,
     };
     
-    // Simulate API call to a custom backend
-    console.log("Simulating internship details submission to backend:", submissionData);
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    try {
+      await submitPlacementForApproval(submissionDataForService, studentId, studentName);
+      
+      if (typeof window !== "undefined") {
+        localStorage.removeItem('onboardingComplete'); 
+      }
 
-    // Save to localStorage for prototype HOD queue
-    localStorage.setItem(`userInternshipDetails_${studentId}`, JSON.stringify(submissionData));
-
-    const hodQueueItem: HODApprovalQueueItem = {
-        studentId: studentId, // Using pseudo ID
-        studentName: studentName,
-        companyName: values.companyName,
-        supervisorName: values.supervisorName,
-        supervisorEmail: values.supervisorEmail,
-        submissionDate: new Date().toISOString(),
-        status: 'PENDING_APPROVAL',
-    };
-
-    const currentQueueRaw = localStorage.getItem('hodCompanyApprovalQueue');
-    let currentQueue: HODApprovalQueueItem[] = currentQueueRaw ? JSON.parse(currentQueueRaw) : [];
-    currentQueue = currentQueue.filter(item => item.studentId !== studentId || item.status !== 'PENDING_APPROVAL');
-    currentQueue.push(hodQueueItem);
-    localStorage.setItem('hodCompanyApprovalQueue', JSON.stringify(currentQueue));
-    
-    localStorage.removeItem('onboardingComplete'); 
-
-    toast({
-      title: isResubmitting ? 'Internship Details Resubmitted! (Simulated)' : 'Internship Details Submitted! (Simulated)',
-      description: 'Your internship information has been sent for HOD approval.',
-      variant: "default",
-    });
-    onSuccess?.(submissionData);
-    setIsLoading(false);
+      toast({
+        title: isResubmitting ? 'Internship Details Resubmitted!' : 'Internship Details Submitted!',
+        description: 'Your internship information has been sent for HOD approval.',
+        variant: "default",
+      });
+      onSuccess?.(submissionDataForService); // Pass the data (now with PENDING_APPROVAL status) back to parent
+    } catch (error) {
+      console.error("Error submitting placement for approval:", error);
+      toast({
+        title: "Submission Error",
+        description: "Could not submit your internship details. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -191,7 +182,7 @@ export default function InternshipDetailsForm({ defaultValues, onSuccess, isResu
                 <FormControl>
                   <Input type="email" placeholder="supervisor@company.com" {...field} className="rounded-lg" />
                 </FormControl>
-                <FormDescription>This email will be used to invite your supervisor once approved by HOD.</FormDescription>
+                <FormDescription>This email may be used to invite your supervisor once approved by HOD.</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
