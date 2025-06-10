@@ -2,7 +2,7 @@
 'use client';
 import * as React from 'react';
 import PageHeader from '@/components/shared/page-header';
-import { ClipboardList, Calendar, Award, Target, Edit3, MessageSquare, Paperclip, Loader2, AlertTriangle } from 'lucide-react'; // Added Loader2, AlertTriangle
+import { ClipboardList, Calendar, Award, Target, Edit3, MessageSquare, Paperclip, Loader2, AlertTriangle } from 'lucide-react'; 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import Link from 'next/link';
 import type { DailyTask } from '@/types';
 import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { getTaskById } from '@/lib/services/task.service'; // Import service
+import { getTaskById } from '@/lib/services/task.service'; 
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 
 const statusColors: Record<DailyTask['status'], string> = {
@@ -21,7 +21,7 @@ const statusColors: Record<DailyTask['status'], string> = {
   REJECTED: 'bg-[hsl(var(--destructive)/0.1)] text-[hsl(var(--destructive))] border-[hsl(var(--destructive)/0.2)]',
 };
 
-export default function TaskDetailPage() { // Removed params from props, will use useParams
+export default function TaskDetailPage() { 
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -144,11 +144,11 @@ export default function TaskDetailPage() { // Removed params from props, will us
             <div>
               <h3 className="text-base font-semibold text-foreground mb-2 flex items-center"><Paperclip className="mr-2 h-5 w-5 text-primary" />Attachments</h3>
               <ul className="list-none space-y-2">
-                {task.attachments.map((file, index) => (
+                {task.attachments.map((att, index) => (
                   <li key={index}>
                     <Button variant="link" className="p-0 h-auto text-base text-accent hover:text-accent/80 font-normal" asChild>
-                      <a href={`/placeholder-download/${file}`} target="_blank" rel="noopener noreferrer" data-ai-hint="document file">
-                        <Paperclip className="mr-1 h-4 w-4" /> {file}
+                      <a href={att.dataUri} target="_blank" rel="noopener noreferrer" download={att.name} data-ai-hint="document file">
+                        <Paperclip className="mr-1 h-4 w-4" /> {att.name} ({(att.size / 1024).toFixed(1)} KB)
                       </a>
                     </Button>
                   </li>
@@ -184,3 +184,4 @@ export default function TaskDetailPage() { // Removed params from props, will us
     </div>
   );
 }
+    

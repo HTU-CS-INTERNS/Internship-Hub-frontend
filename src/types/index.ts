@@ -31,27 +31,33 @@ export interface InternshipDetails {
   companyAddress?: string;
   supervisorName: string;
   supervisorEmail: string;
-  startDate: string; // Store as YYYY-MM-DD string
-  endDate: string;   // Store as YYYY-MM-DD string
+  startDate: string; 
+  endDate: string;   
   location: string;
   status: InternshipStatus;
   rejectionReason?: string;
-  hodComments?: string; // For HOD to add comments if needed during approval
+  hodComments?: string; 
   companyLatitude?: number;
   companyLongitude?: number;
   geofenceRadiusMeters?: number;
 }
 
 export interface HODApprovalQueueItem {
-  studentId: string; // Using email for now as ID
+  studentId: string; 
   studentName: string;
   companyName: string;
   supervisorName: string;
   supervisorEmail: string;
   submissionDate: string; // ISO string
-  status: 'PENDING_APPROVAL'; // Only pending items are in this queue
+  status: 'PENDING_APPROVAL'; 
 }
 
+export interface AttachmentData {
+  name: string;
+  type: string;
+  size: number;
+  dataUri: string; // For mock storage; in real app, this would be a URL
+}
 
 export interface DailyTask {
   id: string;
@@ -62,16 +68,15 @@ export interface DailyTask {
   studentId: string;
   departmentOutcomeLink?: string;
   status: 'PENDING' | 'SUBMITTED' | 'APPROVED' | 'REJECTED';
-  attachments?: string[]; // Array of file names or URLs
+  attachments?: AttachmentData[]; // Array of attachment data objects
   supervisorComments?: string;
   lecturerComments?: string;
 }
 
-export interface DailyReport extends DailyTask { // Reports extend tasks for common fields
+export interface DailyReport extends DailyTask { 
   title?: string;
   challengesFaced?: string;
-  // learnings?: string; // Can use learningObjectives from DailyTask
-  securePhotoUrl?: string; // URL or path to the secure photo
+  securePhotoUrl?: string; // Data URI for mock, URL for real app
 }
 
 
@@ -122,8 +127,9 @@ export interface CheckIn {
   manual_reason?: string;
   is_gps_verified: boolean;
   is_outside_geofence: boolean;
-  photo_url?: string; // URL or path
+  photo_url?: string; // Data URI for mock, URL for real app
   supervisor_verification_status?: 'PENDING' | 'VERIFIED' | 'FLAGGED';
   supervisor_comments?: string;
   created_at: string; // ISO string
 }
+    

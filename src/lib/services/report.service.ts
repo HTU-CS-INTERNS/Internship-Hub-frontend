@@ -1,12 +1,11 @@
 
-'use client'; // Assuming this service might be used client-side for localStorage
+'use client'; 
 
-import type { DailyReport } from '@/types'; // Ensure DailyReport is correctly defined
+import type { DailyReport, AttachmentData } from '@/types';
 import { format } from 'date-fns';
 
-const REPORTS_STORAGE_KEY = 'internshipTrack_dailyReports_v1';
+const REPORTS_STORAGE_KEY = 'internshipTrack_dailyReports_v2'; // Updated key for new structure
 
-// Helper to get current studentId (assuming it's stored as email in localStorage)
 const getCurrentStudentId = (): string => {
   if (typeof window !== "undefined") {
     return localStorage.getItem('userEmail') || 'unknown_student';
@@ -15,25 +14,23 @@ const getCurrentStudentId = (): string => {
 };
 
 async function getAllReportsFromStorage(): Promise<DailyReport[]> {
-  await new Promise(resolve => setTimeout(resolve, 50)); // Simulate async
+  await new Promise(resolve => setTimeout(resolve, 50)); 
   if (typeof window === "undefined") return [];
   const reportsRaw = localStorage.getItem(REPORTS_STORAGE_KEY);
   return reportsRaw ? JSON.parse(reportsRaw) : [];
 }
 
 async function saveAllReportsToStorage(reports: DailyReport[]): Promise<void> {
-  await new Promise(resolve => setTimeout(resolve, 50)); // Simulate async
+  await new Promise(resolve => setTimeout(resolve, 50)); 
   if (typeof window === "undefined") return;
   localStorage.setItem(REPORTS_STORAGE_KEY, JSON.stringify(reports));
 }
 
 export async function createReport(
-  reportData: Omit<DailyReport, 'id' | 'studentId' | 'status' | 'date' | 'attachments' | 'securePhotoUrl'> & { 
-    date: Date; 
-    attachments?: File[]; 
-    securePhoto?: File;
-    summary?: string; // For compatibility if form uses summary
-    learnings?: string; // For compatibility if form uses learnings
+  reportData: Omit<DailyReport, 'id' | 'studentId' | 'status' | 'date'> & { 
+    date: string; // Expecting formatted string 'yyyy-MM-dd'
+    attachments: AttachmentData[]; 
+    securePhotoUrl?: string; // Data URI or undefined
   }
 ): Promise<DailyReport> {
   const allReports = await getAllReportsFromStorage();
@@ -41,15 +38,15 @@ export async function createReport(
   const newReport: DailyReport = {
     id: `report_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
     studentId,
-    status: 'PENDING', // Initial status for a newly created report
-    date: format(reportData.date, 'yyyy-MM-dd'),
+    status: 'PENDING', 
+    date: reportData.date,
     title: reportData.title,
-    description: reportData.summary || reportData.description, // Use summary if provided
+    description: reportData.description,
     challengesFaced: reportData.challengesFaced,
-    learningObjectives: reportData.learnings || reportData.learningObjectives, // Use learnings if provided
+    learningObjectives: reportData.learningObjectives,
     outcomes: reportData.outcomes,
-    attachments: reportData.attachments?.map(file => file.name) || [],
-    securePhotoUrl: reportData.securePhoto ? `uploads/secure_${reportData.securePhoto.name}` : undefined, // Simulate URL
+    attachments: reportData.attachments, // Now expects AttachmentData[]
+    securePhotoUrl: reportData.securePhotoUrl,
   };
   allReports.push(newReport);
   await saveAllReportsToStorage(allReports);
@@ -69,12 +66,10 @@ export async function getReportById(reportId: string): Promise<DailyReport | nul
 
 export async function updateReport(
     reportId: string, 
-    updates: Partial<Omit<DailyReport, 'id' | 'studentId' | 'status' | 'date' | 'attachments' | 'securePhotoUrl'>> & { 
-      date?: Date; 
-      attachments?: File[]; 
-      securePhoto?: File;
-      summary?: string; 
-      learnings?: string; 
+    updates: Partial<Omit<DailyReport, 'id' | 'studentId' | 'status' | 'date'>> & { 
+      date?: string; 
+      attachments?: AttachmentData[];
+      securePhotoUrl?: string | null; // Allow null to clear
     }
 ): Promise<DailyReport | null> {
   const allReports = await getAllReportsFromStorage();
@@ -85,25 +80,19 @@ export async function updateReport(
   
   const updatedReportData = { ...allReports[reportIndex] };
 
-  if (updates.date) updatedReportData.date = format(updates.date, 'yyyy-MM-dd');
+  if (updates.date) updatedReportData.date = updates.date; // Expecting formatted string
   if (updates.title !== undefined) updatedReportData.title = updates.title;
-  if (updates.summary !== undefined) updatedReportData.description = updates.summary; // Map summary to description
-  else if (updates.description !== undefined) updatedReportData.description = updates.description;
+  if (updates.description !== undefined) updatedReportData.description = updates.description;
   if (updates.challengesFaced !== undefined) updatedReportData.challengesFaced = updates.challengesFaced;
-  if (updates.learnings !== undefined) updatedReportData.learningObjectives = updates.learnings; // Map learnings to learningObjectives
-  else if (updates.learningObjectives !== undefined) updatedReportData.learningObjectives = updates.learningObjectives;
+  if (updates.learningObjectives !== undefined) updatedReportData.learningObjectives = updates.learningObjectives;
   if (updates.outcomes !== undefined) updatedReportData.outcomes = updates.outcomes;
   
-  if (updates.attachments && updates.attachments.length > 0) {
-    updatedReportData.attachments = updates.attachments.map(file => file.name);
-  } else if (updates.attachments === undefined && !allReports[reportIndex].attachments) {
-     updatedReportData.attachments = [];
+  if (updates.attachments !== undefined) {
+    updatedReportData.attachments = updates.attachments;
   }
-
-  if (updates.securePhoto) {
-    updatedReportData.securePhotoUrl = `uploads/secure_${updates.securePhoto.name}`; // Simulate URL
-  } else if (updates.securePhoto === null) { // Explicitly clearing photo
-    updatedReportData.securePhotoUrl = undefined;
+  
+  if (updates.securePhotoUrl !== undefined) { // Check for undefined to distinguish from null
+    updatedReportData.securePhotoUrl = updates.securePhotoUrl === null ? undefined : updates.securePhotoUrl;
   }
 
   allReports[reportIndex] = updatedReportData;
@@ -130,7 +119,6 @@ export async function updateReportStatus(
     if (commenterRole === 'supervisor') {
       allReports[reportIndex].supervisorComments = comments;
     } else if (commenterRole === 'lecturer') {
-      // Assuming lecturerComments field exists on DailyReport if lecturers can comment
       (allReports[reportIndex] as any).lecturerComments = comments; 
     }
   }
@@ -139,6 +127,31 @@ export async function updateReportStatus(
   return allReports[reportIndex];
 }
 
-// Optional: Initialize with DUMMY_REPORTS if needed for demo
-// (Similar to task.service.ts, can be called from the reports page)
-// initializeDefaultReportsIfNeeded();
+export async function initializeDefaultReportsIfNeeded() {
+  if (typeof window !== "undefined") {
+    const reportsRaw = localStorage.getItem(REPORTS_STORAGE_KEY);
+    if (!reportsRaw || JSON.parse(reportsRaw).length === 0) {
+      const studentId = getCurrentStudentId();
+      const sampleDataUri = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+      const defaultReports: DailyReport[] = [
+         { 
+            id: 'report1_default', 
+            date: format(new Date(new Date().setDate(new Date().getDate() - 3)), 'yyyy-MM-dd'), 
+            title: 'Weekly Auth Module Summary',
+            description: 'Weekly summary of authentication module progress. Focused on JWT implementation and secure endpoint testing. Reviewed security protocols and updated documentation.', 
+            outcomes: 'Module 70% complete. Security review passed.', 
+            learningObjectives: 'Advanced JWT, security best practices, technical documentation.', 
+            studentId: studentId, 
+            status: 'APPROVED',
+            challengesFaced: "Minor issues with token refresh logic, resolved by adjusting expiration strategy.",
+            attachments: [{ name: "auth_architecture.pdf", type: "application/pdf", size: 10240, dataUri: sampleDataUri }],
+            securePhotoUrl: sampleDataUri,
+            supervisorComments: "Good progress this week. Keep it up!"
+          },
+      ];
+      await saveAllReportsToStorage(defaultReports);
+      console.log("Initialized default reports for student:", studentId);
+    }
+  }
+}
+    

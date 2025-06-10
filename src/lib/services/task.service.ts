@@ -1,12 +1,11 @@
 
 'use client';
 
-import type { DailyTask } from '@/types';
+import type { DailyTask, AttachmentData } from '@/types';
 import { format } from 'date-fns';
 
-const TASKS_STORAGE_KEY = 'internshipTrack_dailyTasks_v1';
+const TASKS_STORAGE_KEY = 'internshipTrack_dailyTasks_v2'; // Updated key for new structure
 
-// Helper to get current studentId (assuming it's stored as email in localStorage)
 const getCurrentStudentId = (): string => {
   if (typeof window !== "undefined") {
     return localStorage.getItem('userEmail') || 'unknown_student';
@@ -15,20 +14,35 @@ const getCurrentStudentId = (): string => {
 };
 
 async function getAllTasksFromStorage(): Promise<DailyTask[]> {
-  await new Promise(resolve => setTimeout(resolve, 50)); // Simulate async
+  await new Promise(resolve => setTimeout(resolve, 50)); 
   if (typeof window === "undefined") return [];
   const tasksRaw = localStorage.getItem(TASKS_STORAGE_KEY);
   return tasksRaw ? JSON.parse(tasksRaw) : [];
 }
 
 async function saveAllTasksToStorage(tasks: DailyTask[]): Promise<void> {
-  await new Promise(resolve => setTimeout(resolve, 50)); // Simulate async
+  await new Promise(resolve => setTimeout(resolve, 50)); 
   if (typeof window === "undefined") return;
   localStorage.setItem(TASKS_STORAGE_KEY, JSON.stringify(tasks));
 }
 
+// Helper to convert File to AttachmentData (already in forms, but good for service if needed)
+async function fileToAttachmentData(file: File): Promise<AttachmentData> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve({
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            dataUri: reader.result as string,
+        });
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
 export async function createTask(
-  taskData: Omit<DailyTask, 'id' | 'studentId' | 'status' | 'date' | 'attachments'> & { date: Date; attachments?: File[] }
+  taskData: Omit<DailyTask, 'id' | 'studentId' | 'status' | 'date'> & { date: string; attachments: AttachmentData[] }
 ): Promise<DailyTask> {
   const allTasks = await getAllTasksFromStorage();
   const studentId = getCurrentStudentId();
@@ -36,12 +50,12 @@ export async function createTask(
     id: `task_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
     studentId,
     status: 'PENDING',
-    date: format(taskData.date, 'yyyy-MM-dd'),
+    date: taskData.date, // Already formatted string from form
     description: taskData.description,
     outcomes: taskData.outcomes,
     learningObjectives: taskData.learningObjectives,
     departmentOutcomeLink: taskData.departmentOutcomeLink,
-    attachments: taskData.attachments?.map(file => file.name) || [],
+    attachments: taskData.attachments, // Now expects AttachmentData[]
   };
   allTasks.push(newTask);
   await saveAllTasksToStorage(allTasks);
@@ -61,7 +75,7 @@ export async function getTaskById(taskId: string): Promise<DailyTask | null> {
 
 export async function updateTask(
     taskId: string, 
-    updates: Partial<Omit<DailyTask, 'id' | 'studentId' | 'status' | 'date' | 'attachments'>> & { date?: Date; attachments?: File[] }
+    updates: Partial<Omit<DailyTask, 'id' | 'studentId' | 'status' | 'date'>> & { date?: string; attachments?: AttachmentData[] }
 ): Promise<DailyTask | null> {
   const allTasks = await getAllTasksFromStorage();
   const taskIndex = allTasks.findIndex(t => t.id === taskId);
@@ -71,28 +85,23 @@ export async function updateTask(
   
   const updatedTaskData = { ...allTasks[taskIndex] };
 
-  if (updates.date) {
-    updatedTaskData.date = format(updates.date, 'yyyy-MM-dd');
-  }
+  if (updates.date) updatedTaskData.date = updates.date; // Expecting formatted string
   if (updates.description !== undefined) updatedTaskData.description = updates.description;
   if (updates.outcomes !== undefined) updatedTaskData.outcomes = updates.outcomes;
   if (updates.learningObjectives !== undefined) updatedTaskData.learningObjectives = updates.learningObjectives;
   if (updates.departmentOutcomeLink !== undefined) updatedTaskData.departmentOutcomeLink = updates.departmentOutcomeLink;
   
-  // If new attachments are provided, replace old ones. Otherwise, keep existing.
-  if (updates.attachments && updates.attachments.length > 0) {
-    updatedTaskData.attachments = updates.attachments.map(file => file.name);
-  } else if (updates.attachments === undefined && !allTasks[taskIndex].attachments) {
-    // if attachments field is not in updates, and old task had no attachments, ensure it's an empty array
-     updatedTaskData.attachments = [];
+  // If new attachments are provided (as AttachmentData[]), replace old ones.
+  // If updates.attachments is undefined, existing attachments are preserved.
+  // If updates.attachments is an empty array, all attachments are cleared.
+  if (updates.attachments !== undefined) {
+    updatedTaskData.attachments = updates.attachments;
   }
-  // If updates.attachments is undefined and task had attachments, they are preserved from allTasks[taskIndex]
 
   allTasks[taskIndex] = updatedTaskData;
   await saveAllTasksToStorage(allTasks);
   return allTasks[taskIndex];
 }
-
 
 export async function updateTaskStatus(
   taskId: string,
@@ -126,12 +135,34 @@ export async function initializeDefaultTasksIfNeeded() {
     const tasksRaw = localStorage.getItem(TASKS_STORAGE_KEY);
     if (!tasksRaw || JSON.parse(tasksRaw).length === 0) {
       const studentId = getCurrentStudentId();
+      // Sample Data URI for a tiny transparent PNG
+      const sampleDataUri = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
       const defaultTasks: DailyTask[] = [
-        { id: 'task1_default', date: '2024-07-28', description: 'Develop user authentication module.', outcomes: 'Authentication flow completed.', learningObjectives: 'Learned JWT implementation.', studentId: studentId, status: 'APPROVED', departmentOutcomeLink: "DO1.2", attachments: ["auth_diagram.png"] },
-        { id: 'task2_default', date: '2024-07-29', description: 'Design database schema for posts.', outcomes: 'Schema designed and reviewed.', learningObjectives: 'Understanding of relational databases.', studentId: studentId, status: 'SUBMITTED', attachments: [] },
+        { 
+          id: 'task1_default', 
+          date: format(new Date(new Date().setDate(new Date().getDate() - 2)), 'yyyy-MM-dd'), 
+          description: 'Develop user authentication module for project Alpha. Included JWT implementation.', 
+          outcomes: 'Authentication flow completed. All endpoints tested and functional.', 
+          learningObjectives: 'Learned JWT implementation best practices and secure coding for authentication.', 
+          studentId: studentId, 
+          status: 'APPROVED', 
+          departmentOutcomeLink: "DO1.2 - Applied Security Principles", 
+          attachments: [{ name: "auth_diagram.png", type: "image/png", size: 123, dataUri: sampleDataUri }] 
+        },
+        { 
+          id: 'task2_default', 
+          date: format(new Date(new Date().setDate(new Date().getDate() - 1)), 'yyyy-MM-dd'), 
+          description: 'Design database schema for posts and comments feature. Iterated with team.', 
+          outcomes: 'Schema designed and reviewed by senior dev. Ready for implementation.', 
+          learningObjectives: 'Understanding of relational database design for social features. Experience with normalization.', 
+          studentId: studentId, 
+          status: 'SUBMITTED', 
+          attachments: [] 
+        },
       ];
       await saveAllTasksToStorage(defaultTasks);
       console.log("Initialized default tasks for student:", studentId);
     }
   }
 }
+    

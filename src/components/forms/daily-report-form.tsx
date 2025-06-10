@@ -18,14 +18,15 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Paperclip, UploadCloud, Image as ImageIcon, XCircle, Loader2 } from 'lucide-react';
+import { CalendarIcon, Paperclip, UploadCloud, Image as ImageIconLucide, XCircle, Loader2 } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-import type { DailyReport } from '@/types';
+import type { DailyReport, AttachmentData } from '@/types';
 import { useRouter } from 'next/navigation';
-import NextImage from 'next/image';
+import NextImage from 'next/image'; // Renamed to avoid conflict with Lucide's Image
+import { createReport, updateReport } from '@/lib/services/report.service';
 
 const dailyReportSchema = z.object({
   date: z.date({ required_error: 'Report date is required.' }),
@@ -33,139 +34,190 @@ const dailyReportSchema = z.object({
   summary: z.string().min(20, { message: 'Summary must be at least 20 characters.' }).max(1000, {message: 'Summary too long (max 1000).'}),
   challengesFaced: z.string().max(1000, {message: 'Challenges description too long (max 1000).' }).optional().or(z.literal('')),
   learnings: z.string().min(10, { message: 'Learnings must be at least 10 characters.' }).max(1000, {message: 'Learnings description too long (max 1000).' }),
-  attachments: z.array(z.instanceof(File)).max(5, {message: 'Maximum 5 attachments allowed.'}).optional(),
-  securePhoto: z.instanceof(File).optional(),
+  // Form will manage File objects for new uploads
+  newAttachments: z.array(z.instanceof(File)).max(5, {message: 'Maximum 5 combined attachments allowed.'}).optional(),
+  newSecurePhoto: z.instanceof(File).optional(),
 });
 
 type DailyReportFormValues = z.infer<typeof dailyReportSchema>;
 
 interface DailyReportFormProps {
-  defaultValues?: Partial<DailyReport & { summary?: string; learnings?: string }>; // Adjust for potential renaming
+  defaultValues?: Partial<DailyReport>; // DailyReport has attachments as AttachmentData[] and securePhotoUrl as string
   reportIdToEdit?: string;
   onSuccess?: (reportId: string) => void;
+}
+
+async function fileToAttachmentData(file: File): Promise<AttachmentData> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve({
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            dataUri: reader.result as string,
+        });
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+async function fileToDataUri(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
 }
 
 export default function DailyReportForm({ defaultValues, reportIdToEdit, onSuccess }: DailyReportFormProps) {
   const { toast } = useToast();
   const router = useRouter();
   const [isLoading, setIsLoading] = React.useState(false);
-  const [selectedAttachments, setSelectedAttachments] = React.useState<File[]>([]);
-  const [existingAttachmentNames, setExistingAttachmentNames] = React.useState<string[]>([]);
-  const [securePhotoFile, setSecurePhotoFile] = React.useState<File | null>(null);
-  const [securePhotoPreview, setSecurePhotoPreview] = React.useState<string | null>(defaultValues?.securePhotoUrl || null);
-  
-  const attachmentsInputRef = React.useRef<HTMLInputElement>(null);
-  const securePhotoInputRef = React.useRef<HTMLInputElement>(null);
 
+  const [existingAttachments, setExistingAttachments] = React.useState<AttachmentData[]>([]);
+  const [newlySelectedAttachments, setNewlySelectedAttachments] = React.useState<File[]>([]);
+  const attachmentsInputRef = React.useRef<HTMLInputElement>(null);
+
+  const [existingSecurePhotoUrl, setExistingSecurePhotoUrl] = React.useState<string | null>(null);
+  const [newSecurePhotoFile, setNewSecurePhotoFile] = React.useState<File | null>(null);
+  const [securePhotoPreview, setSecurePhotoPreview] = React.useState<string | null>(null);
+  const securePhotoInputRef = React.useRef<HTMLInputElement>(null);
+  
   const form = useForm<DailyReportFormValues>({
     resolver: zodResolver(dailyReportSchema),
     defaultValues: {
       date: defaultValues?.date ? new Date(defaultValues.date) : new Date(),
-      title: (defaultValues as any)?.title || '',
-      summary: defaultValues?.description || (defaultValues as any)?.summary || '',
-      challengesFaced: (defaultValues as any)?.challengesFaced || '',
-      learnings: defaultValues?.learningObjectives || (defaultValues as any)?.learnings || '',
-      attachments: [],
-      securePhoto: undefined,
+      title: defaultValues?.title || '',
+      summary: defaultValues?.description || '', // map description to summary for form
+      challengesFaced: defaultValues?.challengesFaced || '',
+      learnings: defaultValues?.learningObjectives || '', // map learningObjectives to learnings
+      newAttachments: [],
+      newSecurePhoto: undefined,
     },
   });
   
   React.useEffect(() => {
-    if (reportIdToEdit && defaultValues?.attachments) {
-      setExistingAttachmentNames(defaultValues.attachments);
+    if (defaultValues) {
+      form.reset({
+        date: defaultValues.date ? new Date(defaultValues.date) : new Date(),
+        title: defaultValues.title || '',
+        summary: defaultValues.description || '',
+        challengesFaced: defaultValues.challengesFaced || '',
+        learnings: defaultValues.learningObjectives || '',
+        newAttachments: [],
+        newSecurePhoto: undefined,
+      });
+      setExistingAttachments(defaultValues.attachments || []);
+      setNewlySelectedAttachments([]);
+      
+      setExistingSecurePhotoUrl(defaultValues.securePhotoUrl || null);
+      setSecurePhotoPreview(defaultValues.securePhotoUrl || null);
+      setNewSecurePhotoFile(null);
     }
-    if (defaultValues?.securePhotoUrl) {
-        setSecurePhotoPreview(defaultValues.securePhotoUrl);
-    }
-  }, [reportIdToEdit, defaultValues]);
-
+  }, [defaultValues, form]);
 
   const handleAttachmentChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
       const filesArray = Array.from(event.target.files);
-      const newFiles = [...selectedAttachments, ...filesArray].slice(0, 5);
-      setSelectedAttachments(newFiles);
-      form.setValue("attachments", newFiles, { shouldValidate: true });
+      const combinedCount = existingAttachments.length + newlySelectedAttachments.length + filesArray.length;
+      if (combinedCount > 5) {
+        toast({ title: "Attachment Limit", description: `Cannot exceed 5 total attachments.`, variant: "destructive" });
+        if(attachmentsInputRef.current) attachmentsInputRef.current.value = "";
+        return;
+      }
+      setNewlySelectedAttachments(prev => [...prev, ...filesArray].slice(0, 5 - existingAttachments.length));
     }
   };
 
-  const removeAttachment = (fileName: string) => {
-    const newFiles = selectedAttachments.filter(file => file.name !== fileName);
-    setSelectedAttachments(newFiles);
-    form.setValue("attachments", newFiles, { shouldValidate: true });
+  const removeExistingAttachment = (dataUriToRemove: string) => {
+    setExistingAttachments(prev => prev.filter(att => att.dataUri !== dataUriToRemove));
   };
 
-  const removeExistingAttachment = (fileName: string) => {
-    setExistingAttachmentNames(prev => prev.filter(name => name !== fileName));
-    toast({ title: "Attachment Marked for Removal (Simulated)", description: `${fileName} will be removed upon saving.` });
+  const removeNewAttachment = (fileNameToRemove: string) => {
+    setNewlySelectedAttachments(prev => prev.filter(file => file.name !== fileNameToRemove));
+    if(attachmentsInputRef.current && newlySelectedAttachments.length === 1 && newlySelectedAttachments[0].name === fileNameToRemove) {
+        attachmentsInputRef.current.value = "";
+    }
   };
   
   const handleSecurePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       const file = event.target.files[0];
-      setSecurePhotoFile(file); // Store the File object
-      form.setValue("securePhoto", file, { shouldValidate: true });
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setSecurePhotoPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      setNewSecurePhotoFile(file);
+      fileToDataUri(file).then(setSecurePhotoPreview);
     }
   };
 
   const clearSecurePhoto = () => {
-    setSecurePhotoFile(null);
+    setNewSecurePhotoFile(null);
     setSecurePhotoPreview(null); 
-    form.setValue("securePhoto", undefined, { shouldValidate: true }); 
+    setExistingSecurePhotoUrl(null); // Also clear existing if user decides to clear
     if(securePhotoInputRef.current) securePhotoInputRef.current.value = "";
-  }
+  };
 
   async function onSubmit(values: DailyReportFormValues) {
     setIsLoading(true);
-    // In a real app, attachments and securePhoto (File objects) would be uploaded to storage first.
-    // Then, their URLs would be included in the payload to the backend.
-    // For this mock, the service will just handle file names.
     
-    const reportPayload = {
-        ...values,
-        // Convert File objects to names for mock service
-        attachments: selectedAttachments.map(f => f.name), 
-        // If editing, and existing attachments were kept, merge them here
-        // For simplicity, this example replaces all attachments if new ones are selected.
-        // If `selectedAttachments` is empty, it means no new files were chosen.
-        // We should then probably send `existingAttachmentNames` if they exist for an update.
-        // This needs careful handling in a real scenario.
-        
-        // securePhoto: securePhotoFile ? securePhotoFile.name : (reportIdToEdit && defaultValues?.securePhotoUrl ? defaultValues.securePhotoUrl : undefined),
-        securePhotoUrl: securePhotoFile ? `uploads/${securePhotoFile.name}` : (reportIdToEdit && securePhotoPreview && !securePhotoFile ? securePhotoPreview : undefined),
-    };
-    
-    if (taskIdToEdit && existingAttachmentNames.length > 0 && selectedAttachments.length === 0) {
-        (reportPayload as any).attachments = existingAttachmentNames; // Keep old if no new ones selected
-    }
+    try {
+      const newAttachmentsData: AttachmentData[] = await Promise.all(
+        newlySelectedAttachments.map(file => fileToAttachmentData(file))
+      );
+      const finalAttachments: AttachmentData[] = [...existingAttachments, ...newAttachmentsData];
 
+      if (finalAttachments.length > 5) {
+        toast({ title: "Attachment Limit Exceeded", description: "You cannot have more than 5 total attachments.", variant: "destructive" });
+        setIsLoading(false);
+        return;
+      }
+      
+      let finalSecurePhotoUrl: string | undefined = undefined;
+      if (newSecurePhotoFile) {
+        finalSecurePhotoUrl = await fileToDataUri(newSecurePhotoFile);
+      } else if (securePhotoPreview) { // This means existing photo was kept or previewed but not cleared
+        finalSecurePhotoUrl = securePhotoPreview;
+      }
 
-    console.log("Submitting report payload (mock):", reportPayload);
-    // Simulate API call (service interaction is mocked inside the report page for now)
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    const newReportId = reportIdToEdit || `report_${Date.now()}`;
-    
-    // Simulate saving to DUMMY_REPORTS or calling a service
-    // This part should be replaced by actual service call in a real app
-    // For now, we'll rely on the calling page to handle the actual data update for the mock.
+      const reportPayload = {
+        date: format(values.date, 'yyyy-MM-dd'),
+        title: values.title,
+        description: values.summary,
+        challengesFaced: values.challengesFaced,
+        learningObjectives: values.learnings,
+        outcomes: values.summary, // For simplicity, using summary as outcome for mock. Can be expanded.
+        attachments: finalAttachments,
+        securePhotoUrl: finalSecurePhotoUrl,
+      };
 
-    setIsLoading(false);
-    toast({
-      title: reportIdToEdit ? 'Report Updated!' : 'Report Submitted!',
-      description: `Your work report for ${format(values.date, "PPP")} has been ${reportIdToEdit ? 'updated' : 'submitted'}. Supervisor will be notified.`,
-      variant: "default",
-    });
-    
-    if (onSuccess) {
-      onSuccess(newReportId);
-    } else {
-      router.push('/student/reports'); 
+      let savedReport: DailyReport | null;
+      if (reportIdToEdit) {
+        savedReport = await updateReport(reportIdToEdit, reportPayload);
+      } else {
+        savedReport = await createReport(reportPayload);
+      }
+
+      if (savedReport) {
+        toast({
+          title: reportIdToEdit ? 'Report Updated!' : 'Report Submitted!',
+          description: `Your work report for ${format(values.date, "PPP")} has been ${reportIdToEdit ? 'updated' : 'submitted'}.`,
+        });
+        if (onSuccess) {
+          onSuccess(savedReport.id);
+        } else {
+          router.push('/student/reports'); 
+        }
+      } else {
+        throw new Error("Failed to save report.");
+      }
+    } catch (error) {
+      console.error("Error submitting report:", error);
+      toast({
+        title: "Error",
+        description: "Could not save your report. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -257,7 +309,7 @@ export default function DailyReportForm({ defaultValues, reportIdToEdit, onSucce
         />
 
         <FormItem>
-            <FormLabel>General Attachments (Optional, max 5 files)</FormLabel>
+            <FormLabel>General Attachments (Optional, max 5 total)</FormLabel>
             <FormControl>
             <div className="flex flex-col items-center justify-center w-full">
                 <label htmlFor="dropzone-file-report" className="flex flex-col items-center justify-center w-full h-32 border-2 border-input border-dashed rounded-lg cursor-pointer bg-muted hover:bg-muted/80">
@@ -270,39 +322,34 @@ export default function DailyReportForm({ defaultValues, reportIdToEdit, onSucce
                 </label>
             </div> 
             </FormControl>
-            {/* Display existing attachments if editing */}
-            {reportIdToEdit && existingAttachmentNames.length > 0 && (
-                <div className="mt-4 space-y-2">
-                    <p className="text-sm font-medium text-foreground">Current attachments:</p>
-                    <ul className="list-none space-y-1">
-                    {existingAttachmentNames.map((name, index) => (
-                        <li key={`existing-att-${index}`} className="text-sm text-muted-foreground flex items-center justify-between bg-muted/50 p-2 rounded-md border border-input">
-                            <span className="flex items-center break-all"><Paperclip className="inline mr-2 h-4 w-4 text-primary flex-shrink-0" />{name}</span>
-                            <Button type="button" variant="ghost" size="icon" onClick={() => removeExistingAttachment(name)} className="text-destructive hover:text-destructive h-6 w-6 ml-2 flex-shrink-0">
-                                <XCircle className="h-4 w-4" />
-                            </Button>
-                        </li>
-                    ))}
-                    </ul>
-                </div>
-            )}
-            {/* Display newly selected attachments */}
-            {selectedAttachments.length > 0 && (
-            <div className="mt-4 space-y-2">
-                <p className="text-sm font-medium text-foreground">{reportIdToEdit && existingAttachmentNames.length > 0 ? 'New files to upload (will be added/replace):' : 'Selected files:'}</p>
+            {(existingAttachments.length > 0 || newlySelectedAttachments.length > 0) && (
+              <div className="mt-4 space-y-2">
+                <p className="text-sm font-medium text-foreground">
+                  Current attachments ({existingAttachments.length + newlySelectedAttachments.length} / 5):
+                </p>
                 <ul className="list-none space-y-1">
-                {selectedAttachments.map((file, index) => (
-                    <li key={`new-att-${index}`} className="text-sm text-muted-foreground flex items-center justify-between bg-muted/50 p-2 rounded-md border border-input">
-                    <span className="flex items-center break-all"><Paperclip className="inline mr-2 h-4 w-4 text-primary flex-shrink-0" />{file.name} ({(file.size / 1024).toFixed(1)} KB)</span>
-                    <Button type="button" variant="ghost" size="icon" onClick={() => removeAttachment(file.name)} className="text-destructive hover:text-destructive h-6 w-6 ml-2 flex-shrink-0">
+                  {existingAttachments.map((att, index) => (
+                    <li key={`existing-att-${index}`} className="text-sm text-muted-foreground flex items-center justify-between bg-muted/50 p-2 rounded-md border border-input">
+                      <a href={att.dataUri} target="_blank" rel="noopener noreferrer" className="flex items-center break-all hover:underline">
+                        <Paperclip className="inline mr-2 h-4 w-4 text-primary flex-shrink-0" />{att.name} ({(att.size / 1024).toFixed(1)} KB)
+                      </a>
+                      <Button type="button" variant="ghost" size="icon" onClick={() => removeExistingAttachment(att.dataUri)} className="text-destructive hover:text-destructive h-6 w-6 ml-2 flex-shrink-0">
                         <XCircle className="h-4 w-4" />
-                    </Button>
+                      </Button>
                     </li>
-                ))}
+                  ))}
+                  {newlySelectedAttachments.map((file, index) => (
+                    <li key={`new-att-${index}`} className="text-sm text-muted-foreground flex items-center justify-between bg-blue-500/10 p-2 rounded-md border border-blue-500/30">
+                      <span className="flex items-center break-all"><Paperclip className="inline mr-2 h-4 w-4 text-primary flex-shrink-0" />{file.name} ({(file.size / 1024).toFixed(1)} KB)</span>
+                      <Button type="button" variant="ghost" size="icon" onClick={() => removeNewAttachment(file.name)} className="text-destructive hover:text-destructive h-6 w-6 ml-2 flex-shrink-0">
+                        <XCircle className="h-4 w-4" />
+                      </Button>
+                    </li>
+                  ))}
                 </ul>
-            </div>
+              </div>
             )}
-            <FormMessage>{form.formState.errors.attachments?.message}</FormMessage>
+            <FormMessage>{form.formState.errors.newAttachments?.message}</FormMessage>
         </FormItem>
 
         <FormItem>
@@ -315,7 +362,7 @@ export default function DailyReportForm({ defaultValues, reportIdToEdit, onSucce
                         <NextImage src={securePhotoPreview} alt="Secure photo preview" layout="fill" objectFit="contain" data-ai-hint="workplace item person"/>
                     ) : (
                         <div className="flex flex-col items-center justify-center">
-                            <ImageIcon className="w-10 h-10 mb-2 text-muted-foreground" />
+                            <ImageIconLucide className="w-10 h-10 mb-2 text-muted-foreground" />
                             <p className="mb-1 text-sm text-muted-foreground"><span className="font-semibold">Upload Secure Photo</span></p>
                             <p className="text-xs text-muted-foreground">E.g., photo of completed work, setup</p>
                         </div>
@@ -329,7 +376,7 @@ export default function DailyReportForm({ defaultValues, reportIdToEdit, onSucce
                     <XCircle className="mr-2 h-4 w-4"/> Clear Photo
                 </Button>
              )}
-            <FormMessage>{form.formState.errors.securePhoto?.message}</FormMessage>
+            <FormMessage>{form.formState.errors.newSecurePhoto?.message}</FormMessage>
         </FormItem>
 
         <div className="flex flex-col sm:flex-row gap-3 pt-4">
@@ -345,4 +392,4 @@ export default function DailyReportForm({ defaultValues, reportIdToEdit, onSucce
     </Form>
   );
 }
-
+    

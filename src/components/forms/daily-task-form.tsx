@@ -23,7 +23,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-import type { DailyTask } from '@/types';
+import type { DailyTask, AttachmentData } from '@/types';
 import { useRouter } from 'next/navigation';
 import { createTask, updateTask } from '@/lib/services/task.service';
 
@@ -33,24 +33,39 @@ const dailyTaskSchema = z.object({
   outcomes: z.string().min(10, { message: 'Outcomes must be at least 10 characters.' }).max(1000, {message: 'Outcomes too long (max 1000).' }),
   learningObjectives: z.string().min(10, { message: 'Learning objectives must be at least 10 characters.' }).max(1000, {message: 'Learning objectives too long (max 1000).' }),
   departmentOutcomeLink: z.string().max(100, {message: 'Link too long (max 100).' }).optional().or(z.literal('')),
-  attachments: z.array(z.instanceof(File)).max(5, {message: 'Maximum 5 attachments allowed.'}).optional(),
+  // Form will manage File objects, service will convert. Schema here focuses on form input.
+  newAttachments: z.array(z.instanceof(File)).max(5, {message: 'Maximum 5 combined attachments allowed.'}).optional(),
 });
 
 type DailyTaskFormValues = z.infer<typeof dailyTaskSchema>;
 
 interface DailyTaskFormProps {
-  defaultValues?: Partial<DailyTask>;
+  defaultValues?: Partial<DailyTask>; // DailyTask has attachments as AttachmentData[]
   taskIdToEdit?: string;
   onSuccess?: (taskId: string) => void;
+}
+
+async function fileToAttachmentData(file: File): Promise<AttachmentData> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve({
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            dataUri: reader.result as string,
+        });
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
 }
 
 export default function DailyTaskForm({ defaultValues, taskIdToEdit, onSuccess }: DailyTaskFormProps) {
   const { toast } = useToast();
   const router = useRouter();
   const [isLoading, setIsLoading] = React.useState(false);
-  // Store File objects for submission, and string names for display if editing
-  const [selectedFiles, setSelectedFiles] = React.useState<File[]>([]);
-  const [existingAttachmentNames, setExistingAttachmentNames] = React.useState<string[]>([]);
+  
+  const [existingAttachments, setExistingAttachments] = React.useState<AttachmentData[]>([]);
+  const [newlySelectedFiles, setNewlySelectedFiles] = React.useState<File[]>([]);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const form = useForm<DailyTaskFormValues>({
@@ -61,69 +76,76 @@ export default function DailyTaskForm({ defaultValues, taskIdToEdit, onSuccess }
       outcomes: defaultValues?.outcomes || '',
       learningObjectives: defaultValues?.learningObjectives || '',
       departmentOutcomeLink: defaultValues?.departmentOutcomeLink || '',
-      attachments: [], // Always initialize with empty array for File objects
+      newAttachments: [],
     },
   });
 
   React.useEffect(() => {
-    if (taskIdToEdit && defaultValues?.attachments) {
-      // If editing and there are existing attachments (string names from DB)
-      setExistingAttachmentNames(defaultValues.attachments);
+    if (defaultValues) {
+      form.reset({
+        date: defaultValues.date ? new Date(defaultValues.date) : new Date(),
+        description: defaultValues.description || '',
+        outcomes: defaultValues.outcomes || '',
+        learningObjectives: defaultValues.learningObjectives || '',
+        departmentOutcomeLink: defaultValues.departmentOutcomeLink || '',
+        newAttachments: [],
+      });
+      setExistingAttachments(defaultValues.attachments || []);
+      setNewlySelectedFiles([]); // Clear any previously selected new files when defaultValues change
     }
-  }, [taskIdToEdit, defaultValues?.attachments]);
+  }, [defaultValues, form]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
       const filesArray = Array.from(event.target.files);
-      // Keep newly selected files, don't merge with existingAttachmentNames for form value
-      const newFiles = [...filesArray].slice(0, 5); // Max 5 files
-      setSelectedFiles(newFiles); // Store File objects
-      form.setValue("attachments", newFiles, { shouldValidate: true });
+      const combinedCount = existingAttachments.length + newlySelectedFiles.length + filesArray.length;
+      if (combinedCount > 5) {
+        toast({ title: "Too many files", description: `You can upload a maximum of 5 attachments. You currently have ${existingAttachments.length + newlySelectedFiles.length} and tried to add ${filesArray.length}.`, variant: "destructive" });
+        if (fileInputRef.current) fileInputRef.current.value = ""; // Clear the input
+        return;
+      }
+      setNewlySelectedFiles(prev => [...prev, ...filesArray].slice(0, 5 - existingAttachments.length));
     }
   };
 
-  const removeNewFile = (fileName: string) => {
-    const newFiles = selectedFiles.filter(file => file.name !== fileName);
-    setSelectedFiles(newFiles);
-    form.setValue("attachments", newFiles, { shouldValidate: true });
-    if(fileInputRef.current && newFiles.length === 0) {
-        fileInputRef.current.value = ""; 
+  const removeExistingAttachment = (dataUriToRemove: string) => {
+    setExistingAttachments(prev => prev.filter(att => att.dataUri !== dataUriToRemove));
+  };
+
+  const removeNewFile = (fileNameToRemove: string) => {
+    setNewlySelectedFiles(prev => prev.filter(file => file.name !== fileNameToRemove));
+    if (fileInputRef.current && newlySelectedFiles.length === 1 && newlySelectedFiles[0].name === fileNameToRemove) {
+        fileInputRef.current.value = ""; // Clear input if last new file removed
     }
   };
-
-  const removeExistingFile = (fileName: string) => {
-    // This would typically involve an API call to delete the file from storage
-    // For mock, just remove from displayed list
-    setExistingAttachmentNames(prev => prev.filter(name => name !== fileName));
-    toast({ title: "Attachment Removed (Simulated)", description: `${fileName} would be deleted from storage.` });
-  };
-
 
   async function onSubmit(values: DailyTaskFormValues) {
     setIsLoading(true);
     
     try {
-      let savedTask: DailyTask | null;
-      // The service will now receive File objects in values.attachments (if any new files selected)
-      // and needs to handle them appropriately (e.g., upload and get URLs, or store names for mock)
+      const newAttachmentsData: AttachmentData[] = await Promise.all(
+        newlySelectedFiles.map(file => fileToAttachmentData(file))
+      );
+      
+      const finalAttachments: AttachmentData[] = [...existingAttachments, ...newAttachmentsData];
+
+      if (finalAttachments.length > 5) {
+        toast({ title: "Attachment Limit Exceeded", description: "You cannot have more than 5 attachments in total.", variant: "destructive" });
+        setIsLoading(false);
+        return;
+      }
+
       const taskPayload = {
-        ...values,
-        // Pass selected File objects. The service is updated to handle this.
-        attachments: selectedFiles, 
-        // If editing and wanting to keep old files, logic to merge old (string names) and new (File objects)
-        // would be needed here or in the service. For simplicity, this form replaces attachments on edit.
-        // If existingAttachmentNames should be preserved and no new files are selected, ensure they are passed.
-        // This mock service for updateTask now expects new File[] or undefined.
-        // If you want to keep existing, you'd need to send existingAttachmentNames too.
+        date: format(values.date, 'yyyy-MM-dd'),
+        description: values.description,
+        outcomes: values.outcomes,
+        learningObjectives: values.learningObjectives,
+        departmentOutcomeLink: values.departmentOutcomeLink,
+        attachments: finalAttachments, 
       };
 
+      let savedTask: DailyTask | null;
       if (taskIdToEdit) {
-        // For update, we might want to pass existing names too if no new files are chosen
-        // This part is tricky with mock: updateTask needs to decide if it replaces or merges.
-        // Let's assume `updateTask` in the service will handle this: if `attachments` is empty but
-        // `existingAttachmentNames` (passed separately or part of a more complex payload) is not, it keeps them.
-        // For simplicity, our mock service now just takes the new files.
-        // A real backend would handle this more robustly (e.g. specific "remove" flags).
         savedTask = await updateTask(taskIdToEdit, taskPayload);
       } else {
         savedTask = await createTask(taskPayload);
@@ -133,7 +155,6 @@ export default function DailyTaskForm({ defaultValues, taskIdToEdit, onSuccess }
         toast({
           title: taskIdToEdit ? 'Task Updated!' : 'Task Declared!',
           description: `Your daily task for ${format(values.date, "PPP")} has been ${taskIdToEdit ? 'updated' : 'submitted'}.`,
-          variant: "default",
         });
         if (onSuccess) {
           onSuccess(savedTask.id);
@@ -246,7 +267,7 @@ export default function DailyTaskForm({ defaultValues, taskIdToEdit, onSuccess }
         />
 
         <FormItem>
-            <FormLabel>Attachments (Optional, max 5 files)</FormLabel>
+            <FormLabel>Attachments (Optional, max 5 total)</FormLabel>
             <FormControl>
             <div className="flex flex-col items-center justify-center w-full">
                 <label htmlFor="dropzone-file-task" className="flex flex-col items-center justify-center w-full h-32 border-2 border-input border-dashed rounded-lg cursor-pointer bg-muted hover:bg-muted/80">
@@ -259,40 +280,35 @@ export default function DailyTaskForm({ defaultValues, taskIdToEdit, onSuccess }
                 </label>
             </div> 
             </FormControl>
-            {/* Display existing attachments if editing */}
-            {taskIdToEdit && existingAttachmentNames.length > 0 && (
-                <div className="mt-4 space-y-2">
-                    <p className="text-sm font-medium text-foreground">Current attachments:</p>
-                    <ul className="list-none space-y-1">
-                    {existingAttachmentNames.map((name, index) => (
-                        <li key={`existing-${index}`} className="text-sm text-muted-foreground flex items-center justify-between bg-muted/50 p-2 rounded-md border border-input">
-                            <span className="flex items-center break-all"><Paperclip className="inline mr-2 h-4 w-4 text-primary flex-shrink-0" />{name}</span>
-                            <Button type="button" variant="ghost" size="icon" onClick={() => removeExistingFile(name)} className="text-destructive hover:text-destructive h-6 w-6 ml-2 flex-shrink-0">
-                                <XCircle className="h-4 w-4" />
-                            </Button>
-                        </li>
-                    ))}
-                    </ul>
-                    <p className="text-xs text-muted-foreground">Uploading new files will replace these.</p>
-                </div>
-            )}
-            {/* Display newly selected files */}
-            {selectedFiles.length > 0 && (
-            <div className="mt-4 space-y-2">
-                <p className="text-sm font-medium text-foreground">{taskIdToEdit ? 'New files to upload (will replace existing):' : 'Selected files:'}</p>
+            
+            {(existingAttachments.length > 0 || newlySelectedFiles.length > 0) && (
+              <div className="mt-4 space-y-2">
+                <p className="text-sm font-medium text-foreground">
+                  Current attachments ({existingAttachments.length + newlySelectedFiles.length} / 5):
+                </p>
                 <ul className="list-none space-y-1">
-                {selectedFiles.map((file, index) => (
-                    <li key={index} className="text-sm text-muted-foreground flex items-center justify-between bg-muted/50 p-2 rounded-md border border-input">
-                      <span className="flex items-center break-all"><Paperclip className="inline mr-2 h-4 w-4 text-primary flex-shrink-0" />{file.name} ({(file.size / 1024).toFixed(1)} KB)</span>
-                      <Button type="button" variant="ghost" size="icon" onClick={() => removeNewFile(file.name)} className="text-destructive hover:text-destructive h-6 w-6 ml-2 flex-shrink-0">
-                          <XCircle className="h-4 w-4" />
+                  {existingAttachments.map((att, index) => (
+                    <li key={`existing-${index}`} className="text-sm text-muted-foreground flex items-center justify-between bg-muted/50 p-2 rounded-md border border-input">
+                      <a href={att.dataUri} target="_blank" rel="noopener noreferrer" className="flex items-center break-all hover:underline">
+                        <Paperclip className="inline mr-2 h-4 w-4 text-primary flex-shrink-0" />{att.name} ({(att.size / 1024).toFixed(1)} KB)
+                      </a>
+                      <Button type="button" variant="ghost" size="icon" onClick={() => removeExistingAttachment(att.dataUri)} className="text-destructive hover:text-destructive h-6 w-6 ml-2 flex-shrink-0">
+                        <XCircle className="h-4 w-4" />
                       </Button>
                     </li>
-                ))}
+                  ))}
+                  {newlySelectedFiles.map((file, index) => (
+                    <li key={`new-${index}`} className="text-sm text-muted-foreground flex items-center justify-between bg-blue-500/10 p-2 rounded-md border border-blue-500/30">
+                      <span className="flex items-center break-all"><Paperclip className="inline mr-2 h-4 w-4 text-primary flex-shrink-0" />{file.name} ({(file.size / 1024).toFixed(1)} KB)</span>
+                      <Button type="button" variant="ghost" size="icon" onClick={() => removeNewFile(file.name)} className="text-destructive hover:text-destructive h-6 w-6 ml-2 flex-shrink-0">
+                        <XCircle className="h-4 w-4" />
+                      </Button>
+                    </li>
+                  ))}
                 </ul>
-            </div>
+              </div>
             )}
-            <FormMessage>{form.formState.errors.attachments?.message}</FormMessage>
+            <FormMessage>{form.formState.errors.newAttachments?.message}</FormMessage>
         </FormItem>
 
         <div className="flex flex-col sm:flex-row gap-3 pt-4">
@@ -308,4 +324,4 @@ export default function DailyTaskForm({ defaultValues, taskIdToEdit, onSuccess }
     </Form>
   );
 }
-
+    
