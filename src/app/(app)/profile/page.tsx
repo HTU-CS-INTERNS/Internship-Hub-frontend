@@ -11,10 +11,11 @@ import ProfileSetupForm from '@/components/forms/profile-setup-form';
 import InternshipDetailsForm from '@/components/forms/internship-details-form';
 import type { UserRole, InternshipDetails, InternshipStatus, ProfileFormValues } from '@/types';
 import { USER_ROLES, FACULTIES, DEPARTMENTS } from '@/lib/constants';
-import { useRouter } from 'next/navigation'; 
+import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from '@/lib/utils';
 import { format, parseISO, isValid } from 'date-fns';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const getInitials = (name: string) => {
     if (!name) return 'U';
@@ -29,20 +30,20 @@ const statusAlertColors: Record<InternshipStatus, { bg: string, border: string, 
 };
 
 export default function ProfilePage() {
-  const router = useRouter(); 
+  const router = useRouter();
   const [userRole, setUserRole] = React.useState<UserRole | null>(null);
   const [isEditingProfile, setIsEditingProfile] = React.useState(false);
   const [isEditingInternship, setIsEditingInternship] = React.useState(false);
   const [isLoadingData, setIsLoadingData] = React.useState(true);
   const [profileError, setProfileError] = React.useState<string | null>(null);
-  
+
   const [userData, setUserData] = React.useState<ProfileFormValues & {
     avatarUrl: string;
     facultyName: string;
     departmentName: string;
     internship: InternshipDetails;
   }>({
-    name: '', 
+    name: '',
     email: '',
     avatarUrl: '',
     facultyId: '',
@@ -79,7 +80,7 @@ export default function ProfilePage() {
         const fetchedContactNumber = localStorage.getItem('userContactNumber') || '';
         const fetchedSupervisorCompanyName = localStorage.getItem('supervisorCompanyName') || '';
         const fetchedSupervisorCompanyAddress = localStorage.getItem('supervisorCompanyAddress') || '';
-        
+
         let fetchedInternship: InternshipDetails = {
             companyName: '', companyAddress: '', supervisorName: '', supervisorEmail: '',
             startDate: '', endDate: '', location: '', status: 'NOT_SUBMITTED', rejectionReason: ''
@@ -91,7 +92,7 @@ export default function ProfilePage() {
                 fetchedInternship = JSON.parse(internshipDetailsRaw);
             }
         }
-        
+
         const faculty = FACULTIES.find(f => f.id === fetchedFacultyId);
         const department = DEPARTMENTS.find(d => d.id === fetchedDepartmentId && d.facultyId === fetchedFacultyId);
 
@@ -108,7 +109,7 @@ export default function ProfilePage() {
             departmentName: storedRoleFromAuth === 'STUDENT' ? (department?.name || 'Not Set') : '',
             internship: storedRoleFromAuth === 'STUDENT' ? fetchedInternship : userData.internship,
         });
-        
+
         const onboardingComplete = localStorage.getItem('onboardingComplete') === 'true';
         const supervisorProfileComplete = localStorage.getItem('supervisorProfileComplete') === 'true';
 
@@ -117,7 +118,7 @@ export default function ProfilePage() {
                 setIsEditingProfile(true);
                 setIsEditingInternship(false);
             } else if (fetchedInternship.status === 'NOT_SUBMITTED' || fetchedInternship.status === 'REJECTED') {
-                 setIsEditingProfile(false); 
+                 setIsEditingProfile(false);
                  setIsEditingInternship(true);
             } else if (fetchedInternship.status === 'APPROVED') {
                 localStorage.setItem('onboardingComplete', 'true');
@@ -138,11 +139,11 @@ export default function ProfilePage() {
         setIsLoadingData(false);
       }
     };
-    
+
     fetchData();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router]); 
-  
+  }, [router]);
+
   const handleProfileSaveSuccess = (updatedProfileData: ProfileFormValues) => {
     localStorage.setItem('userName', updatedProfileData.name);
     localStorage.setItem('userEmail', updatedProfileData.email);
@@ -168,9 +169,9 @@ export default function ProfilePage() {
       supervisorCompanyAddress: userRole === 'SUPERVISOR' ? updatedProfileData.supervisorCompanyAddress || '' : '',
       avatarUrl: `https://placehold.co/150x150.png?text=${getInitials(updatedProfileData.name)}`,
     }));
-    
+
     setIsEditingProfile(false);
-    
+
     if (userRole === 'STUDENT' && (userData.internship.status === 'NOT_SUBMITTED' || userData.internship.status === 'REJECTED')) {
         setIsEditingInternship(true);
     } else if (userRole === 'STUDENT' && userData.internship.status === 'APPROVED') {
@@ -190,7 +191,7 @@ export default function ProfilePage() {
         localStorage.removeItem('onboardingComplete');
     }
   };
-  
+
   if (isLoadingData) {
     return (
       <div className="flex items-center justify-center h-full p-6">
@@ -206,6 +207,15 @@ export default function ProfilePage() {
 
   const currentInternshipStatus = userData.internship.status;
   const StatusIcon = statusAlertColors[currentInternshipStatus]?.icon || Edit3;
+
+  let internshipEditButtonText = 'Edit Internship';
+  if (currentInternshipStatus === 'NOT_SUBMITTED' || currentInternshipStatus === 'REJECTED') {
+    internshipEditButtonText = 'Enter/Update Details';
+  } else if (currentInternshipStatus === 'PENDING_APPROVAL') {
+    internshipEditButtonText = 'Edit Pending Submission';
+  }
+  const canEditInternship = currentInternshipStatus !== 'APPROVED';
+
 
   return (
     <div className="space-y-8 p-4 md:p-6">
@@ -234,10 +244,18 @@ export default function ProfilePage() {
               <div className="flex items-center gap-2">
                 <CardTitle className="text-2xl font-headline">{userData.name}</CardTitle>
                 {!isEditingInternship && !isEditingProfile && (
-                    <Button variant="ghost" size="icon" onClick={() => setIsEditingProfile(true)} className="text-muted-foreground hover:text-primary h-7 w-7">
-                        <Edit3 className="h-4 w-4" />
-                        <span className="sr-only">Edit Profile</span>
-                    </Button>
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" onClick={() => setIsEditingProfile(true)} className="text-muted-foreground hover:text-primary h-7 w-7">
+                                    <Edit3 className="h-4 w-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent className="bg-card text-card-foreground border-border">
+                                <p>Edit Profile</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
                 )}
               </div>
               <CardDescription className="text-base">{userData.email}</CardDescription>
@@ -245,8 +263,8 @@ export default function ProfilePage() {
             </div>
           </div>
           {isEditingProfile && (
-             <Button variant="outline" onClick={() => { 
-                 setIsEditingProfile(false); 
+             <Button variant="outline" onClick={() => {
+                 setIsEditingProfile(false);
                 }} className="bg-card hover:bg-accent hover:text-accent-foreground rounded-lg mt-2 sm:mt-0">
               Cancel Profile Edit
             </Button>
@@ -254,10 +272,10 @@ export default function ProfilePage() {
         </CardHeader>
         <CardContent className="p-6">
           {isEditingProfile ? (
-            <ProfileSetupForm 
+            <ProfileSetupForm
               userRole={userRole}
-              defaultValues={userData} 
-              onSuccess={handleProfileSaveSuccess} 
+              defaultValues={userData}
+              onSuccess={handleProfileSaveSuccess}
             />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 text-sm">
@@ -314,16 +332,23 @@ export default function ProfilePage() {
           <Separator className="my-8" />
           <Card className="shadow-xl rounded-xl" id="internship">
             <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 border-b">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-grow">
                 <Briefcase className="h-6 w-6 text-primary" />
                 <CardTitle className="text-xl font-headline">Internship Details</CardTitle>
               </div>
-               {!isEditingProfile && !isEditingInternship && 
-                (currentInternshipStatus !== 'PENDING_APPROVAL') && (
-                <Button variant="outline" onClick={() => setIsEditingInternship(true)} className="bg-card hover:bg-accent hover:text-accent-foreground rounded-lg">
-                    <Edit3 className="mr-2 h-4 w-4" /> 
-                    {currentInternshipStatus === 'NOT_SUBMITTED' || currentInternshipStatus === 'REJECTED' ? 'Enter/Update Details' : 'Edit Internship'}
-                </Button>
+               {!isEditingProfile && !isEditingInternship && canEditInternship && (
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" onClick={() => setIsEditingInternship(true)} className="text-muted-foreground hover:text-primary h-7 w-7">
+                                    <Edit3 className="h-4 w-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent className="bg-card text-card-foreground border-border">
+                                <p>{internshipEditButtonText}</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
                )}
                {isEditingInternship && (
                 <Button variant="outline" onClick={() => setIsEditingInternship(false)} className="bg-card hover:bg-accent hover:text-accent-foreground rounded-lg">
@@ -347,10 +372,10 @@ export default function ProfilePage() {
               )}
 
               {isEditingInternship ? (
-                <InternshipDetailsForm 
+                <InternshipDetailsForm
                   defaultValues={userData.internship}
                   onSuccess={handleInternshipSaveSuccess}
-                  isResubmitting={currentInternshipStatus === 'REJECTED'}
+                  isResubmitting={currentInternshipStatus === 'REJECTED' || currentInternshipStatus === 'PENDING_APPROVAL'}
                 />
               ) : currentInternshipStatus !== 'NOT_SUBMITTED' ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 text-sm">
