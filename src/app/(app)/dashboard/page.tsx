@@ -18,13 +18,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { PieChart, Pie, Cell } from "recharts";
 import { useToast } from '@/hooks/use-toast';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
+import type { CheckIn } from '@/types';
 
 const getInitials = (name: string) => {
     if (!name) return 'U';
@@ -105,7 +106,10 @@ interface StoredCheckinData {
   location: string;
   date: string; 
   photoPreview?: string | null;
+  isGpsVerified?: boolean;
 }
+
+const CHECKINS_STORAGE_KEY = 'internshipTrack_checkIns_v1';
 
 const StudentDashboard: React.FC<{ userName: string }> = ({ userName }) => {
     const [reportDate, setReportDate] = React.useState<Date | undefined>(new Date());
@@ -114,23 +118,39 @@ const StudentDashboard: React.FC<{ userName: string }> = ({ userName }) => {
     const [isCheckedInToday, setIsCheckedInToday] = React.useState(false);
     const [checkinDetails, setCheckinDetails] = React.useState<StoredCheckinData | null>(null);
 
-    const getTodayDateString = () => format(new Date(), 'yyyy-MM-dd');
+    const getTodayDateString = React.useCallback(() => format(new Date(), 'yyyy-MM-dd'), []);
 
     React.useEffect(() => {
         const todayDateStr = getTodayDateString();
-        const storedCheckinRaw = typeof window !== "undefined" ? localStorage.getItem('internshipTrack_checkin') : null;
-        if (storedCheckinRaw) {
+        const studentId = typeof window !== "undefined" ? localStorage.getItem('userEmail') || 'unknown_student' : 'unknown_student';
+
+        const checkInsRaw = typeof window !== "undefined" ? localStorage.getItem(CHECKINS_STORAGE_KEY) : null;
+        if (checkInsRaw) {
             try {
-                const storedCheckin: StoredCheckinData = JSON.parse(storedCheckinRaw);
-                if (storedCheckin.date === todayDateStr) {
+                const allCheckIns: CheckIn[] = JSON.parse(checkInsRaw);
+                const todayCheckInsForStudent = allCheckIns.filter(
+                    ci => ci.student_id === studentId && format(parseISO(ci.check_in_timestamp), 'yyyy-MM-dd') === todayDateStr
+                );
+
+                if (todayCheckInsForStudent.length > 0) {
+                    const latestCheckIn = todayCheckInsForStudent.sort((a, b) =>
+                        new Date(b.check_in_timestamp).getTime() - new Date(a.check_in_timestamp).getTime()
+                    )[0];
+
                     setIsCheckedInToday(true);
-                    setCheckinDetails(storedCheckin);
+                    setCheckinDetails({
+                        time: format(parseISO(latestCheckIn.check_in_timestamp), 'p'),
+                        location: latestCheckIn.address_resolved || latestCheckIn.manual_reason || 'Checked In',
+                        date: format(parseISO(latestCheckIn.check_in_timestamp), 'yyyy-MM-dd'),
+                        photoPreview: latestCheckIn.photo_url,
+                        isGpsVerified: latestCheckIn.is_gps_verified,
+                    });
                 } else {
                     setIsCheckedInToday(false);
                     setCheckinDetails(null);
                 }
             } catch (e) {
-                console.error("Failed to parse stored check-in data for dashboard", e);
+                console.error("Failed to parse check-in data for dashboard", e);
                 setIsCheckedInToday(false);
                 setCheckinDetails(null);
             }
@@ -138,7 +158,7 @@ const StudentDashboard: React.FC<{ userName: string }> = ({ userName }) => {
             setIsCheckedInToday(false);
             setCheckinDetails(null);
         }
-    }, []);
+    }, [getTodayDateString]);
     
     const studentCheckInChartData = isCheckedInToday 
         ? [{ name: 'Checked In', value: 100, fill: 'hsl(var(--primary))' }]
@@ -756,4 +776,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
