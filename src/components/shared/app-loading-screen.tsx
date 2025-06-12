@@ -1,4 +1,3 @@
-
 'use client';
 
 import { GraduationCap } from 'lucide-react';
@@ -11,7 +10,7 @@ export default function AppLoadingScreen() {
         <h1 className="text-3xl sm:text-4xl font-headline font-bold">
           InternshipTrack
         </h1>
-        <p className="mt-4 text-lg text-muted-foreground">Loading your experience...</p>
+        <p className="mt-4 text-lg text-muted-foreground">Initializing your workspace...</p>
       </div>
       <div className="absolute bottom-8 text-center text-sm text-muted-foreground">
         <p>&copy; {new Date().getFullYear()} InternshipTrack. All Rights Reserved.</p>
