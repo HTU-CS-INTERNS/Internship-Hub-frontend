@@ -141,7 +141,7 @@ export default function ProfilePage() {
     
     fetchData();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router]); // Removed userData.internship.status to prevent loop, initial load sets flags.
+  }, [router]); 
   
   const handleProfileSaveSuccess = (updatedProfileData: ProfileFormValues) => {
     localStorage.setItem('userName', updatedProfileData.name);
@@ -225,30 +225,29 @@ export default function ProfilePage() {
 
       <Card className="shadow-xl rounded-xl">
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 border-b">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-grow">
             <Avatar className="h-20 w-20 border-2 border-primary">
               <AvatarImage src={userData.avatarUrl} alt={userData.name} data-ai-hint="person portrait"/>
               <AvatarFallback className="text-2xl bg-primary/20 text-primary">{getInitials(userData.name)}</AvatarFallback>
             </Avatar>
-            <div>
-              <CardTitle className="text-2xl font-headline">{userData.name}</CardTitle>
+            <div className="flex-grow">
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-2xl font-headline">{userData.name}</CardTitle>
+                {!isEditingInternship && !isEditingProfile && (
+                    <Button variant="ghost" size="icon" onClick={() => setIsEditingProfile(true)} className="text-muted-foreground hover:text-primary h-7 w-7">
+                        <Edit3 className="h-4 w-4" />
+                        <span className="sr-only">Edit Profile</span>
+                    </Button>
+                )}
+              </div>
               <CardDescription className="text-base">{userData.email}</CardDescription>
               {userRole && <p className="text-sm text-primary font-medium">{USER_ROLES[userRole]}</p>}
             </div>
           </div>
-          {!isEditingInternship && !isEditingProfile && (
-            <Button variant="outline" onClick={() => setIsEditingProfile(true)} className="bg-card hover:bg-accent hover:text-accent-foreground rounded-lg">
-              <Edit3 className="mr-2 h-4 w-4" /> Edit Profile
-            </Button>
-          )}
           {isEditingProfile && (
              <Button variant="outline" onClick={() => { 
                  setIsEditingProfile(false); 
-                 if (userRole === 'STUDENT' && (userData.internship.status === 'NOT_SUBMITTED' || userData.internship.status === 'REJECTED')) {
-                    // Only auto-move if the form was explicitly cancelled and internship needs attention
-                    // No, let the user decide to click "Edit Internship" separately
-                 }
-                }} className="bg-card hover:bg-accent hover:text-accent-foreground rounded-lg">
+                }} className="bg-card hover:bg-accent hover:text-accent-foreground rounded-lg mt-2 sm:mt-0">
               Cancel Profile Edit
             </Button>
           )}
@@ -320,7 +319,7 @@ export default function ProfilePage() {
                 <CardTitle className="text-xl font-headline">Internship Details</CardTitle>
               </div>
                {!isEditingProfile && !isEditingInternship && 
-                (currentInternshipStatus !== 'PENDING_APPROVAL') && ( // Allow editing if NOT PENDING_APPROVAL
+                (currentInternshipStatus !== 'PENDING_APPROVAL') && (
                 <Button variant="outline" onClick={() => setIsEditingInternship(true)} className="bg-card hover:bg-accent hover:text-accent-foreground rounded-lg">
                     <Edit3 className="mr-2 h-4 w-4" /> 
                     {currentInternshipStatus === 'NOT_SUBMITTED' || currentInternshipStatus === 'REJECTED' ? 'Enter/Update Details' : 'Edit Internship'}
