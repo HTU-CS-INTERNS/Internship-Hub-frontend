@@ -15,7 +15,6 @@ import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from '@/lib/utils';
 import { format, parseISO, isValid } from 'date-fns';
-// Removed Firebase imports: auth, db, doc, getDoc, DocumentData
 
 const getInitials = (name: string) => {
     if (!name) return 'U';
@@ -70,7 +69,6 @@ export default function ProfilePage() {
         return;
       }
 
-      // Simulate fetching data as Firebase is removed
       await new Promise(resolve => setTimeout(resolve, 500));
 
       try {
@@ -88,7 +86,7 @@ export default function ProfilePage() {
         };
 
         if (storedRoleFromAuth === 'STUDENT') {
-            const internshipDetailsRaw = localStorage.getItem(`userInternshipDetails_${fetchedUserEmail}`); // Using email as pseudo-ID for localStorage
+            const internshipDetailsRaw = localStorage.getItem(`userInternshipDetails_${fetchedUserEmail}`);
             if (internshipDetailsRaw) {
                 fetchedInternship = JSON.parse(internshipDetailsRaw);
             }
@@ -142,18 +140,17 @@ export default function ProfilePage() {
     };
     
     fetchData();
-  }, [router, userData.internship.status]); // Re-run if internship status changes for student
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router]); // Removed userData.internship.status to prevent loop, initial load sets flags.
   
   const handleProfileSaveSuccess = (updatedProfileData: ProfileFormValues) => {
-    // Simulate saving to localStorage as backend is not Firebase
     localStorage.setItem('userName', updatedProfileData.name);
-    localStorage.setItem('userEmail', updatedProfileData.email); // Though email is unlikely to change here
+    localStorage.setItem('userEmail', updatedProfileData.email);
     if(updatedProfileData.facultyId) localStorage.setItem('userFacultyId', updatedProfileData.facultyId);
     if(updatedProfileData.departmentId) localStorage.setItem('userDepartmentId', updatedProfileData.departmentId);
     if(updatedProfileData.contactNumber) localStorage.setItem('userContactNumber', updatedProfileData.contactNumber);
     if(userRole === 'SUPERVISOR' && updatedProfileData.supervisorCompanyName) localStorage.setItem('supervisorCompanyName', updatedProfileData.supervisorCompanyName);
     if(userRole === 'SUPERVISOR' && updatedProfileData.supervisorCompanyAddress) localStorage.setItem('supervisorCompanyAddress', updatedProfileData.supervisorCompanyAddress);
-
 
     const faculty = FACULTIES.find(f => f.id === updatedProfileData.facultyId);
     const department = DEPARTMENTS.find(d => d.id === updatedProfileData.departmentId && d.facultyId === updatedProfileData.facultyId);
@@ -182,7 +179,6 @@ export default function ProfilePage() {
   };
 
   const handleInternshipSaveSuccess = (updatedInternshipData: InternshipDetails) => {
-    // InternshipDetailsForm handles its own localStorage saving now
     setUserData(prev => ({
         ...prev,
         internship: updatedInternshipData
@@ -240,8 +236,7 @@ export default function ProfilePage() {
               {userRole && <p className="text-sm text-primary font-medium">{USER_ROLES[userRole]}</p>}
             </div>
           </div>
-          {!isEditingInternship && !isEditingProfile && 
-           (userRole === 'STUDENT' ? currentInternshipStatus !== 'PENDING_APPROVAL' : true) && (
+          {!isEditingInternship && !isEditingProfile && (
             <Button variant="outline" onClick={() => setIsEditingProfile(true)} className="bg-card hover:bg-accent hover:text-accent-foreground rounded-lg">
               <Edit3 className="mr-2 h-4 w-4" /> Edit Profile
             </Button>
@@ -250,7 +245,8 @@ export default function ProfilePage() {
              <Button variant="outline" onClick={() => { 
                  setIsEditingProfile(false); 
                  if (userRole === 'STUDENT' && (userData.internship.status === 'NOT_SUBMITTED' || userData.internship.status === 'REJECTED')) {
-                    setIsEditingInternship(true);
+                    // Only auto-move if the form was explicitly cancelled and internship needs attention
+                    // No, let the user decide to click "Edit Internship" separately
                  }
                 }} className="bg-card hover:bg-accent hover:text-accent-foreground rounded-lg">
               Cancel Profile Edit
@@ -324,7 +320,7 @@ export default function ProfilePage() {
                 <CardTitle className="text-xl font-headline">Internship Details</CardTitle>
               </div>
                {!isEditingProfile && !isEditingInternship && 
-                (currentInternshipStatus === 'NOT_SUBMITTED' || currentInternshipStatus === 'REJECTED' || currentInternshipStatus === 'APPROVED') && (
+                (currentInternshipStatus !== 'PENDING_APPROVAL') && ( // Allow editing if NOT PENDING_APPROVAL
                 <Button variant="outline" onClick={() => setIsEditingInternship(true)} className="bg-card hover:bg-accent hover:text-accent-foreground rounded-lg">
                     <Edit3 className="mr-2 h-4 w-4" /> 
                     {currentInternshipStatus === 'NOT_SUBMITTED' || currentInternshipStatus === 'REJECTED' ? 'Enter/Update Details' : 'Edit Internship'}
@@ -457,3 +453,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    
