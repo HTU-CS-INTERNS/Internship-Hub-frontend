@@ -12,15 +12,16 @@ import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'; 
 import PageHeader from '@/components/shared/page-header';
 import { createCheckInForStudent, getCheckInsByStudentId, initializeDefaultCheckInsIfNeeded } from '@/lib/services/checkInService';
-import type { CheckInCreatePayload } from '@/lib/services/checkInService'; // Assuming you export this type
+import type { CheckInCreatePayload } from '@/lib/services/checkInService'; 
+import { useRouter } from 'next/navigation'; // Added useRouter
 
 type CheckinStep = 'initial' | 'gpsPrompt' | 'manualReason' | 'geofenceWarning' | 'success';
 
-interface StoredCheckinData { // This matches simplified CheckIn data for UI
+interface StoredCheckinData { 
   time: string;
-  location: string; // This can be GPS address or manual reason summary
+  location: string; 
   date: string; 
-  photoPreview?: string | null; // Data URI for preview
+  photoPreview?: string | null; 
   isGpsVerified?: boolean;
 }
 
@@ -34,24 +35,25 @@ export default function CheckInPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const router = useRouter(); // Initialized useRouter
 
   const getTodayDateString = React.useCallback(() => format(new Date(), 'yyyy-MM-dd'), []);
 
   const loadCheckinFromStorage = React.useCallback(async () => {
     setIsLoading(true);
-    await initializeDefaultCheckInsIfNeeded(); // Ensure some data exists for demo purposes
+    await initializeDefaultCheckInsIfNeeded(); 
     const studentId = typeof window !== "undefined" ? localStorage.getItem('userEmail') || 'unknown_student' : 'unknown_student';
     const todayCheckIns = (await getCheckInsByStudentId(studentId)).filter(
         ci => format(parseISO(ci.check_in_timestamp), 'yyyy-MM-dd') === getTodayDateString()
     );
     
     if (todayCheckIns.length > 0) {
-        const latestCheckIn = todayCheckIns[0]; // Assuming sorted by most recent
+        const latestCheckIn = todayCheckIns[0]; 
         setCurrentCheckin({
             time: format(parseISO(latestCheckIn.check_in_timestamp), 'p'),
             location: latestCheckIn.address_resolved || latestCheckIn.manual_reason || 'Checked In',
             date: format(parseISO(latestCheckIn.check_in_timestamp), 'yyyy-MM-dd'),
-            photoPreview: latestCheckIn.photo_url, // This assumes photo_url from service is suitable for preview
+            photoPreview: latestCheckIn.photo_url, 
             isGpsVerified: latestCheckIn.is_gps_verified,
         });
         setStep('success');
@@ -91,37 +93,46 @@ export default function CheckInPage() {
     setIsSubmitting(true);
     toast({ title: 'Requesting Location', description: 'Please wait...' });
     // --- Geofence Logic (Client-Side Simulation) ---
-    // 1. Fetch Company Geofence:
-    //    In a real app, you'd get this from student's InternshipDetails (companyLatitude, companyLongitude, geofenceRadiusMeters)
-    //    const companyLat = /* ... */; const companyLng = /* ... */; const radius = /* ... */;
-    // 2. Get Current Position:
+    // 1. Fetch Company Geofence Details:
+    //    In a real app, fetch `companyLatitude`, `companyLongitude`, `geofenceRadiusMeters` 
+    //    from the student's approved `internship_placements` record.
+    //    Example: const placementDetails = await getStudentPlacementDetails();
+    //    const { companyLatitude, companyLongitude, geofenceRadiusMeters } = placementDetails;
+
+    // 2. Get Current GPS Position:
     //    Using `navigator.geolocation.getCurrentPosition((position) => { ... }, (error) => { ... });`
     //    const currentLat = position.coords.latitude;
     //    const currentLng = position.coords.longitude;
-    // 3. Check if within geofence:
-    //    Implement distance calculation (e.g. Haversine) and compare with radius.
-    //    const distance = calculateDistance(currentLat, currentLng, companyLat, companyLng);
-    //    const withinGeofence = distance <= radius;
+
+    // 3. Geofence Check:
+    //    Implement distance calculation (e.g., Haversine formula) to compare
+    //    (currentLat, currentLng) with (companyLatitude, companyLongitude).
+    //    const distance = calculateDistance(currentLat, currentLng, companyLatitude, companyLongitude);
+    //    const withinGeofence = distance <= geofenceRadiusMeters;
+
+    // 4. Reverse Geocode (Optional):
+    //    If needed, use a service to convert (currentLat, currentLng) to a human-readable address.
+    //    const address = await reverseGeocode(currentLat, currentLng);
     // --- End of Geofence Logic Simulation ---
     
     try {
       await new Promise(resolve => setTimeout(resolve, 1500)); 
-      const withinGeofence = Math.random() < 0.8; // Simulate geofence check result
-      const simulatedLat = 34.0522; // Example
-      const simulatedLng = -118.2437; // Example
+      const withinGeofence = Math.random() < 0.8; 
+      const simulatedLat = 34.0522; 
+      const simulatedLng = -118.2437; 
 
       const checkInData: CheckInCreatePayload = {
         latitude: simulatedLat,
         longitude: simulatedLng,
-        address_resolved: 'Acme Corp HQ (Verified by GPS)', // Would come from reverse geocoding in real app
+        address_resolved: 'Acme Corp HQ (Verified by GPS)', 
         is_gps_verified: true,
         is_outside_geofence: !withinGeofence,
-        photo_url: securePhotoPreview || undefined, // Send preview if available, actual URL if uploaded
+        photo_url: securePhotoPreview || undefined, 
       };
 
       if (withinGeofence) {
         await createCheckInForStudent(checkInData);
-        loadCheckinFromStorage(); // Refresh and go to success
+        loadCheckinFromStorage(); 
         toast({ title: 'Success', description: 'Location verified within geofence.' });
       } else {
         setStep('geofenceWarning');
@@ -144,19 +155,17 @@ export default function CheckInPage() {
       return;
     }
     setIsSubmitting(true);
-    // In a real app, if securePhotoFile exists, upload it to Supabase Storage first, get the URL.
-    // For mock, we'll use the data URI from preview.
     const photoUrl = securePhotoPreview || undefined;
 
     const checkInData: CheckInCreatePayload = {
         manual_reason: manualReason,
         photo_url: photoUrl,
         is_gps_verified: false,
-        is_outside_geofence: false, // Typically false or N/A for manual entry like this
+        is_outside_geofence: false, 
     };
     try {
         await createCheckInForStudent(checkInData);
-        loadCheckinFromStorage(); // Refresh and go to success
+        loadCheckinFromStorage();
         toast({ title: 'Manual Check-in Submitted', description: 'Your check-in reason has been recorded.' });
     } catch (error) {
         console.error("Manual Check-in Error:", error);
@@ -314,7 +323,7 @@ export default function CheckInPage() {
           </div>
         );
       case 'success':
-        if (!currentCheckin) return null; // Should not happen if step is 'success'
+        if (!currentCheckin) return null;
         return (
           <div className="py-6 slide-in space-y-6">
             <div className="text-center">
@@ -341,7 +350,6 @@ export default function CheckInPage() {
                         <div className="mt-3">
                             <p className="text-sm text-muted-foreground mb-1">Location Context:</p>
                             <div className="relative w-full aspect-[16/9] rounded-lg overflow-hidden border border-input bg-gray-200 flex items-center justify-center">
-                                {/* Improved Placeholder Map View */}
                                 <MapPin className="h-16 w-16 text-primary/30" />
                                 <p className="absolute bottom-2 text-xs text-primary/70">
                                   {currentCheckin.isGpsVerified ? "GPS Location Visualized Here" : "Map Context (if available)"}
@@ -369,8 +377,14 @@ export default function CheckInPage() {
                 </div>
             </div>
 
-            <Button onClick={resetFlowAndCheckStorage} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 rounded-lg text-lg mt-2">
-              Done
+            <Button 
+              onClick={() => {
+                resetFlowAndCheckStorage();
+                router.push('/dashboard');
+              }} 
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 rounded-lg text-lg mt-2"
+            >
+              Back to Dashboard
             </Button>
           </div>
         );
