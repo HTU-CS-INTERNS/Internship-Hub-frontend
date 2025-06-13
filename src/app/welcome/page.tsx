@@ -34,9 +34,9 @@ export default function WelcomePage1() {
         </div>
 
         <div className="pt-4 animate-in fade-in-0 slide-in-from-bottom-10 duration-700 delay-400">
-          <Link href="/welcome/features" passHref>
+          <Link href="/welcome/get-started" passHref>
             <Button size="lg" className="font-headline text-lg px-10 py-6 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg transform hover:scale-105 active:scale-95 transition-transform duration-300 rounded-xl w-full sm:w-auto group">
-              Discover Features <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+              Let's Get Started <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
             </Button>
           </Link>
         </div>
