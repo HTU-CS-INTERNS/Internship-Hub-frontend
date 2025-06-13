@@ -3,8 +3,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 
-const APP_NAME = "InternshipTrack";
-const APP_DESCRIPTION = "Streamlining Internship Management for Students, Lecturers, and Companies.";
+const APP_NAME = "InternHub - HTU"; // Updated
+const APP_DESCRIPTION = "Streamlining Internship Management for Ho Technical University Students, Lecturers, and Companies."; // Updated
 
 export const metadata: Metadata = {
   applicationName: APP_NAME,
@@ -55,7 +55,7 @@ export default function RootLayout({
         {/* Standard PWA meta tags are handled by Next.js Metadata API using the manifest */}
         <meta name="theme-color" content="#4f46e5" />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
-        
+
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=PT+Sans&display=swap" rel="stylesheet" />

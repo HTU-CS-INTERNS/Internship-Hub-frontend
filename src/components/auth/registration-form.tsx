@@ -23,14 +23,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import Link from 'next/link';
 import { FACULTIES, DEPARTMENTS, USER_ROLES } from '@/lib/constants';
 import type { UserRole } from '@/types';
-// Removed Firebase imports: auth, db, createUserWithEmailAndPassword, updateProfile, doc, setDoc, serverTimestamp
 import { sendOtp } from '@/ai/flows/send-otp-flow';
 
 
 const registrationStep1Schema = z.object({
   schoolId: z.string().min(3, { message: 'School ID must be at least 3 characters.' }).max(20, { message: 'School ID too long.'}),
   schoolEmail: z.string().email({ message: 'Please enter a valid school email address.' })
-    .refine(email => email.endsWith('@htu.edu.gh'), {
+    .refine(email => email.endsWith('@htu.edu.gh'), { // Updated domain
       message: 'Email must be a valid @htu.edu.gh address.'
     }),
 });
@@ -62,11 +61,11 @@ const fetchStudentDataFromSchoolDB = async (schoolId: string): Promise<{name: st
   }
   const faculty = FACULTIES.find(f => f.name.includes("Engineering")) || FACULTIES[0];
   const department = DEPARTMENTS.find(d => d.facultyId === faculty.id) || DEPARTMENTS.find(d => d.id === "D005");
-  
-  return { 
+
+  return {
     name: `Student ${schoolId.substring(0,5)}`,
-    facultyId: faculty.id, 
-    departmentId: department?.id || DEPARTMENTS[0].id 
+    facultyId: faculty.id,
+    departmentId: department?.id || DEPARTMENTS[0].id
   };
 };
 
@@ -99,29 +98,29 @@ export function RegistrationForm() {
     const studentData = await fetchStudentDataFromSchoolDB(values.schoolId);
 
     if (!studentData) {
-      toast({ 
-        title: 'School ID Verification Failed', 
-        description: 'The School ID provided was not found or is invalid. Please check and try again.', 
-        variant: 'destructive' 
+      toast({
+        title: 'School ID Verification Failed',
+        description: 'The School ID provided was not found or is invalid. Please check and try again.',
+        variant: 'destructive'
       });
       step1Form.setError("schoolId", { type: "manual", message: "Invalid School ID."});
       setIsLoading(false);
       return;
     }
-    
+
     setUserDataFromDB(studentData);
     setVerifiedSchoolEmail(values.schoolEmail);
-    
+
     try {
       const otpResponse = await sendOtp({ email: values.schoolEmail });
       setGeneratedOtpForVerification(otpResponse.otp);
-      toast({ 
-        title: 'OTP Sent! (Simulated)', 
+      toast({
+        title: 'OTP Sent! (Simulated)',
         description: `An OTP (simulated as ${otpResponse.otp}) has been 'sent' to ${values.schoolEmail}. Please enter it below.`,
         variant: "default",
         duration: 7000,
       });
-      setStep(2); 
+      setStep(2);
     } catch (error) {
       console.error("Error sending OTP:", error);
       toast({ title: "OTP Error", description: "Could not send OTP. Please try again.", variant: "destructive"});
@@ -131,8 +130,8 @@ export function RegistrationForm() {
 
   async function handleStep2Submit(values: RegistrationStep2Values) {
     setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 700)); 
-    
+    await new Promise(resolve => setTimeout(resolve, 700));
+
     if (values.otp !== generatedOtpForVerification) {
       toast({
         title: 'Invalid OTP',
@@ -146,7 +145,7 @@ export function RegistrationForm() {
 
     toast({
       title: 'OTP Verified!',
-      description: `Welcome, ${userDataFromDB?.name}! Please set a secure password for your account.`,
+      description: `Welcome, ${userDataFromDB?.name}! Please set a secure password for your InternHub account.`, // Updated
       variant: 'default'
     });
     setStep(3);
@@ -162,23 +161,21 @@ export function RegistrationForm() {
         return;
     }
 
-    // Simulate backend API call for user registration
     await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Store basic info in localStorage for prototype
+
     if (typeof window !== "undefined") {
       localStorage.setItem('userRole', 'STUDENT');
       localStorage.setItem('userName', userDataFromDB.name);
-      localStorage.setItem('userEmail', verifiedSchoolEmail); 
+      localStorage.setItem('userEmail', verifiedSchoolEmail);
       localStorage.setItem('userFacultyId', userDataFromDB.facultyId);
       localStorage.setItem('userDepartmentId', userDataFromDB.departmentId);
-      localStorage.removeItem('onboardingComplete'); 
+      localStorage.removeItem('onboardingComplete');
       localStorage.setItem('isLoggedIn', 'true');
     }
-    
+
     toast({
       title: "Registration Successful! (Simulated)",
-      description: `Welcome, ${userDataFromDB.name}! Your account is created. Please complete your profile.`,
+      description: `Welcome, ${userDataFromDB.name}! Your InternHub account is created. Please complete your profile.`, // Updated
       variant: "default",
     });
     router.push('/profile');
@@ -202,7 +199,7 @@ export function RegistrationForm() {
                   <FormControl>
                     <Input placeholder="Enter your unique school ID" {...field} className="rounded-lg border-input"/>
                   </FormControl>
-                  <FormDescription>This will be used to verify your student status.</FormDescription>
+                  <FormDescription>This will be used to verify your Ho Technical University student status.</FormDescription> {/* Updated */}
                   <FormMessage />
                 </FormItem>
               )}
@@ -212,11 +209,11 @@ export function RegistrationForm() {
               name="schoolEmail"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>School Email Address</FormLabel>
+                  <FormLabel>Ho Technical University Email Address</FormLabel> {/* Updated */}
                   <FormControl>
                     <Input type="email" placeholder="your.id@htu.edu.gh" {...field} className="rounded-lg border-input"/>
                   </FormControl>
-                  <FormDescription>Must be your official @htu.edu.gh email. An OTP will be sent here.</FormDescription>
+                  <FormDescription>Must be your official @htu.edu.gh email. An OTP will be sent here.</FormDescription> {/* Updated */}
                   <FormMessage />
                 </FormItem>
               )}
@@ -259,14 +256,14 @@ export function RegistrationForm() {
                 <FormItem>
                   <FormLabel>Enter OTP Code</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="Enter 6-digit OTP" 
-                      {...field} 
-                      className="rounded-lg border-input text-center tracking-[0.5em]" 
+                    <Input
+                      placeholder="Enter 6-digit OTP"
+                      {...field}
+                      className="rounded-lg border-input text-center tracking-[0.5em]"
                       maxLength={6}
                     />
                   </FormControl>
-                  <FormDescription>Check your school email ({verifiedSchoolEmail}) for the code.</FormDescription>
+                  <FormDescription>Check your @htu.edu.gh email ({verifiedSchoolEmail}) for the code.</FormDescription> {/* Updated */}
                   <FormMessage />
                 </FormItem>
               )}
@@ -294,8 +291,8 @@ export function RegistrationForm() {
                   </CardTitle>
               </CardHeader>
               <CardContent className="text-sm text-green-700/90 dark:text-green-300/90 space-y-1">
-                  <p>Welcome, <strong>{userDataFromDB.name}</strong>! Your email <strong>{verifiedSchoolEmail}</strong> and school identity have been verified.</p>
-                  <p>Please create a secure password for your InternshipTrack account.</p>
+                  <p>Welcome, <strong>{userDataFromDB.name}</strong>! Your email <strong>{verifiedSchoolEmail}</strong> and Ho Technical University identity have been verified.</p> {/* Updated */}
+                  <p>Please create a secure password for your InternHub account.</p> {/* Updated */}
               </CardContent>
           </Card>
           <form onSubmit={step3Form.handleSubmit(handleStep3Submit)} className="space-y-6">
@@ -334,8 +331,8 @@ export function RegistrationForm() {
       </div>
     );
   }
-  
-  if ((step === 2 || step === 3) && !userDataFromDB) { 
+
+  if ((step === 2 || step === 3) && !userDataFromDB) {
       return (
           <div className="text-center space-y-4 p-4 border border-destructive/50 rounded-lg bg-destructive/10" key="registration-error-fallback">
               <AlertTriangle className="mx-auto h-10 w-10 text-destructive"/>

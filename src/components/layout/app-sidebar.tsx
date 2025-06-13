@@ -52,12 +52,13 @@ export default function AppSidebar({ userRole }: AppSidebarProps) {
       localStorage.removeItem('theme');
       localStorage.removeItem('userName');
       localStorage.removeItem('userEmail');
+      localStorage.removeItem('isLoggedIn');
     }
     document.documentElement.classList.remove('dark');
     router.push('/login');
   };
 
-  const navSections = ["Main", "Tools", "Management", "Settings"];
+  const navSections = ["Main", "Tools", "Management", "Administration", "Settings"]; // Added Administration
 
   const renderNavItemsForSection = (section: string, links: NavItem[]) => {
     const sectionLinks = links.filter(link => link.section === section && link.roles.includes(userRole));
@@ -94,13 +95,13 @@ export default function AppSidebar({ userRole }: AppSidebarProps) {
       </React.Fragment>
     );
   };
-  
+
   const allLinks = [...NAV_LINKS, ...BOTTOM_NAV_LINKS];
 
   return (
-    <Sidebar 
-      collapsible="icon" 
-      variant="sidebar" 
+    <Sidebar
+      collapsible="icon"
+      variant="sidebar"
       className="shadow-lg bg-sidebar text-sidebar-foreground border-r border-sidebar-border"
     >
       <SidebarHeader className="p-4 border-b border-sidebar-border flex items-center justify-between group-data-[collapsible=icon]:justify-center">
@@ -109,11 +110,11 @@ export default function AppSidebar({ userRole }: AppSidebarProps) {
             <GraduationCap className="h-6 w-6 text-primary-foreground" />
           </div>
           <span className="font-headline text-xl font-bold text-primary-foreground group-hover:text-primary-foreground/80 transition-colors group-data-[collapsible=icon]:hidden">
-            InternshipTrack
+            InternHub
           </span>
         </Link>
       </SidebarHeader>
-      
+
       <SidebarContent className="p-0 flex-1 overflow-y-auto">
         <div className="p-4 border-b border-sidebar-border group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:border-b-0">
             <div className="flex items-center justify-between">
@@ -137,7 +138,7 @@ export default function AppSidebar({ userRole }: AppSidebarProps) {
 
         {navSections.map(section => renderNavItemsForSection(section, allLinks))}
       </SidebarContent>
-      
+
       <SidebarSeparator className="bg-sidebar-border" />
       <SidebarFooter className="p-2">
         <SidebarMenu>
@@ -157,5 +158,3 @@ export default function AppSidebar({ userRole }: AppSidebarProps) {
     </Sidebar>
   );
 }
-
-    

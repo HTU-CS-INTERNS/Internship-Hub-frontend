@@ -3,8 +3,8 @@ import type { NextConfig } from 'next';
 // Correctly import the default export from @ducanh2912/next-pwa
 import withPWAInit from '@ducanh2912/next-pwa';
 
-const APP_NAME = "InternshipTrack";
-const APP_DESCRIPTION = "Streamlining Internship Management for Students, Lecturers, and Companies.";
+const APP_NAME = "InternHub"; // Updated
+const APP_DESCRIPTION = "Streamlining Internship Management for Ho Technical University Students, Lecturers, and Companies."; // Updated
 
 const withPWA = withPWAInit({
   dest: 'public',
@@ -25,7 +25,7 @@ const withPWA = withPWAInit({
   reloadOnOnline: true, // Reload the app when it comes back online
   manifest: {
     name: APP_NAME,
-    short_name: "InternTrack",
+    short_name: "InternHubHTU", // Updated
     description: APP_DESCRIPTION,
     start_url: "/",
     display: "standalone",
@@ -37,7 +37,7 @@ const withPWA = withPWAInit({
         src: "/icons/icon-192x192.png",
         sizes: "192x192",
         type: "image/png",
-        purpose: "any maskable" 
+        purpose: "any maskable"
       },
       {
         src: "/icons/icon-384x384.png",

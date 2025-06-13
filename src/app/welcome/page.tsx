@@ -66,13 +66,13 @@ export default function WelcomePage1() {
     <main className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-primary/5 via-background to-background p-4 sm:p-6 text-center">
       <div className="space-y-6 max-w-lg w-full">
         <div className="animate-in fade-in-0 slide-in-from-top-8 duration-700">
-          <Image 
-            src="https://placehold.co/600x400.png" 
-            alt="Internship Success" 
-            width={600} 
-            height={400} 
+          <Image
+            src="https://placehold.co/600x400.png"
+            alt="Ho Technical University Campus or Students"
+            width={600}
+            height={400}
             className="rounded-xl shadow-2xl object-cover aspect-video"
-            data-ai-hint="team collaboration success"
+            data-ai-hint="university students learning"
           />
         </div>
 
@@ -82,11 +82,11 @@ export default function WelcomePage1() {
               <GraduationCap className="h-8 w-8 text-primary-foreground" />
             </div>
             <h1 className="text-3xl font-headline font-bold text-primary tracking-tight">
-              Welcome to InternshipTrack!
+              Welcome to InternHub!
             </h1>
           </div>
           <p className="text-lg text-foreground/80 font-body leading-relaxed">
-            Your all-in-one platform for managing and tracking internships seamlessly.
+            Your internship management platform for Ho Technical University.
           </p>
         </div>
 
@@ -104,7 +104,7 @@ export default function WelcomePage1() {
               <Checkbox id="terms" checked={termsAccepted} onCheckedChange={(checked) => setTermsAccepted(checked as boolean)} />
               <div className="grid gap-1.5 leading-none">
                 <Label htmlFor="terms" className="text-sm font-medium text-foreground cursor-pointer">
-                  I have read and agree to the InternshipTrack
+                  I have read and agree to the InternHub
                   <Button variant="link" asChild className="p-0 h-auto ml-1 text-primary hover:underline"><Link href="/terms-placeholder" target="_blank">Terms and Conditions</Link></Button>
                   {' '}and
                   <Button variant="link" asChild className="p-0 h-auto ml-1 text-primary hover:underline"><Link href="/privacy-placeholder" target="_blank">Privacy Policy</Link></Button>.
@@ -165,7 +165,7 @@ export default function WelcomePage1() {
         </div>
       </div>
       <footer className="absolute bottom-8 text-center text-sm text-muted-foreground animate-in fade-in-0 duration-500 delay-700">
-        <p>&copy; {new Date().getFullYear()} InternshipTrack. Empowering Futures.</p>
+        <p>&copy; {new Date().getFullYear()} InternHub - Ho Technical University. Empowering Futures.</p>
       </footer>
     </main>
   );
