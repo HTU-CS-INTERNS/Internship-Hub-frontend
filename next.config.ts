@@ -27,7 +27,7 @@ const withPWA = withPWAInit({
     name: APP_NAME,
     short_name: "InternHubHTU", // Updated
     description: APP_DESCRIPTION,
-    start_url: "/",
+    start_url: "/welcome", // <<<<< UPDATED THIS LINE
     display: "standalone",
     scope: "/",
     background_color: "#f5f5f5", // Corresponds to hsl(0 0% 96%)
