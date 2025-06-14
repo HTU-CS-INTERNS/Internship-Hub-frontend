@@ -3,8 +3,8 @@ import type { NextConfig } from 'next';
 // Correctly import the default export from @ducanh2912/next-pwa
 import withPWAInit from '@ducanh2912/next-pwa';
 
-const APP_NAME = "InternHub"; // Updated
-const APP_DESCRIPTION = "Streamlining Internship Management for Ho Technical University Students, Lecturers, and Companies."; // Updated
+const APP_NAME = "InternHub"; 
+const APP_DESCRIPTION = "Streamlining Internship Management for Ho Technical University Students, Lecturers, and Companies.";
 
 const withPWA = withPWAInit({
   dest: 'public',
@@ -13,25 +13,25 @@ const withPWA = withPWAInit({
   disable: process.env.NODE_ENV === 'development', // Disable PWA in development
   workboxOptions: {
     disableDevLogs: true, // Disable Workbox logs in development
-    importScripts: ['/custom-sw.js'], // Import custom service worker
+    // importScripts: ['/custom-sw.js'], // Removed custom service worker for troubleshooting
   },
   fallbacks: {
     // document: '/offline', // example: fallbacks to /_offline if the page is not cached
     // image: '/static/images/fallback.png',
     // font: '/static/fonts/fallback.woff2',
   },
-  cacheOnFrontEndNav: true, // Cache pages navigated to on the client-side
-  aggressiveFrontEndNavCaching: true, // More aggressive caching for client-side navigation
-  reloadOnOnline: true, // Reload the app when it comes back online
+  cacheOnFrontEndNav: true, 
+  aggressiveFrontEndNavCaching: true, 
+  reloadOnOnline: true, 
   manifest: {
     name: APP_NAME,
-    short_name: "InternHubHTU", // Updated
+    short_name: "InternHubHTU", 
     description: APP_DESCRIPTION,
-    start_url: "/welcome", // <<<<< UPDATED THIS LINE
+    start_url: "/welcome", // Explicitly set to /welcome
     display: "standalone",
     scope: "/",
-    background_color: "#f5f5f5", // Corresponds to hsl(0 0% 96%)
-    theme_color: "#4f46e5",     // Corresponds to hsl(225, 73%, 57%) - Primary color
+    background_color: "#f5f5f5", 
+    theme_color: "#4f46e5",     
     icons: [
       {
         src: "/icons/icon-192x192.png",
@@ -74,3 +74,4 @@ const nextConfig: NextConfig = {
 };
 
 export default withPWA(nextConfig);
+    

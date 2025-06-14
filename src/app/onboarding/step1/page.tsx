@@ -1,3 +1,4 @@
+
 'use client';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -55,11 +56,9 @@ export default function OnboardingStep1Page() {
               <OnboardingStepDot isActive={false} onGradientBg={true} />
             </div>
             <div className="flex items-center w-full max-w-xs mx-auto gap-x-2">
-                <Link href="/register" passHref className="flex-1">
-                    <Button variant="ghost" size="sm" className="font-body text-white/80 hover:text-white rounded-lg w-full h-10 sm:h-11 text-xs sm:text-sm">
-                    Skip
-                    </Button>
-                </Link>
+                <Button variant="link" asChild className="flex-1 p-0 h-auto font-body text-white/80 hover:text-white rounded-lg text-xs sm:text-sm">
+                    <Link href="/register">Skip</Link>
+                </Button>
                 <Link href="/onboarding/step2" passHref className="flex-1">
                     <Button variant="default" size="sm" className="font-body bg-white hover:bg-gray-100 text-orange-600 shadow-md rounded-lg w-full h-10 sm:h-11 text-xs sm:text-sm group">
                     Next <ArrowRight className="ml-1.5 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
@@ -73,3 +72,4 @@ export default function OnboardingStep1Page() {
     </main>
   );
 }
+    
