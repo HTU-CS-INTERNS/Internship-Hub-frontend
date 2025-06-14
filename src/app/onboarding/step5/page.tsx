@@ -41,7 +41,7 @@ export default function OnboardingStep5Page() {
         </div>
       </div>
 
-      <div className="w-full max-w-md text-center py-6">
+      <div className="w-full max-w-md mx-auto text-center py-6">
         <div className="flex justify-center items-center space-x-2 mb-8">
           <OnboardingStepDot isActive={false} />
           <OnboardingStepDot isActive={false} />
@@ -49,21 +49,21 @@ export default function OnboardingStep5Page() {
           <OnboardingStepDot isActive={false} />
           <OnboardingStepDot isActive={true} />
         </div>
-        <div className="flex items-center justify-between space-x-4">
-          <Link href="/onboarding/step4" passHref className="flex-1">
+        <div className="flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:space-x-4">
+          <Link href="/onboarding/step4" passHref className="w-full sm:w-auto flex-1">
             <Button variant="outline" size="lg" className="font-body text-primary border-primary hover:bg-primary/10 rounded-xl w-full group">
               <ArrowLeft className="mr-2 h-5 w-5 transition-transform group-hover:-translate-x-1" /> Back
             </Button>
           </Link>
-          <Link href="/register" passHref className="flex-1">
-            <Button size="lg" className="font-body text-lg px-10 py-3 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg rounded-xl w-full group">
-              Let&apos;s Start Your Journey!
+          <Link href="/register" passHref className="w-full sm:w-auto flex-1">
+            <Button size="lg" className="font-body text-lg px-8 py-3 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg rounded-xl w-full group">
+              Let&apos;s Start Your Journey! <Rocket className="ml-2 h-5 w-5 transition-transform group-hover:rotate-12" />
             </Button>
           </Link>
         </div>
       </div>
       <footer className="flex-shrink-0 py-8 text-center text-sm text-muted-foreground animate-in fade-in-0 duration-500 delay-700">
-        <p>&copy; {new Date().getFullYear()} InternHub. Your Success, Our Priority.</p>
+        <p>&copy; {new Date().getFullYear()} InternHub - Ho Technical University. Your Success, Our Priority.</p>
       </footer>
     </main>
   );

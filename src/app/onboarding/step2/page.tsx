@@ -41,7 +41,7 @@ export default function OnboardingStep2Page() {
         </div>
       </div>
 
-      <div className="w-full max-w-md text-center py-6">
+      <div className="w-full max-w-md mx-auto text-center py-6">
         <div className="flex justify-center items-center space-x-2 mb-8">
           <OnboardingStepDot isActive={false} />
           <OnboardingStepDot isActive={true} />
@@ -49,33 +49,28 @@ export default function OnboardingStep2Page() {
           <OnboardingStepDot isActive={false} />
           <OnboardingStepDot isActive={false} />
         </div>
-        <div className="flex items-center justify-between space-x-4">
-          <Link href="/onboarding/step1" passHref className="flex-1">
+        <div className="flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:space-x-4">
+          <Link href="/onboarding/step1" passHref className="w-full sm:w-auto flex-1">
             <Button variant="outline" size="lg" className="font-body text-primary border-primary hover:bg-primary/10 rounded-xl w-full group">
               <ArrowLeft className="mr-2 h-5 w-5 transition-transform group-hover:-translate-x-1" /> Back
             </Button>
           </Link>
-          <Link href="/register" passHref className="flex-1 sm:hidden"> {/* Skip for mobile, hidden on larger */}
-            <Button variant="ghost" size="lg" className="font-body text-muted-foreground hover:text-primary rounded-xl w-full">
-              Skip
-            </Button>
-          </Link>
-          <Link href="/onboarding/step3" passHref className="flex-1">
-            <Button size="lg" className="font-body text-lg px-10 py-3 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg rounded-xl w-full group">
+          <Link href="/onboarding/step3" passHref className="w-full sm:w-auto flex-1">
+            <Button size="lg" className="font-body text-lg px-8 py-3 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg rounded-xl w-full group">
               Next <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
             </Button>
           </Link>
         </div>
-         <div className="hidden sm:flex justify-center mt-4"> {/* Skip for desktop */}
-            <Link href="/register" passHref>
+        <div className="mt-4">
+             <Link href="/register" passHref>
                 <Button variant="ghost" size="sm" className="font-body text-muted-foreground hover:text-primary rounded-xl">
-                Skip
+                Skip to Registration
                 </Button>
             </Link>
         </div>
       </div>
       <footer className="flex-shrink-0 py-8 text-center text-sm text-muted-foreground animate-in fade-in-0 duration-500 delay-700">
-        <p>&copy; {new Date().getFullYear()} InternHub. Your Success, Our Priority.</p>
+        <p>&copy; {new Date().getFullYear()} InternHub - Ho Technical University. Your Success, Our Priority.</p>
       </footer>
     </main>
   );
