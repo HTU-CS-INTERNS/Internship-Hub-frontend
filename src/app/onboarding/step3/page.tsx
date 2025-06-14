@@ -11,8 +11,8 @@ const OnboardingStepDot = ({ isActive, onGradientBg }: { isActive: boolean; onGr
 
 export default function OnboardingStep3Page() {
   return (
-    <main className="relative flex flex-col min-h-screen bg-white overflow-hidden p-4">
-      <div className="flex-grow flex flex-col items-center justify-center text-center pt-8 sm:pt-10 md:pt-12">
+    <main className="relative flex flex-col min-h-screen bg-white overflow-hidden">
+      <div className="flex-grow flex flex-col items-center justify-center text-center pt-8 sm:pt-10 md:pt-12 px-4 sm:px-6 md:px-8">
         <div className="w-full max-w-[250px] sm:max-w-xs">
           <Image
             src="https://placehold.co/270x170.png"
@@ -25,10 +25,10 @@ export default function OnboardingStep3Page() {
         </div>
       </div>
 
-      <div className="relative w-full h-[55vh] sm:h-[50vh] md:h-[48vh] bg-green-500 rounded-t-[3rem] shadow-[0_-10px_25px_-5px_rgba(0,0,0,0.1),_0_-20px_15px_-10px_rgba(0,0,0,0.08)] flex flex-col">
+      <div className="relative w-full h-[60vh] sm:h-[55vh] md:h-[50vh] bg-green-500 rounded-t-[3rem] shadow-[-10px_-10px_30px_rgba(0,0,0,0.07)] flex flex-col">
         <div className="relative z-10 w-full max-w-md mx-auto flex flex-col justify-between h-full p-6 sm:p-8 text-center text-white">
           <div className="pt-3 sm:pt-4">
-            <div className="flex justify-center items-center mb-3">
+            <div className="flex justify-center items-center mb-2">
               <div className="p-2 bg-white/20 rounded-full shadow-md">
                 <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               </div>
@@ -36,7 +36,7 @@ export default function OnboardingStep3Page() {
             <h1 className="text-xl sm:text-2xl md:text-3xl font-headline font-bold tracking-tight">
               Stay Connected, Get Guided
             </h1>
-            <p className="text-sm sm:text-base font-body leading-relaxed mt-2 opacity-90 max-w-[95%] mx-auto">
+            <p className="text-sm sm:text-base font-body leading-relaxed mt-1.5 opacity-90 max-w-[95%] mx-auto">
               Communicate directly with your company supervisor and university lecturer. Receive timely feedback and get the support you need.
             </p>
           </div>
