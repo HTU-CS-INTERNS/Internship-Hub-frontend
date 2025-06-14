@@ -30,19 +30,19 @@ export default function WelcomePage() {
               </div>
             </div>
             <h1 className="text-4xl md:text-5xl font-headline font-bold text-primary tracking-tight mt-4">
-              Elevate Your Internship Experience
+              Elevate Your Internship Experience with InternHub
             </h1>
             <p className="text-lg md:text-xl text-foreground/80 font-body leading-relaxed max-w-md mx-auto">
-              InternHub: The Official Internship Platform for Ho Technical University.
+              The Official Internship Platform for Ho Technical University.
             </p>
           </div>
 
-          <div className="pt-6 animate-in fade-in-0 slide-in-from-bottom-12 duration-1000 delay-500 space-y-4 sm:space-y-0 sm:flex sm:flex-col sm:items-center sm:space-y-4">
-            <Link href="/onboarding/step1" passHref className="w-full sm:w-auto">
+          <div className="pt-6 animate-in fade-in-0 slide-in-from-bottom-12 duration-1000 delay-500 flex flex-col items-center space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4 sm:justify-center">
+            <Link href="/welcome/get-started" passHref className="w-full sm:w-auto">
               <Button
                 className="font-headline text-base px-8 py-3 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg transform hover:scale-105 active:scale-95 transition-transform duration-300 rounded-xl w-full group"
               >
-                Get Started with InternHub <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+                Discover InternHub <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
               </Button>
             </Link>
             <Link href="/login" passHref className="w-full sm:w-auto">
