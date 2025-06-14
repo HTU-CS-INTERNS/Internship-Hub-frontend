@@ -18,13 +18,13 @@ body {
     --popover: 0 0% 100%; /* White */
     --popover-foreground: 0 0% 15%; /* Darker text for popovers */
 
-    /* Primary color from proposal - Soft Blue */
+    /* Primary color - Soft Blue */
     --primary: 207 90% 69%; /* hsl(207, 90%, 69%) for #64B5F6 */
     --primary-foreground: 0 0% 100%; /* White text on primary */
     
-    /* Accent color from proposal - Warm Orange */
+    /* Accent color - Warm Orange */
     --accent: 33 100% 67%; /* hsl(33, 100%, 67%) for #FFB74D */
-    --accent-foreground: 0 0% 20%; /* Dark text on accent for better readability if needed, can be white too */
+    --accent-foreground: 0 0% 20%; /* Dark text on accent */
 
     --secondary: 207 70% 95%; /* Lighter soft blue for secondary elements */
     --secondary-foreground: 207 50% 25%; /* Darker text for secondary */

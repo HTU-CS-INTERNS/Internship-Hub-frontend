@@ -6,20 +6,21 @@ import { LogIn } from 'lucide-react';
 
 export default function LoginPage() {
   return (
-    <>
-      {/* Top white section with large icon */}
-      <div className="flex-grow flex flex-col items-center justify-center pt-10 pb-6 sm:pt-16 sm:pb-8 px-4">
+    <main className="relative flex flex-col min-h-screen bg-white overflow-hidden">
+      {/* Top white section */}
+      <div className="flex-grow flex flex-col items-center justify-center text-center pt-10 pb-6 sm:pt-16 sm:pb-8 px-4">
         <div 
           className="relative w-32 h-32 sm:w-40 sm:h-40 bg-white rounded-full flex items-center justify-center"
-          style={{ filter: 'drop-shadow(0px 0px 25px rgba(100, 181, 246, 0.35))' }} // Glow with primary color (soft blue)
+          style={{ filter: 'drop-shadow(0px 0px 25px rgba(100, 181, 246, 0.35))' }} // Soft Blue: rgba(100, 181, 246, 0.35)
         >
           <LogIn className="h-16 w-16 sm:h-20 sm:w-20 text-primary" strokeWidth={1.5} />
         </div>
       </div>
 
-      {/* Bottom colored rectangle for the form */}
+      {/* Bottom colored rectangle */}
       <div className="relative w-full bg-primary rounded-t-[3rem] shadow-[-10px_-10px_30px_rgba(0,0,0,0.07)] text-primary-foreground">
-        <div className="relative z-10 w-full max-w-md mx-auto flex flex-col p-6 sm:p-8 min-h-[60vh] sm:min-h-[55vh]">
+        {/* Inner container for content with padding and max-width */}
+        <div className="relative z-10 w-full max-w-md mx-auto flex flex-col p-6 sm:p-8 min-h-[65vh] sm:min-h-[60vh]">
           <div className="text-center mb-6 sm:mb-8">
             <h1 className="text-2xl sm:text-3xl font-headline font-bold tracking-tight">
               Welcome Back!
@@ -40,7 +41,7 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
-    </>
+    </main>
   );
 }
     
