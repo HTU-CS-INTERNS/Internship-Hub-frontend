@@ -3,25 +3,22 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, ArrowLeft, ListChecks } from 'lucide-react';
-import Image from 'next/image';
 
 const OnboardingStepDot = ({ isActive, onGradientBg }: { isActive: boolean; onGradientBg?: boolean }) => (
   <div className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${isActive ? (onGradientBg ? 'bg-yellow-900 scale-110' : 'bg-yellow-700 scale-110') : (onGradientBg ? 'bg-yellow-800/50' : 'bg-yellow-200')}`} />
 );
 
+// Hex for yellow-400: #FACC15
+const iconGlowStyle = {
+  filter: 'drop-shadow(0px 0px 20px rgba(250,204,21,0.5))',
+};
+
 export default function OnboardingStep2Page() {
   return (
     <main className="relative flex flex-col min-h-screen bg-white overflow-hidden">
-      <div className="flex-grow flex flex-col items-center justify-center text-center pt-8 sm:pt-12 px-4 sm:px-6 md:px-8">
-        <div className="w-full max-w-[240px] sm:max-w-xs">
-          <Image
-            src="https://placehold.co/260x170.png"
-            alt="App mock-up of task or report submission"
-            width={260}
-            height={170}
-            className="rounded-lg shadow-lg object-contain aspect-[13/9]"
-            data-ai-hint="app interface task report progress"
-          />
+      <div className="flex-grow flex flex-col items-center justify-center text-center pt-12 sm:pt-16 px-4 sm:px-6 md:px-8">
+        <div className="w-full max-w-[200px] sm:max-w-xs mb-6 sm:mb-8" style={iconGlowStyle}>
+          <ListChecks className="h-32 w-32 sm:h-40 sm:w-40 text-yellow-400 mx-auto" strokeWidth={1.5}/>
         </div>
       </div>
 
@@ -29,14 +26,14 @@ export default function OnboardingStep2Page() {
         <div className="relative z-10 w-full max-w-md mx-auto flex flex-col justify-between h-full p-6 sm:p-8 text-center text-yellow-900">
           <div className="sm:pt-2">
             <div className="flex justify-center items-center mb-2">
-              <div className="p-2 bg-yellow-800/20 rounded-full shadow-md">
-                <ListChecks className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-900" />
+              <div className="p-1.5 bg-yellow-800/20 rounded-full shadow-md">
+                <ListChecks className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-900" />
               </div>
             </div>
             <h1 className="text-xl sm:text-2xl md:text-3xl font-headline font-bold tracking-tight">
               Effortlessly Track Your Progress
             </h1>
-            <p className="text-sm sm:text-base font-body leading-relaxed mt-1.5 opacity-90 max-w-[95%] mx-auto">
+            <p className="text-sm sm:text-base font-body leading-relaxed mt-1 opacity-90 max-w-[95%] mx-auto">
               Log daily tasks, capture learning objectives, and submit detailed reports. Showcase your work.
             </p>
           </div>

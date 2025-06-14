@@ -4,11 +4,39 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { GraduationCap, ArrowRight, LogIn } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import AppLoadingScreen from '@/components/shared/app-loading-screen';
 
 export default function WelcomePage() {
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Check if user is already logged in
+    if (typeof window !== "undefined") {
+      const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+      if (isLoggedIn) {
+        router.replace('/dashboard'); // Redirect to dashboard if logged in
+      } else {
+        setIsLoading(false); // Show welcome page if not logged in
+      }
+    } else {
+      setIsLoading(false); // Fallback for SSR or environments without localStorage
+    }
+  }, [router]);
+
+  if (isLoading) {
+    return <AppLoadingScreen />; // Or any loading indicator
+  }
+
   return (
-    <main className="flex flex-col min-h-screen bg-primary text-primary-foreground p-4">
-      <div className="flex-grow flex flex-col items-center justify-center text-center pt-[5vh] sm:pt-[8vh]">
+    <main className="relative flex flex-col min-h-screen bg-primary text-primary-foreground p-4 overflow-hidden">
+      {/* Decorative subtle gradient background elements if desired */}
+      {/* <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-br from-primary via-primary/80 to-primary/60 opacity-30 z-[-1]"></div> */}
+      {/* <div className="absolute bottom-0 right-0 w-1/2 h-full bg-gradient-to-tl from-accent/30 via-transparent to-transparent z-[-1]"></div> */}
+
+      <div className="flex-grow flex flex-col items-center justify-center text-center pt-[5vh] sm:pt-[8vh] z-0">
         <div className="relative z-10 mb-6 animate-in fade-in-0 slide-in-from-top-12 duration-1000">
           <div className="p-3 bg-primary-foreground/20 rounded-full inline-block shadow-lg backdrop-blur-sm">
             <GraduationCap className="h-12 w-12 sm:h-14 sm:w-14 text-primary-foreground" />
