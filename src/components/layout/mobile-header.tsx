@@ -16,7 +16,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useRouter } from 'next/navigation';
-// Removed Firebase Auth import
 
 const getInitials = (name: string) => {
     if (!name) return 'U';
@@ -48,7 +47,7 @@ export default function MobileHeader({ userRole }: MobileHeaderProps) {
       localStorage.removeItem('theme');
       localStorage.removeItem('userName');
       localStorage.removeItem('userEmail');
-      localStorage.removeItem('isLoggedIn'); // Clear login status
+      localStorage.removeItem('isLoggedIn'); 
     }
     document.documentElement.classList.remove('dark');
     router.push('/login');
@@ -58,7 +57,7 @@ export default function MobileHeader({ userRole }: MobileHeaderProps) {
     <header className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between h-[var(--mobile-header-height)] px-4 bg-primary text-primary-foreground shadow-md">
       <Link href="/dashboard" className="flex items-center space-x-2">
         <Briefcase className="h-6 w-6" />
-        <h1 className="font-bold text-xl font-headline">InternshipTrack</h1>
+        <h1 className="font-bold text-xl font-headline">InternHub</h1>
       </Link>
       <div className="flex items-center space-x-1">
         <Link href="/schedule" passHref>

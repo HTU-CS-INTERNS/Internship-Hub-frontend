@@ -221,7 +221,7 @@ export default function ProfilePage() {
     <div className="space-y-8 p-4 md:p-6">
       <PageHeader
         title="My Profile"
-        description="View and manage your personal and internship information."
+        description="View and manage your personal and internship information on InternHub."
         icon={UserIcon}
         breadcrumbs={[{ href: "/dashboard", label: "Dashboard" }, { label: "Profile" }]}
       />
@@ -467,7 +467,7 @@ export default function ProfilePage() {
           </CardHeader>
           <CardContent className="p-6">
             <p className="text-muted-foreground">
-              As a {USER_ROLES[userRole]}, your primary role involves { userRole === 'LECTURER' ? 'managing student assignments, tracking progress, and facilitating communication.' : userRole === 'HOD' ? 'overseeing departmental internship activities, managing assignments, and analyzing overall program performance.' : userRole === 'ADMIN' ? 'managing the entire InternshipTrack platform, including university structure, user accounts, and system settings.' : '' }
+              As a {USER_ROLES[userRole]}, your primary role involves { userRole === 'LECTURER' ? 'managing student assignments, tracking progress, and facilitating communication.' : userRole === 'HOD' ? 'overseeing departmental internship activities, managing assignments, and analyzing overall program performance.' : userRole === 'ADMIN' ? 'managing the entire InternHub platform, including university structure, user accounts, and system settings.' : '' }
               You can manage relevant aspects via the appropriate sections like '{userRole === 'LECTURER' ? 'Assignments' : userRole === 'HOD' ? 'Department Ops' : 'Admin Dashboard'}' and use the 'Feedback Hub' for communication.
             </p>
              {isEditingProfile && <p className="mt-4 text-sm text-destructive">Please save your profile information first to proceed.</p>}
@@ -477,5 +477,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    

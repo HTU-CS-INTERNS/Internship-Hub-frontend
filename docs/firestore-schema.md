@@ -1,7 +1,7 @@
 
-# InternshipTrack - Firestore Database Schema
+# InternHub - Firestore Database Schema
 
-This document outlines a conceptual NoSQL database schema for the InternshipTrack application using Cloud Firestore.
+This document outlines a conceptual NoSQL database schema for the InternHub application using Cloud Firestore.
 
 ## General Notes:
 
@@ -249,5 +249,4 @@ This document outlines a conceptual NoSQL database schema for the InternshipTrac
 ---
 
 This Firestore schema attempts to balance normalization with the typical denormalization patterns for efficient querying in NoSQL. Specific query patterns will further refine this schema during development.
-
     

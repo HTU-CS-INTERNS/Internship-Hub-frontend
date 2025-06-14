@@ -493,7 +493,7 @@ const LecturerDashboard: React.FC<{ userName: string }> = ({ userName }) => {
         <>
             <Card className="bg-gradient-to-r from-primary to-accent rounded-xl p-6 text-primary-foreground shadow-lg">
                 <h2 className="text-2xl font-bold mb-1">Welcome, {userName.split(' ')[0]}!</h2>
-                <p className="opacity-90 text-sm">Oversee your assigned students and their progress.</p>
+                <p className="opacity-90 text-sm">Oversee your assigned students and their progress on InternHub.</p>
             </Card>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <DashboardStatsCard title="Assigned Students" value={assignedStudents.length} icon={UsersIcon} iconBgColor="bg-blue-100 dark:bg-blue-900" iconColor="text-blue-500 dark:text-blue-300" actionLink="/assignments" actionLabel="Manage Assignments"/>
@@ -565,7 +565,7 @@ const SupervisorDashboard: React.FC<{ userName: string }> = ({ userName }) => {
         <>
             <Card className="bg-gradient-to-r from-primary to-accent rounded-xl p-6 text-primary-foreground shadow-lg">
                 <h2 className="text-2xl font-bold mb-1">Welcome, {userName.split(' ')[0]}!</h2>
-                <p className="opacity-90 text-sm">Manage your assigned interns and their submissions.</p>
+                <p className="opacity-90 text-sm">Manage your assigned interns and their submissions on InternHub.</p>
             </Card>
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <DashboardStatsCard title="Assigned Interns" value={supervisedInterns.length} icon={Users2} iconBgColor="bg-green-100 dark:bg-green-900" iconColor="text-green-500 dark:text-green-300" actionLink="/supervisor/interns" actionLabel="View My Interns"/>
@@ -650,7 +650,7 @@ const HODDashboard: React.FC<{ userName: string }> = ({ userName }) => {
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
                     <div>
                         <h2 className="text-2xl font-bold mb-1">Welcome, {userName.split(' ')[0]}!</h2>
-                        <p className="opacity-90 text-sm">Departmental Internship Overview: {hodDepartmentName}</p>
+                        <p className="opacity-90 text-sm">Departmental Internship Overview: {hodDepartmentName} on InternHub.</p>
                     </div>
                     <Link href="/analytics" passHref>
                         <Button className="mt-3 md:mt-0 bg-primary-foreground text-primary hover:bg-primary-foreground/90 font-medium transition shrink-0 rounded-lg">
@@ -752,8 +752,6 @@ export default function DashboardPage() {
       case 'HOD':
         return <HODDashboard userName={userName} />;
       default:
-        // For ADMIN, the dashboard is at /admin/dashboard
-        // This page might redirect or show a generic message if an ADMIN lands here directly.
         if (userRole === 'ADMIN') {
             return <div className="text-center p-8"><p>Redirecting to Admin Dashboard...</p><script>{`setTimeout(() => window.location.href = '/admin/dashboard', 100);`}</script></div>;
         }
@@ -769,7 +767,7 @@ export default function DashboardPage() {
     <div className="space-y-6 p-4 md:p-6 bg-background text-foreground">
         <PageHeader
             title={`${USER_ROLES[userRole!] || 'User'} Dashboard`}
-            description={`Welcome to your InternshipTrack ${USER_ROLES[userRole!]?.toLowerCase()} dashboard.`}
+            description={`Welcome to your InternHub ${USER_ROLES[userRole!]?.toLowerCase()} dashboard.`}
             icon={LayoutDashboard}
         />
         {renderDashboardContent()}

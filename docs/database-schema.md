@@ -1,7 +1,7 @@
 
-# InternshipTrack - Relational Database Schema (PostgreSQL/MySQL)
+# InternHub - Relational Database Schema (PostgreSQL/MySQL)
 
-This document outlines a conceptual relational database schema for the InternshipTrack application.
+This document outlines a conceptual relational database schema for the InternHub application.
 
 ## General Notes:
 

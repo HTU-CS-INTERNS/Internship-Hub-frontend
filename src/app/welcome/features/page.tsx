@@ -32,7 +32,7 @@ export default function WelcomePage2() {
             </h1>
           </div>
           <p className="text-lg text-foreground/80 font-body leading-relaxed">
-            InternshipTrack provides all the tools you need for a successful internship experience.
+            InternHub provides all the tools you need for a successful internship experience.
           </p>
         </div>
 
@@ -52,7 +52,7 @@ export default function WelcomePage2() {
         </div>
       </div>
       <footer className="absolute bottom-8 text-center text-sm text-muted-foreground animate-in fade-in-0 duration-500 delay-700">
-        <p>&copy; {new Date().getFullYear()} InternshipTrack. Your Success, Our Priority.</p>
+        <p>&copy; {new Date().getFullYear()} InternHub. Your Success, Our Priority.</p>
       </footer>
     </main>
   );

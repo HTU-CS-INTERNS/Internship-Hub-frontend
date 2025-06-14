@@ -1,8 +1,8 @@
 
 {
-  "name": "internshiptrack-backend",
+  "name": "internhub-backend",
   "version": "1.0.0",
-  "description": "Backend service for InternshipTrack application",
+  "description": "Backend service for InternHub application",
   "main": "dist/server.js",
   "scripts": {
     "build": "tsc",

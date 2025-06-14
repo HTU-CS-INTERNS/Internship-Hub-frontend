@@ -7,7 +7,7 @@ import { ArrowRight, LogIn } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AppLoadingScreen from '@/components/shared/app-loading-screen';
-import Image from 'next/image'; // Import NextImage
+import Image from 'next/image'; 
 
 export default function WelcomePage() {
   const router = useRouter();
@@ -35,12 +35,11 @@ export default function WelcomePage() {
       <div className="flex-grow flex flex-col items-center justify-center text-center pt-[5vh] sm:pt-[8vh] z-0">
         <div className="relative z-10 mb-6 animate-in fade-in-0 slide-in-from-top-12 duration-1000">
           <div className="p-2 bg-primary-foreground/20 rounded-full inline-block shadow-lg backdrop-blur-sm">
-            {/* HTU Logo */}
             <Image 
               src="https://firebase.so/docs/studio/guides/images/internship-track-logo.png" 
               alt="Ho Technical University Logo" 
-              width={64} // Adjust size as needed
-              height={64} // Adjust size as needed
+              width={64} 
+              height={64} 
               className="h-12 w-12 sm:h-14 sm:w-14" 
               priority
             />

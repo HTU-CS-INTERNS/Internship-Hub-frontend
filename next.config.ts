@@ -3,7 +3,7 @@ import type { NextConfig } from 'next';
 import withPWAInit from '@ducanh2912/next-pwa';
 
 const APP_NAME = "InternHub - HTU"; 
-const APP_DESCRIPTION = "Streamlining Internship Management for Ho Technical University Students, Lecturers, and Companies.";
+const APP_DESCRIPTION = "Streamlining Internship Management for Ho Technical University Students, Lecturers, and Companies with InternHub.";
 
 const withPWA = withPWAInit({
   dest: 'public',

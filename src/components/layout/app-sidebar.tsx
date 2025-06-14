@@ -20,7 +20,7 @@ import { NAV_LINKS, BOTTOM_NAV_LINKS, USER_ROLES } from '@/lib/constants';
 import type { NavItem, UserRole } from '@/types';
 import { LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import Image from 'next/image'; // Import NextImage
+import Image from 'next/image'; 
 
 const getInitials = (name: string) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase() : 'U';
 

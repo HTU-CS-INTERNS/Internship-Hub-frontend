@@ -42,7 +42,7 @@ app.use('/api/evaluations', evaluationRoutes); // Added
 
 // Health Check Endpoint
 app.get('/api/health', (req: Request, res: Response) => {
-  res.status(200).json({ status: 'Backend is healthy!', timestamp: new Date().toISOString() });
+  res.status(200).json({ status: 'Backend for InternHub is healthy!', timestamp: new Date().toISOString() });
 });
 
 // Global Error Handler (basic example)
@@ -53,5 +53,5 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
 
 // Start Server
 app.listen(port, () => {
-  console.log(`Backend server listening on http://localhost:${port}`);
+  console.log(`InternHub Backend server listening on http://localhost:${port}`);
 });

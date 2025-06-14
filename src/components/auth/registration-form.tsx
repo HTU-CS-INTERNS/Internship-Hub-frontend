@@ -24,8 +24,8 @@ import Link from 'next/link';
 import { FACULTIES, DEPARTMENTS, USER_ROLES } from '@/lib/constants';
 import type { UserRole } from '@/types';
 import { sendOtp } from '@/ai/flows/send-otp-flow';
-import { Checkbox } from '@/components/ui/checkbox'; // Added Checkbox import
-import { Label } from '@/components/ui/label'; // Added Label import
+import { Checkbox } from '@/components/ui/checkbox'; 
+import { Label } from '@/components/ui/label'; 
 
 
 const registrationStep1Schema = z.object({

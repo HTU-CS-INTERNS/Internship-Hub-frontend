@@ -12,7 +12,6 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-// IMPORTANT: Replace this with your own VAPID public key generated for your application
 const VAPID_PUBLIC_KEY = "BNoC_U9XFj_6408ZGJIfc9kRzR9NHDb5c51l_f2FqXQ10f8239F5K8Y8Y8h8h7g7g7g7g7g7g7g7g7g7g7g7g7g7g";
 
 
@@ -21,7 +20,7 @@ export default function SettingsPage() {
   const [theme, setTheme] = React.useState<'light' | 'dark'>('light');
   const [notifications, setNotifications] = React.useState({
     email: true,
-    push: false, // Default to false, user enables it
+    push: false, 
     sms: false,
   });
   const [pushPermissionStatus, setPushPermissionStatus] = React.useState<NotificationPermission | null>(null);
@@ -94,8 +93,6 @@ export default function SettingsPage() {
             applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
           });
           console.log('New push subscription:', subscription);
-          // TODO: Send this subscription to your backend server
-          // For now, we just log it and update UI state
           toast({ title: 'Subscribed!', description: 'Successfully subscribed to push notifications. (Subscription logged to console)' });
           setNotifications(prev => ({ ...prev, push: true }));
         }
@@ -117,7 +114,7 @@ export default function SettingsPage() {
     <div className="space-y-8 p-4 md:p-6">
       <PageHeader
         title="Settings"
-        description="Manage your account preferences and application settings."
+        description="Manage your InternHub account preferences and application settings."
         icon={SettingsIcon}
         breadcrumbs={[{ href: "/dashboard", label: "Dashboard" }, { label: "Settings" }]}
       />

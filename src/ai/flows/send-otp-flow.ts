@@ -37,7 +37,7 @@ const otpEmailPrompt = ai.definePrompt({
   name: 'otpEmailPrompt',
   input: { schema: z.object({ email: SendOtpInputSchema.shape.email, otp: SendOtpOutputSchema.shape.otp }) },
   output: { schema: z.object({ emailBody: z.string() }) },
-  prompt: `Draft a short and friendly email to {{email}} containing the following One-Time Password (OTP): {{otp}}. The email should state that the OTP is for verifying their email address for InternshipTrack and that it's valid for a short period (e.g., 10 minutes).`,
+  prompt: `Draft a short and friendly email to {{email}} containing the following One-Time Password (OTP): {{otp}}. The email should state that the OTP is for verifying their email address for InternHub and that it's valid for a short period (e.g., 10 minutes).`,
 });
 
 const sendOtpFlow = ai.defineFlow(

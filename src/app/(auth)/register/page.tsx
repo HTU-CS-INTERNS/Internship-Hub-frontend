@@ -9,10 +9,10 @@ export default function RegisterPage() {
     <main className="relative flex flex-col min-h-screen bg-white overflow-hidden">
       <div className="flex-grow flex flex-col items-center justify-center text-center pt-10 pb-6 sm:pt-12 px-4">
         <div 
-          className="relative w-32 h-32 sm:w-40 sm:h-40 bg-white rounded-full flex items-center justify-center"
-          style={{ filter: 'drop-shadow(0px 0px 25px rgba(217, 38, 38, 0.35))' }} // Glow with HTU Red RGBA
+          className="relative w-32 h-32 sm:w-40 sm:h-40 bg-white rounded-full flex items-center justify-center shadow-lg"
+          style={{ filter: 'drop-shadow(0px 0px 25px rgba(255, 183, 77, 0.35))' }} 
         >
-          <UserPlus className="h-16 w-16 sm:h-20 sm:w-20 text-accent" strokeWidth={1.5} /> {/* Icon color from accent CSS var */}
+          <UserPlus className="h-16 w-16 sm:h-20 sm:w-20 text-accent" strokeWidth={1.5} /> 
         </div>
       </div>
 
@@ -23,7 +23,7 @@ export default function RegisterPage() {
         <div className="relative z-10 w-full max-w-md mx-auto flex flex-col flex-grow p-6 sm:p-8">
           <div className="text-center mb-6 sm:mb-8">
             <h1 className="text-xl sm:text-2xl md:text-3xl font-headline font-bold tracking-tight">
-              Create Your Account
+              Create Your InternHub Account
             </h1>
             <p className="text-sm sm:text-base opacity-90 mt-1.5">
               Start your internship journey with InternHub.
