@@ -51,19 +51,19 @@ export default function OnboardingStep2Page() {
         </div>
         <div className="flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:space-x-4">
           <Link href="/onboarding/step1" passHref className="w-full sm:w-auto flex-1">
-            <Button variant="outline" size="lg" className="font-body text-primary border-primary hover:bg-primary/10 rounded-xl w-full group">
+            <Button variant="ghost" className="font-body text-primary hover:bg-primary/10 rounded-xl w-full h-auto py-3 group">
               <ArrowLeft className="mr-2 h-5 w-5 transition-transform group-hover:-translate-x-1" /> Back
             </Button>
           </Link>
           <Link href="/onboarding/step3" passHref className="w-full sm:w-auto flex-1">
-            <Button size="lg" className="font-body text-lg px-8 py-3 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg rounded-xl w-full group">
+            <Button className="font-body text-base px-8 py-3 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg rounded-xl w-full group">
               Next <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
             </Button>
           </Link>
         </div>
-        <div className="mt-4">
+         <div className="mt-4">
              <Link href="/register" passHref>
-                <Button variant="ghost" size="sm" className="font-body text-muted-foreground hover:text-primary rounded-xl">
+                <Button variant="link" size="sm" className="font-body text-muted-foreground hover:text-primary rounded-xl h-auto py-2">
                 Skip to Registration
                 </Button>
             </Link>

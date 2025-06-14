@@ -49,14 +49,14 @@ export default function OnboardingStep1Page() {
           <OnboardingStepDot isActive={false} />
           <OnboardingStepDot isActive={false} />
         </div>
-        <div className="flex flex-col sm:flex-row items-center justify-between space-y-3 sm:space-y-0 sm:space-x-4">
-          <Link href="/onboarding/step2" passHref className="w-full sm:w-auto flex-1 order-2 sm:order-1">
-            <Button size="lg" className="font-body text-lg px-8 py-3 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg rounded-xl w-full group">
+        <div className="flex flex-col space-y-3 sm:flex-row-reverse sm:space-y-0 sm:space-x-4 sm:space-x-reverse">
+          <Link href="/onboarding/step2" passHref className="w-full sm:w-auto flex-1">
+            <Button className="font-body text-base px-8 py-3 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg rounded-xl w-full group">
               Next <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
             </Button>
           </Link>
-          <Link href="/register" passHref className="w-full sm:w-auto flex-1 order-1 sm:order-2">
-            <Button variant="outline" size="lg" className="font-body text-muted-foreground hover:text-primary rounded-xl w-full">
+          <Link href="/register" passHref className="w-full sm:w-auto flex-1">
+            <Button variant="link" className="font-body text-muted-foreground hover:text-primary rounded-xl w-full h-auto py-3">
               Skip
             </Button>
           </Link>
