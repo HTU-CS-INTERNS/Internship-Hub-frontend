@@ -51,7 +51,7 @@ export default function WelcomePage() {
       {/* Buttons Area */}
       <div className="w-full max-w-xs mx-auto text-center py-6 sm:py-8 z-0 animate-in fade-in-0 slide-in-from-bottom-12 duration-1000 delay-500">
         <div className="flex flex-col items-center space-y-3 sm:space-y-4">
-          <Link href="/welcome/get-started" passHref className="w-full">
+          <Link href="/onboarding/step1" passHref className="w-full">
             <Button
               className="font-body text-sm px-6 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground shadow-md rounded-lg w-full group"
             >
@@ -75,3 +75,4 @@ export default function WelcomePage() {
     </main>
   );
 }
+    

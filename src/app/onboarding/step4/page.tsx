@@ -52,7 +52,7 @@ export default function OnboardingStep4Page() {
               Build Your Verifiable Record
             </h1>
             <p className="text-xs text-foreground/80 font-body leading-normal">
-              Securely check-in and verify presence. Your privacy is paramount.
+              Securely check-in at your internship site and verify your presence to build a strong, trusted record of your dedication. Your privacy is paramount.
             </p>
           </div>
         </div>
@@ -92,3 +92,4 @@ export default function OnboardingStep4Page() {
     </main>
   );
 }
+    

@@ -52,7 +52,7 @@ export default function OnboardingStep3Page() {
               Stay Connected, Get Guided
             </h1>
             <p className="text-xs text-foreground/80 font-body leading-normal">
-              Communicate with supervisors and lecturers. Receive timely feedback and support.
+              Communicate directly with your company supervisor and university lecturer. Receive timely feedback and get the support you need.
             </p>
           </div>
         </div>
@@ -92,3 +92,4 @@ export default function OnboardingStep3Page() {
     </main>
   );
 }
+    

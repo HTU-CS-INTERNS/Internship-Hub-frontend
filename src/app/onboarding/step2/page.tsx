@@ -49,7 +49,7 @@ export default function OnboardingStep2Page() {
               </div>
             </div>
             <h1 className="text-lg font-headline font-bold text-primary tracking-tight mt-1">
-              Effortlessly Track Progress
+              Effortlessly Track Your Progress
             </h1>
             <p className="text-xs text-foreground/80 font-body leading-normal">
               Log daily tasks, capture learning objectives, and submit detailed reports. Showcase your work.
@@ -92,3 +92,4 @@ export default function OnboardingStep2Page() {
     </main>
   );
 }
+    
