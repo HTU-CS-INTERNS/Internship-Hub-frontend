@@ -1,4 +1,3 @@
-
 'use client';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -14,8 +13,9 @@ export default function OnboardingStep1Page() {
   return (
     <main className="relative flex flex-col min-h-screen bg-background overflow-x-clip p-4">
       <TopWave />
-      <div className="flex-grow flex flex-col items-center justify-center text-center z-0 pt-12 sm:pt-16">
-        <div className="w-full max-w-xs">
+      {/* Content Wrapper */}
+      <div className="relative z-0 flex-grow flex flex-col items-center justify-center pt-16 sm:pt-20 md:pt-24"> {/* Increased top padding */}
+        <div className="w-full max-w-xs text-center">
           <div className="flex justify-center mb-4 sm:mb-5">
             <Image
               src="https://placehold.co/280x175.png"
@@ -33,7 +33,7 @@ export default function OnboardingStep1Page() {
                 <GraduationCap className="h-5 w-5 text-primary-foreground" />
               </div>
             </div>
-            <h1 className="text-lg sm:text-xl font-headline font-bold text-primary tracking-tight mt-1">
+            <h1 className="text-xl sm:text-2xl font-headline font-bold text-primary tracking-tight mt-1">
               Unlock Your Internship Potential!
             </h1>
             <p className="text-xs sm:text-sm text-foreground/80 font-body leading-normal">
@@ -43,7 +43,8 @@ export default function OnboardingStep1Page() {
         </div>
       </div>
 
-      <div className="w-full max-w-xs mx-auto text-center py-4 z-0">
+      {/* Navigation Footer */}
+      <div className="relative z-0 w-full max-w-xs mx-auto text-center py-4">
         <div className="flex justify-center items-center space-x-1.5 mb-4 sm:mb-5">
           <OnboardingStepDot isActive={true} />
           <OnboardingStepDot isActive={false} />
@@ -64,7 +65,7 @@ export default function OnboardingStep1Page() {
           </Link>
         </div>
       </div>
-      <footer className="flex-shrink-0 py-4 text-center text-xs text-muted-foreground z-0">
+      <footer className="relative z-0 flex-shrink-0 py-6 text-center text-xs text-muted-foreground">
         <p>&copy; {new Date().getFullYear()} InternHub - HTU</p>
       </footer>
     </main>
