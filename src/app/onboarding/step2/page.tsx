@@ -1,4 +1,3 @@
-
 'use client';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -27,7 +26,7 @@ export default function OnboardingStep2Page() {
 
       <div className="relative w-full h-[55vh] sm:h-[50vh] md:h-[45vh] bg-yellow-400 rounded-t-[3rem] shadow-[-10px_-10px_30px_rgba(0,0,0,0.07)] flex flex-col">
         <div className="relative z-10 w-full max-w-md mx-auto flex flex-col justify-between h-full p-6 sm:p-8 text-center text-yellow-900">
-          <div className="sm:pt-4">
+          <div className="sm:pt-2">
             <div className="flex justify-center items-center mb-2">
               <div className="p-2 bg-yellow-800/20 rounded-full shadow-md">
                 <ListChecks className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-900" />
@@ -39,40 +38,37 @@ export default function OnboardingStep2Page() {
             <p className="text-sm sm:text-base font-body leading-relaxed mt-1.5 opacity-90 max-w-[95%] mx-auto">
               Log daily tasks, capture learning objectives, and submit detailed reports. Showcase your work.
             </p>
-            <div className="mt-4 flex justify-center">
-                <Link href="/onboarding/step3" passHref>
-                    <Button variant="ghost" size="icon" className="bg-yellow-800/20 hover:bg-yellow-800/30 text-yellow-900 rounded-full h-10 w-10 sm:h-12 sm:w-12">
-                    <ArrowRight className="h-5 w-5 sm:h-6 sm:w-6" />
-                    </Button>
-                </Link>
-            </div>
           </div>
           
           <div className="pb-2 text-center mt-auto">
-            <div className="flex justify-center items-center space-x-2 mb-3">
+            <div className="flex justify-center items-center space-x-2 mb-4">
               <OnboardingStepDot isActive={false} onGradientBg={true}/>
               <OnboardingStepDot isActive={true} onGradientBg={true}/>
               <OnboardingStepDot isActive={false} onGradientBg={true}/>
               <OnboardingStepDot isActive={false} onGradientBg={true}/>
               <OnboardingStepDot isActive={false} onGradientBg={true}/>
             </div>
-            <div className="flex items-center justify-between w-full max-w-xs mx-auto">
-              <Link href="/onboarding/step1" passHref>
-                <Button variant="link" size="sm" className="font-body text-yellow-800/80 hover:text-yellow-900 rounded-lg group h-auto py-1 text-xs">
-                  <ArrowLeft className="mr-1 h-3 w-3 transition-transform group-hover:-translate-x-0.5" /> Back
-                </Button>
-              </Link>
-              <Link href="/register" passHref>
-                <Button variant="link" size="sm" className="font-body text-yellow-800/80 hover:text-yellow-900 rounded-lg h-auto py-1 text-xs">
-                  Skip
-                </Button>
-              </Link>
+            <div className="flex items-center w-full max-w-xs mx-auto gap-x-2">
+                <Link href="/onboarding/step1" passHref className="flex-1">
+                    <Button variant="ghost" size="sm" className="font-body text-yellow-800/80 hover:text-yellow-900 rounded-lg w-full h-10 sm:h-11 text-xs sm:text-sm group">
+                    <ArrowLeft className="mr-1.5 h-4 w-4 transition-transform group-hover:-translate-x-0.5" /> Back
+                    </Button>
+                </Link>
+                <Link href="/register" passHref className="flex-1">
+                    <Button variant="ghost" size="sm" className="font-body text-yellow-800/80 hover:text-yellow-900 rounded-lg w-full h-10 sm:h-11 text-xs sm:text-sm">
+                    Skip
+                    </Button>
+                </Link>
+                <Link href="/onboarding/step3" passHref className="flex-1">
+                    <Button variant="default" size="sm" className="font-body bg-yellow-800/20 hover:bg-yellow-800/30 text-yellow-900 shadow-md rounded-lg w-full h-10 sm:h-11 text-xs sm:text-sm group">
+                    Next <ArrowRight className="ml-1.5 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                    </Button>
+                </Link>
             </div>
-            <p className="text-xs text-yellow-800/70 mt-3">&copy; {new Date().getFullYear()} InternHub - HTU</p>
+            <p className="text-xs text-yellow-800/70 mt-4">&copy; {new Date().getFullYear()} InternHub - HTU</p>
           </div>
         </div>
       </div>
     </main>
   );
 }
-    

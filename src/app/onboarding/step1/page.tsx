@@ -1,8 +1,7 @@
-
 'use client';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, ArrowLeft, GraduationCap } from 'lucide-react';
+import { ArrowRight, GraduationCap } from 'lucide-react';
 import Image from 'next/image';
 
 const OnboardingStepDot = ({ isActive, onGradientBg }: { isActive: boolean; onGradientBg?: boolean }) => (
@@ -31,8 +30,8 @@ export default function OnboardingStep1Page() {
         {/* Content layered on top of the rectangle */}
         <div className="relative z-10 w-full max-w-md mx-auto flex flex-col justify-between h-full p-6 sm:p-8 text-center text-white">
           
-          {/* Top part: Icon, Title, Subtitle, Next Button */}
-          <div className="sm:pt-4">
+          {/* Top part: Icon, Title, Subtitle */}
+          <div className="sm:pt-2">
             <div className="flex justify-center items-center mb-2">
               <div className="p-2 bg-white/20 rounded-full shadow-md">
                 <GraduationCap className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
@@ -44,35 +43,33 @@ export default function OnboardingStep1Page() {
             <p className="text-sm sm:text-base font-body leading-relaxed mt-1.5 opacity-90 max-w-[95%] mx-auto">
               Your seamless journey to a successful internship experience starts here. Stay connected, organized, and accountable.
             </p>
-            {/* Next Arrow Button - MOVED HERE */}
-            <div className="mt-4 flex justify-center">
-                <Link href="/onboarding/step2" passHref>
-                    <Button variant="ghost" size="icon" className="bg-white/20 hover:bg-white/30 text-white rounded-full h-10 w-10 sm:h-12 sm:w-12">
-                    <ArrowRight className="h-5 w-5 sm:h-6 sm:w-6" />
-                    </Button>
-                </Link>
-            </div>
           </div>
           
-          {/* Bottom part: Dots, Skip/Back, Copyright */}
-          <div className="pb-2 text-center mt-auto"> {/* mt-auto pushes this to bottom */}
-            <div className="flex justify-center items-center space-x-2 mb-3">
+          {/* Bottom part: Dots, Buttons, Copyright */}
+          <div className="pb-2 text-center mt-auto">
+            <div className="flex justify-center items-center space-x-2 mb-4">
               <OnboardingStepDot isActive={true} onGradientBg={true} />
               <OnboardingStepDot isActive={false} onGradientBg={true} />
               <OnboardingStepDot isActive={false} onGradientBg={true} />
               <OnboardingStepDot isActive={false} onGradientBg={true} />
               <OnboardingStepDot isActive={false} onGradientBg={true} />
             </div>
-            <Link href="/register" passHref>
-                <Button variant="link" size="sm" className="font-body text-white/80 hover:text-white rounded-lg h-auto py-1 text-xs">
-                Skip to Registration
-                </Button>
-            </Link>
-            <p className="text-xs opacity-70 mt-3">&copy; {new Date().getFullYear()} InternHub - HTU</p>
+            <div className="flex items-center w-full max-w-xs mx-auto gap-x-2">
+                <Link href="/register" passHref className="flex-1">
+                    <Button variant="ghost" size="sm" className="font-body text-white/80 hover:text-white rounded-lg w-full h-10 sm:h-11 text-xs sm:text-sm">
+                    Skip
+                    </Button>
+                </Link>
+                <Link href="/onboarding/step2" passHref className="flex-1">
+                    <Button variant="default" size="sm" className="font-body bg-white hover:bg-gray-100 text-orange-600 shadow-md rounded-lg w-full h-10 sm:h-11 text-xs sm:text-sm group">
+                    Next <ArrowRight className="ml-1.5 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                    </Button>
+                </Link>
+            </div>
+            <p className="text-xs text-white/70 mt-4">&copy; {new Date().getFullYear()} InternHub - HTU</p>
           </div>
         </div>
       </div>
     </main>
   );
 }
-    

@@ -1,4 +1,3 @@
-
 'use client';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -25,9 +24,9 @@ export default function OnboardingStep5Page() {
         </div>
       </div>
       
-      <div className="relative w-full h-[60vh] sm:h-[55vh] md:h-[50vh] bg-purple-500 rounded-t-[3rem] shadow-[-10px_-10px_30px_rgba(0,0,0,0.07)] flex flex-col">
+      <div className="relative w-full h-[55vh] sm:h-[50vh] md:h-[45vh] bg-purple-500 rounded-t-[3rem] shadow-[-10px_-10px_30px_rgba(0,0,0,0.07)] flex flex-col">
         <div className="relative z-10 w-full max-w-md mx-auto flex flex-col justify-between h-full p-6 sm:p-8 text-center text-white">
-          <div className="pt-3 sm:pt-4">
+          <div className="sm:pt-2">
             <div className="flex justify-center items-center mb-2">
               <div className="p-2 bg-white/20 rounded-full shadow-md">
                 <Rocket className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
@@ -41,7 +40,7 @@ export default function OnboardingStep5Page() {
             </p>
           </div>
           
-          <div className="pb-2 text-center">
+          <div className="pb-2 text-center mt-auto">
             <div className="flex justify-center items-center space-x-2 mb-4">
               <OnboardingStepDot isActive={false} onGradientBg={true}/>
               <OnboardingStepDot isActive={false} onGradientBg={true}/>
@@ -49,23 +48,22 @@ export default function OnboardingStep5Page() {
               <OnboardingStepDot isActive={false} onGradientBg={true}/>
               <OnboardingStepDot isActive={true} onGradientBg={true}/>
             </div>
-            <div className="flex flex-col space-y-3 max-w-xs mx-auto">
-                <Link href="/register" passHref className="w-full">
-                    <Button className="font-body text-base bg-white hover:bg-gray-100 text-purple-600 shadow-lg rounded-lg w-full group h-12 sm:h-14">
-                    Let&apos;s Start <Rocket className="ml-2 h-5 w-5 transition-transform group-hover:rotate-6" />
+            <div className="flex items-center w-full max-w-xs mx-auto gap-x-2">
+                <Link href="/onboarding/step4" passHref className="flex-1">
+                    <Button variant="ghost" size="sm" className="font-body text-white/80 hover:text-white rounded-lg w-full h-10 sm:h-11 text-xs sm:text-sm group">
+                    <ArrowLeft className="mr-1.5 h-4 w-4 transition-transform group-hover:-translate-x-0.5" /> Back
                     </Button>
                 </Link>
-                <Link href="/onboarding/step4" passHref className="w-full">
-                    <Button variant="link" size="sm" className="font-body text-white/80 hover:text-white rounded-lg group h-auto py-1 text-xs w-full">
-                    <ArrowLeft className="mr-1 h-3 w-3 transition-transform group-hover:-translate-x-0.5" /> Back
+                <Link href="/register" passHref className="flex-1">
+                    <Button className="font-body text-sm sm:text-base bg-white hover:bg-gray-100 text-purple-600 shadow-lg rounded-lg w-full group h-11 sm:h-12">
+                    Let's Start <Rocket className="ml-2 h-4 sm:h-5 w-4 sm:w-5 transition-transform group-hover:rotate-6" />
                     </Button>
                 </Link>
             </div>
-            <p className="text-xs text-white/70 mt-3">&copy; {new Date().getFullYear()} InternHub - HTU</p>
+            <p className="text-xs text-white/70 mt-4">&copy; {new Date().getFullYear()} InternHub - HTU</p>
           </div>
         </div>
       </div>
     </main>
   );
 }
-    
