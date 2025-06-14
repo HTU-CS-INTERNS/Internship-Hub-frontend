@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight, GraduationCap } from 'lucide-react';
 import Image from 'next/image';
 
-const OnboardingStepDot = ({ isActive }: { isActive: boolean }) => (
-  <div className={`w-2 h-2 rounded-full transition-all duration-300 ${isActive ? 'bg-primary scale-110' : 'bg-muted'}`} />
+const OnboardingStepDot = ({ isActive, onPrimaryBg }: { isActive: boolean; onPrimaryBg?: boolean }) => (
+  <div className={`w-2 h-2 rounded-full transition-all duration-300 ${isActive ? (onPrimaryBg ? 'bg-primary-foreground scale-110' : 'bg-primary scale-110') : (onPrimaryBg ? 'bg-primary-foreground/50' : 'bg-muted')}`} />
 );
 
 export default function OnboardingStep1Page() {
@@ -30,53 +30,55 @@ export default function OnboardingStep1Page() {
               data-ai-hint="student growth support professional modern"
             />
           </div>
-          {/* Spacer to push text content into the bottom blob area */}
-          <div className="h-[4vh] sm:h-[6vh]"></div>
+          {/* Spacer to push text content into the bottom blob area, if needed */}
+          <div className="h-[2vh] sm:h-[4vh]"></div>
         </div>
       </div>
 
       {/* Bottom Blob with Text and Next Button */}
-      <div className="relative w-full h-[45vh] sm:h-[40vh] md:h-[35vh] z-0 flex flex-col items-center justify-end">
-        <svg viewBox="0 0 1440 300" className="absolute bottom-0 left-0 w-full h-full z-0" fill="hsl(var(--primary))" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-          <path d="M0,100 C200,200 400,50 720,100 C1000,150 1200,0 1440,80 L1440,300 L0,300 Z" />
+      <div className="relative w-full h-[55vh] sm:h-[50vh] md:h-[45vh] z-0 flex flex-col items-center justify-end">
+        <svg viewBox="0 0 1440 320" className="absolute bottom-0 left-0 w-full h-full z-0" fill="hsl(var(--primary))" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+          <path d="M0,100 C200,200 400,50 720,100 C1000,150 1200,0 1440,80 L1440,320 L0,320 Z" />
         </svg>
-        <div className="relative z-10 p-4 text-center text-primary-foreground w-full max-w-xs mx-auto mb-[calc(2rem+16px)] pr-12 sm:pr-14">
-          <div className="flex justify-center items-center space-x-2 mb-1">
-            <div className="p-1.5 bg-primary-foreground/20 rounded-full shadow-md">
-              <GraduationCap className="h-4 w-4 sm:h-5 sm:w-5 text-primary-foreground" />
+        <div className="relative z-10 p-4 text-center text-primary-foreground w-full max-w-xs mx-auto flex flex-col justify-between h-full">
+          {/* Top part of content within blob */}
+          <div className="pt-6 sm:pt-8">
+            <div className="flex justify-center items-center space-x-2 mb-1">
+              <div className="p-1.5 bg-primary-foreground/20 rounded-full shadow-md">
+                <GraduationCap className="h-4 w-4 sm:h-5 sm:w-5 text-primary-foreground" />
+              </div>
             </div>
+            <h1 className="text-lg font-headline font-bold tracking-tight">
+              Unlock Your Internship Potential!
+            </h1>
+            <p className="text-xs font-body leading-normal mt-1 opacity-90 max-w-[90%] mx-auto">
+              Your seamless journey to a successful internship experience starts here. Stay connected, organized, and accountable.
+            </p>
+            <Link href="/onboarding/step2" passHref>
+              <Button variant="ghost" size="icon" className="absolute top-1/2 right-2 sm:right-3 -translate-y-1/2 mt-2 bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground rounded-full h-9 w-9 sm:h-10 sm:w-10">
+                <ArrowRight className="h-5 w-5" />
+              </Button>
+            </Link>
           </div>
-          <h1 className="text-lg font-headline font-bold tracking-tight">
-            Unlock Your Internship Potential!
-          </h1>
-          <p className="text-xs font-body leading-normal mt-1 opacity-90 max-w-[90%] mx-auto">
-            Your seamless journey to a successful internship experience starts here. Stay connected, organized, and accountable.
-          </p>
-          <Link href="/onboarding/step2" passHref>
-            <Button variant="ghost" size="icon" className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground rounded-full h-9 w-9 sm:h-10 sm:w-10">
-              <ArrowRight className="h-5 w-5" />
-            </Button>
-          </Link>
+
+          {/* Bottom part of content within blob (dots, skip, copyright) */}
+          <div className="pb-2">
+            <div className="flex justify-center items-center space-x-1.5 mb-2">
+              <OnboardingStepDot isActive={true} onPrimaryBg={true} />
+              <OnboardingStepDot isActive={false} onPrimaryBg={true} />
+              <OnboardingStepDot isActive={false} onPrimaryBg={true} />
+              <OnboardingStepDot isActive={false} onPrimaryBg={true} />
+              <OnboardingStepDot isActive={false} onPrimaryBg={true} />
+            </div>
+            <Link href="/register" passHref>
+                <Button variant="link" size="sm" className="font-body text-primary-foreground/80 hover:text-primary-foreground rounded-lg h-auto py-1 text-xs">
+                Skip to Registration
+                </Button>
+            </Link>
+            <p className="text-xs text-primary-foreground/70 mt-2">&copy; {new Date().getFullYear()} InternHub - HTU</p>
+          </div>
         </div>
       </div>
-      
-      <div className="relative z-20 w-full max-w-xs mx-auto text-center py-4">
-        <div className="flex justify-center items-center space-x-1.5 mb-3">
-          <OnboardingStepDot isActive={true} />
-          <OnboardingStepDot isActive={false} />
-          <OnboardingStepDot isActive={false} />
-          <OnboardingStepDot isActive={false} />
-          <OnboardingStepDot isActive={false} />
-        </div>
-        <Link href="/register" passHref>
-            <Button variant="link" size="sm" className="font-body text-muted-foreground hover:text-primary rounded-lg h-auto py-1 text-xs">
-            Skip to Registration
-            </Button>
-        </Link>
-      </div>
-      <footer className="relative z-20 flex-shrink-0 py-2 text-center text-xs text-muted-foreground">
-        <p>&copy; {new Date().getFullYear()} InternHub - HTU</p>
-      </footer>
     </main>
   );
 }
