@@ -8,8 +8,7 @@ import { Rocket, ShieldCheck, MapPin, Info, CheckCircle, AlertTriangle } from 'l
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import TopWave from '@/components/shared/top-wave';
 
 export default function WelcomeGetStartedPage() {
@@ -65,7 +64,7 @@ export default function WelcomeGetStartedPage() {
   return (
     <main className="relative flex flex-col min-h-screen bg-background overflow-x-clip p-4">
       <TopWave />
-      <div className="flex-grow flex flex-col items-center justify-center z-0 pt-12 sm:pt-16"> {/* Adjusted top padding */}
+      <div className="flex-grow flex flex-col items-center justify-center z-0 pt-12 sm:pt-16">
         <div className="space-y-3 max-w-xs w-full text-center">
           <div className="animate-in fade-in-0 slide-in-from-top-8 duration-700">
             <div className="flex justify-center items-center space-x-2 mb-3">

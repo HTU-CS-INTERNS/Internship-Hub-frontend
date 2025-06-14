@@ -14,7 +14,7 @@ export default function OnboardingStep1Page() {
   return (
     <main className="relative flex flex-col min-h-screen bg-background overflow-x-clip p-4">
       <TopWave />
-      <div className="flex-grow flex flex-col items-center justify-center text-center z-0 pt-12 sm:pt-16"> {/* Adjusted padding */}
+      <div className="flex-grow flex flex-col items-center justify-center text-center z-0 pt-12 sm:pt-16">
         <div className="w-full max-w-xs">
           <div className="flex justify-center mb-4 sm:mb-5">
             <Image
