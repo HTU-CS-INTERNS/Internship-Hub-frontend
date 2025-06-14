@@ -6,49 +6,49 @@ import { ArrowRight, ArrowLeft, ListChecks } from 'lucide-react';
 import Image from 'next/image';
 
 const OnboardingStepDot = ({ isActive, onGradientBg }: { isActive: boolean; onGradientBg?: boolean }) => (
-  <div className={`w-2 h-2 rounded-full transition-all duration-300 ${isActive ? (onGradientBg ? 'bg-accent-foreground scale-110' : 'bg-primary scale-110') : (onGradientBg ? 'bg-accent-foreground/50' : 'bg-muted')}`} />
+  <div className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${isActive ? (onGradientBg ? 'bg-yellow-800 scale-110' : 'bg-yellow-600 scale-110') : (onGradientBg ? 'bg-yellow-700/50' : 'bg-yellow-200')}`} />
 );
 
 export default function OnboardingStep2Page() {
   return (
-    <main className="relative flex flex-col min-h-screen bg-background overflow-x-hidden">
-      <div className="flex-grow flex flex-col items-center justify-center text-center p-4 pt-8 sm:pt-12">
-        <div className="w-full max-w-xs">
+    <main className="relative flex flex-col min-h-screen bg-white overflow-hidden p-4">
+      <div className="flex-grow flex flex-col items-center justify-center text-center pt-8 sm:pt-10 md:pt-12">
+        <div className="w-full max-w-[240px] sm:max-w-xs">
           <Image
-            src="https://placehold.co/250x156.png"
+            src="https://placehold.co/260x170.png"
             alt="App mock-up of task or report submission"
-            width={250}
-            height={156}
-            className="rounded-lg shadow-lg object-contain aspect-[16/10]"
+            width={260}
+            height={170}
+            className="rounded-lg shadow-lg object-contain aspect-[13/9]"
             data-ai-hint="app interface task report progress"
           />
         </div>
       </div>
 
-      <div className="relative w-full h-[55vh] sm:h-[50vh] md:h-[45vh] bg-accent rounded-t-2xl md:rounded-t-3xl shadow-2xl flex flex-col">
-        <div className="relative z-10 w-full max-w-md mx-auto flex flex-col justify-between h-full p-6 sm:p-8 text-center text-accent-foreground">
-          <div className="pt-2 sm:pt-4">
-            <div className="flex justify-center items-center mb-2">
-              <div className="p-1.5 bg-accent-foreground/20 rounded-full shadow-md">
-                <ListChecks className="h-4 w-4 sm:h-5 sm:w-5 text-accent-foreground" />
+      <div className="relative w-full h-[55vh] sm:h-[50vh] md:h-[48vh] bg-yellow-400 rounded-t-[3rem] shadow-[0_-10px_25px_-5px_rgba(0,0,0,0.1),_0_-20px_15px_-10px_rgba(0,0,0,0.08)] flex flex-col">
+        <div className="relative z-10 w-full max-w-md mx-auto flex flex-col justify-between h-full p-6 sm:p-8 text-center text-yellow-900">
+          <div className="pt-3 sm:pt-4">
+            <div className="flex justify-center items-center mb-3">
+              <div className="p-2 bg-yellow-800/20 rounded-full shadow-md">
+                <ListChecks className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-900" />
               </div>
             </div>
-            <h1 className="text-lg font-headline font-bold tracking-tight">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-headline font-bold tracking-tight">
               Effortlessly Track Your Progress
             </h1>
-            <p className="text-xs font-body leading-normal mt-1 opacity-90 max-w-[90%] mx-auto">
+            <p className="text-sm sm:text-base font-body leading-relaxed mt-2 opacity-90 max-w-[95%] mx-auto">
               Log daily tasks, capture learning objectives, and submit detailed reports. Showcase your work.
             </p>
           </div>
           
           <Link href="/onboarding/step3" passHref className="absolute top-1/2 right-4 transform -translate-y-1/2">
-            <Button variant="ghost" size="icon" className="bg-accent-foreground/20 hover:bg-accent-foreground/30 text-accent-foreground rounded-full h-9 w-9 sm:h-10 sm:w-10">
-              <ArrowRight className="h-5 w-5" />
+            <Button variant="ghost" size="icon" className="bg-yellow-800/20 hover:bg-yellow-800/30 text-yellow-900 rounded-full h-10 w-10 sm:h-12 sm:w-12">
+              <ArrowRight className="h-5 w-5 sm:h-6 sm:w-6" />
             </Button>
           </Link>
 
           <div className="pb-2 text-center">
-            <div className="flex justify-center items-center space-x-1.5 mb-2">
+            <div className="flex justify-center items-center space-x-2 mb-3">
               <OnboardingStepDot isActive={false} onGradientBg={true}/>
               <OnboardingStepDot isActive={true} onGradientBg={true}/>
               <OnboardingStepDot isActive={false} onGradientBg={true}/>
@@ -57,17 +57,17 @@ export default function OnboardingStep2Page() {
             </div>
             <div className="flex items-center justify-between w-full max-w-xs mx-auto">
               <Link href="/onboarding/step1" passHref>
-                <Button variant="link" size="sm" className="font-body text-accent-foreground/80 hover:text-accent-foreground rounded-lg group h-auto py-1 text-xs">
+                <Button variant="link" size="sm" className="font-body text-yellow-800/80 hover:text-yellow-900 rounded-lg group h-auto py-1 text-xs">
                   <ArrowLeft className="mr-1 h-3 w-3 transition-transform group-hover:-translate-x-0.5" /> Back
                 </Button>
               </Link>
               <Link href="/register" passHref>
-                <Button variant="link" size="sm" className="font-body text-accent-foreground/80 hover:text-accent-foreground rounded-lg h-auto py-1 text-xs">
+                <Button variant="link" size="sm" className="font-body text-yellow-800/80 hover:text-yellow-900 rounded-lg h-auto py-1 text-xs">
                   Skip
                 </Button>
               </Link>
             </div>
-            <p className="text-xs text-accent-foreground/70 mt-2">&copy; {new Date().getFullYear()} InternHub - HTU</p>
+            <p className="text-xs text-yellow-800/70 mt-2">&copy; {new Date().getFullYear()} InternHub - HTU</p>
           </div>
         </div>
       </div>
