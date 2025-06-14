@@ -3,11 +3,10 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, LogIn, GraduationCap } from 'lucide-react'; // Changed from Image
+import { ArrowRight, LogIn, GraduationCap } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AppLoadingScreen from '@/components/shared/app-loading-screen';
-// Removed Image import
 
 export default function WelcomePage() {
   const router = useRouter();
@@ -35,7 +34,6 @@ export default function WelcomePage() {
       <div className="flex-grow flex flex-col items-center justify-center text-center pt-[5vh] sm:pt-[8vh] z-0">
         <div className="relative z-10 mb-6 animate-in fade-in-0 slide-in-from-top-12 duration-1000">
           <div className="p-3 bg-primary-foreground/20 rounded-full inline-block shadow-lg backdrop-blur-sm">
-            {/* Replaced Image with Lucide Icon */}
             <GraduationCap className="h-12 w-12 sm:h-14 sm:w-14 text-primary-foreground" />
           </div>
           <h1 className="mt-3 text-3xl sm:text-4xl font-headline font-bold text-primary-foreground tracking-tight">
@@ -62,8 +60,7 @@ export default function WelcomePage() {
           </Link>
           <Link href="/login" passHref className="w-full sm:w-auto">
             <Button
-              variant="outline"
-              className="font-body text-sm px-6 py-2.5 border-primary-foreground/50 text-primary-foreground hover:bg-primary-foreground/10 shadow-sm rounded-lg w-full group h-10"
+              className="font-body text-sm px-6 py-2.5 bg-primary-foreground text-primary hover:bg-primary-foreground/90 shadow-md rounded-lg w-full group h-10"
             >
               <LogIn className="mr-2 h-4 w-4"/> Login
             </Button>
