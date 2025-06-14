@@ -13,7 +13,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import PageHeader from '@/components/shared/page-header';
 import { createCheckInForStudent, getCheckInsByStudentId, initializeDefaultCheckInsIfNeeded } from '@/lib/services/checkInService';
 import type { CheckInCreatePayload } from '@/lib/services/checkInService'; 
-import { useRouter } from 'next/navigation'; // Added useRouter
+import { useRouter } from 'next/navigation';
 
 type CheckinStep = 'initial' | 'gpsPrompt' | 'manualReason' | 'geofenceWarning' | 'success';
 
@@ -35,7 +35,7 @@ export default function CheckInPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const router = useRouter(); // Initialized useRouter
+  const router = useRouter();
 
   const getTodayDateString = React.useCallback(() => format(new Date(), 'yyyy-MM-dd'), []);
 
@@ -91,60 +91,59 @@ export default function CheckInPage() {
 
   const handleAllowGps = async () => {
     setIsSubmitting(true);
-    toast({ title: 'Requesting Location', description: 'Please wait...' });
-    // --- Geofence Logic (Client-Side Simulation) ---
-    // 1. Fetch Company Geofence Details:
-    //    In a real app, fetch `companyLatitude`, `companyLongitude`, `geofenceRadiusMeters` 
-    //    from the student's approved `internship_placements` record.
-    //    Example: const placementDetails = await getStudentPlacementDetails();
-    //    const { companyLatitude, companyLongitude, geofenceRadiusMeters } = placementDetails;
-
-    // 2. Get Current GPS Position:
-    //    Using `navigator.geolocation.getCurrentPosition((position) => { ... }, (error) => { ... });`
-    //    const currentLat = position.coords.latitude;
-    //    const currentLng = position.coords.longitude;
-
-    // 3. Geofence Check:
-    //    Implement distance calculation (e.g., Haversine formula) to compare
-    //    (currentLat, currentLng) with (companyLatitude, companyLongitude).
-    //    const distance = calculateDistance(currentLat, currentLng, companyLatitude, companyLongitude);
-    //    const withinGeofence = distance <= geofenceRadiusMeters;
-
-    // 4. Reverse Geocode (Optional):
-    //    If needed, use a service to convert (currentLat, currentLng) to a human-readable address.
-    //    const address = await reverseGeocode(currentLat, currentLng);
-    // --- End of Geofence Logic Simulation ---
-    
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1500)); 
-      const withinGeofence = Math.random() < 0.8; 
-      const simulatedLat = 34.0522; 
-      const simulatedLng = -118.2437; 
-
-      const checkInData: CheckInCreatePayload = {
-        latitude: simulatedLat,
-        longitude: simulatedLng,
-        address_resolved: 'Acme Corp HQ (Verified by GPS)', 
-        is_gps_verified: true,
-        is_outside_geofence: !withinGeofence,
-        photo_url: securePhotoPreview || undefined, 
-      };
-
-      if (withinGeofence) {
-        await createCheckInForStudent(checkInData);
-        loadCheckinFromStorage(); 
-        toast({ title: 'Success', description: 'Location verified within geofence.' });
-      } else {
-        setStep('geofenceWarning');
-        toast({ variant: 'destructive', title: 'Geofence Alert', description: 'You appear to be outside the designated work area.' });
-      }
-    } catch (error) {
-      console.error("GPS Error/Submission Error:", error);
-      toast({ variant: 'destructive', title: 'Error', description: 'Could not process GPS check-in.' });
+    if (!navigator.geolocation) {
+      toast({ title: 'Location Not Supported', description: 'Your browser does not support geolocation. Please check-in manually.', variant: 'destructive' });
       setStep('manualReason');
-    } finally {
       setIsSubmitting(false);
+      return;
     }
+
+    toast({ title: 'Requesting Location', description: 'Please wait and allow location access in your browser.' });
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        
+        // --- Geofence Logic (Client-Side Simulation) ---
+        // In a real app, fetch company geofence details from backend.
+        // For mock: Assume company is at (34.0522, -118.2437) and radius 500m.
+        // const companyLat = 34.0522; const companyLng = -118.2437; const radius = 500;
+        // const distance = haversineDistance({lat: latitude, lng: longitude}, {lat: companyLat, lng: companyLng});
+        // const withinGeofence = distance <= radius;
+        const withinGeofence = Math.random() < 0.8; // Simulate 80% chance of being within geofence
+
+        const checkInData: CheckInCreatePayload = {
+          latitude: latitude,
+          longitude: longitude,
+          address_resolved: `Location: ${latitude.toFixed(4)}, ${longitude.toFixed(4)} (GPS)`, 
+          is_gps_verified: true,
+          is_outside_geofence: !withinGeofence,
+          photo_url: securePhotoPreview || undefined, 
+        };
+
+        if (withinGeofence) {
+          await createCheckInForStudent(checkInData);
+          await loadCheckinFromStorage(); 
+          toast({ title: 'Success!', description: 'Location verified within geofence and check-in recorded.' });
+        } else {
+          setStep('geofenceWarning');
+          toast({ variant: 'destructive', title: 'Geofence Alert', description: 'You appear to be outside the designated work area.' });
+        }
+        setIsSubmitting(false);
+      },
+      (error) => {
+        console.error("Geolocation Error:", error);
+        let message = 'Could not get your location.';
+        if (error.code === error.PERMISSION_DENIED) message = 'Location access denied. Please enable it in your browser settings or check-in manually.';
+        else if (error.code === error.POSITION_UNAVAILABLE) message = 'Location information is unavailable. Try again or check-in manually.';
+        else if (error.code === error.TIMEOUT) message = 'Location request timed out. Try again or check-in manually.';
+        
+        toast({ variant: 'destructive', title: 'Location Error', description: message });
+        setStep('manualReason');
+        setIsSubmitting(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
   };
 
   const handleDenyGps = () => setStep('manualReason');
@@ -165,7 +164,7 @@ export default function CheckInPage() {
     };
     try {
         await createCheckInForStudent(checkInData);
-        loadCheckinFromStorage();
+        await loadCheckinFromStorage();
         toast({ title: 'Manual Check-in Submitted', description: 'Your check-in reason has been recorded.' });
     } catch (error) {
         console.error("Manual Check-in Error:", error);
@@ -421,4 +420,4 @@ export default function CheckInPage() {
     </div>
   );
 }
-
+    
