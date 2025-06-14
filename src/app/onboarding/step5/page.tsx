@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Rocket } from 'lucide-react';
-import Image from 'next/image';
+// Removed Image import
 
 const OnboardingStepDot = ({ isActive }: { isActive: boolean }) => (
   <div className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${isActive ? 'bg-white scale-110' : 'bg-white/50'}`} />
@@ -17,7 +17,7 @@ export default function OnboardingStep5Page() {
           className="relative w-40 h-40 sm:w-48 sm:h-48 md:w-56 md:h-56 bg-white rounded-full flex items-center justify-center"
           style={{ filter: 'drop-shadow(0px 0px 35px rgba(139,92,246,0.35))' }} // Purple glow
         >
-          <Rocket className="h-20 w-20 sm:h-24 sm:h-24 md:h-28 md:w-28 text-purple-500" strokeWidth={1.5}/>
+          <Rocket className="h-32 w-32 sm:h-40 sm:w-40 text-purple-500" strokeWidth={1.5}/>
         </div>
       </div>
       
@@ -28,13 +28,8 @@ export default function OnboardingStep5Page() {
           <div className="sm:pt-2">
             <div className="flex justify-center items-center mb-2">
               <div className="p-1.5 bg-white/20 rounded-full shadow-md">
-                <Image 
-                    src="https://firebase.so/docs/studio/guides/images/internship-track-logo.png" 
-                    alt="HTU Logo" 
-                    width={20} 
-                    height={20} 
-                    className="h-4 w-4 sm:h-5 sm:w-5"
-                 />
+                {/* Replaced Image with Lucide Icon */}
+                <Rocket className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
               </div>
             </div>
             <h1 className="text-xl sm:text-2xl md:text-3xl font-headline font-bold tracking-tight">

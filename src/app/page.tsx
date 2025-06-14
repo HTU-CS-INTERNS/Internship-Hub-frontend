@@ -3,11 +3,11 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, LogIn } from 'lucide-react';
+import { ArrowRight, LogIn, GraduationCap } from 'lucide-react'; // Changed from Image
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AppLoadingScreen from '@/components/shared/app-loading-screen';
-import Image from 'next/image'; 
+// Removed Image import
 
 export default function WelcomePage() {
   const router = useRouter();
@@ -34,15 +34,9 @@ export default function WelcomePage() {
     <main className="relative flex flex-col min-h-screen bg-primary text-primary-foreground p-4 overflow-hidden">
       <div className="flex-grow flex flex-col items-center justify-center text-center pt-[5vh] sm:pt-[8vh] z-0">
         <div className="relative z-10 mb-6 animate-in fade-in-0 slide-in-from-top-12 duration-1000">
-          <div className="p-2 bg-primary-foreground/20 rounded-full inline-block shadow-lg backdrop-blur-sm">
-            <Image 
-              src="https://firebase.so/docs/studio/guides/images/internship-track-logo.png" 
-              alt="Ho Technical University Logo" 
-              width={64} 
-              height={64} 
-              className="h-12 w-12 sm:h-14 sm:w-14" 
-              priority
-            />
+          <div className="p-3 bg-primary-foreground/20 rounded-full inline-block shadow-lg backdrop-blur-sm">
+            {/* Replaced Image with Lucide Icon */}
+            <GraduationCap className="h-12 w-12 sm:h-14 sm:w-14 text-primary-foreground" />
           </div>
           <h1 className="mt-3 text-3xl sm:text-4xl font-headline font-bold text-primary-foreground tracking-tight">
             InternHub

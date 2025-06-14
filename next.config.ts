@@ -12,6 +12,7 @@ const withPWA = withPWAInit({
   disable: process.env.NODE_ENV === 'development', 
   workboxOptions: {
     disableDevLogs: true, 
+    // Removed importScripts: ['/custom-sw.js']
   },
   fallbacks: {},
   cacheOnFrontEndNav: true, 
@@ -21,10 +22,10 @@ const withPWA = withPWAInit({
     name: APP_NAME,
     short_name: "InternHubHTU", 
     description: APP_DESCRIPTION,
-    start_url: "/", 
+    start_url: "/", // Changed from /welcome
     display: "standalone",
     scope: "/",
-    background_color: "#ffffff", // Assuming primary background for PWA is white for the splash
+    background_color: "#ffffff", 
     theme_color: "hsl(215, 50%, 25%)", // HTU Navy Blue     
     icons: [
       {
@@ -62,12 +63,7 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
-      {
-        protocol: 'https',
-        hostname: 'firebase.so', // Added for HTU logo
-        port: '',
-        pathname: '/**',
-      },
+      // Removed firebase.so hostname as logo is no longer used from there
     ],
   },
 };

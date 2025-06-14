@@ -18,9 +18,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { NAV_LINKS, BOTTOM_NAV_LINKS, USER_ROLES } from '@/lib/constants';
 import type { NavItem, UserRole } from '@/types';
-import { LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LogOut, ChevronLeft, ChevronRight, GraduationCap } from 'lucide-react'; // Changed from Image
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import Image from 'next/image'; 
+// Removed Image import
 
 const getInitials = (name: string) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase() : 'U';
 
@@ -106,14 +106,9 @@ export default function AppSidebar({ userRole }: AppSidebarProps) {
     >
       <SidebarHeader className="p-4 border-b border-sidebar-border flex items-center justify-between group-data-[collapsible=icon]:justify-center">
         <Link href="/dashboard" className="flex items-center gap-2 group">
-          <div className="w-10 h-10 rounded-full bg-primary-foreground/10 flex items-center justify-center shadow-md p-1">
-            <Image 
-              src="https://firebase.so/docs/studio/guides/images/internship-track-logo.png" 
-              alt="HTU Logo" 
-              width={32} 
-              height={32} 
-              className="h-full w-full object-contain"
-            />
+          <div className="w-10 h-10 rounded-full bg-primary-foreground/10 flex items-center justify-center shadow-md p-1.5">
+            {/* Replaced Image with Lucide Icon */}
+            <GraduationCap className="h-full w-full text-primary-foreground" />
           </div>
           <span className="font-headline text-xl font-bold text-primary-foreground group-hover:text-primary-foreground/80 transition-colors group-data-[collapsible=icon]:hidden">
             InternHub
