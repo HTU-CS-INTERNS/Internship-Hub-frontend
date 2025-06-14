@@ -37,20 +37,18 @@ export default function WelcomePage() {
             </p>
           </div>
 
-          <div className="pt-6 animate-in fade-in-0 slide-in-from-bottom-12 duration-1000 delay-500 space-y-4 sm:space-y-0 sm:flex sm:flex-row sm:justify-center sm:items-center sm:space-x-4">
+          <div className="pt-6 animate-in fade-in-0 slide-in-from-bottom-12 duration-1000 delay-500 space-y-4 sm:space-y-0 sm:flex sm:flex-col sm:items-center sm:space-y-4">
             <Link href="/onboarding/step1" passHref className="w-full sm:w-auto">
               <Button
-                size="lg"
-                className="font-headline text-xl px-10 py-7 bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl transform hover:scale-105 active:scale-95 transition-transform duration-300 rounded-xl w-full group"
+                className="font-headline text-base px-8 py-3 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg transform hover:scale-105 active:scale-95 transition-transform duration-300 rounded-xl w-full group"
               >
-                Get Started with InternHub <ArrowRight className="ml-2 h-6 w-6 transition-transform group-hover:translate-x-1" />
+                Get Started with InternHub <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
               </Button>
             </Link>
             <Link href="/login" passHref className="w-full sm:w-auto">
               <Button
                 variant="outline"
-                size="lg"
-                className="font-headline text-lg px-8 py-6 border-primary text-primary hover:bg-primary/5 shadow-lg transform hover:scale-105 active:scale-95 transition-transform duration-300 rounded-xl w-full group"
+                className="font-headline text-base px-8 py-3 border-primary text-primary hover:bg-primary/5 shadow-lg transform hover:scale-105 active:scale-95 transition-transform duration-300 rounded-xl w-full group"
               >
                  <LogIn className="mr-2 h-5 w-5"/> Already have an account? Login
               </Button>
@@ -58,7 +56,7 @@ export default function WelcomePage() {
           </div>
         </div>
       </div>
-      <footer className="flex-shrink-0 py-8 text-center text-sm text-muted-foreground animate-in fade-in-0 duration-500 delay-700">
+      <footer className="flex-shrink-0 py-8 text-center text-sm text-muted-foreground">
         <p>&copy; {new Date().getFullYear()} InternHub - Ho Technical University. Empowering Futures.</p>
       </footer>
     </main>

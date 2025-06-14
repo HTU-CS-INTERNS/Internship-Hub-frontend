@@ -1,9 +1,10 @@
+
 'use client';
 
 import * as React from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, ShieldCheck, MapPin, Info, CheckCircle, AlertTriangle, Rocket } from 'lucide-react';
+import { Rocket, ShieldCheck, MapPin, Info, CheckCircle, AlertTriangle } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
@@ -137,8 +138,7 @@ export default function WelcomeGetStartedPage() {
           <div className="pt-2 animate-in fade-in-0 slide-in-from-bottom-10 duration-700 delay-400">
             <Link href="/onboarding/step1" passHref>
               <Button
-                size="lg"
-                className="font-headline text-lg px-10 py-6 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg transform hover:scale-105 active:scale-95 transition-transform duration-300 rounded-xl w-full sm:w-auto group"
+                className="font-headline text-base px-8 py-3 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg transform hover:scale-105 active:scale-95 transition-transform duration-300 rounded-xl w-full sm:w-auto group"
                 disabled={!termsAccepted}
                 aria-disabled={!termsAccepted}
               >
@@ -151,7 +151,7 @@ export default function WelcomeGetStartedPage() {
           </div>
         </div>
       </div>
-       <footer className="py-8 text-center text-sm text-muted-foreground animate-in fade-in-0 duration-500 delay-700">
+       <footer className="py-8 text-center text-sm text-muted-foreground">
         <p>&copy; {new Date().getFullYear()} InternHub - Ho Technical University. Your Journey Starts Here.</p>
       </footer>
     </main>
