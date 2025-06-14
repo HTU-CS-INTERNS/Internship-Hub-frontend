@@ -18,12 +18,10 @@ export default function LoginPage() {
         <div className="text-center text-sm">
           Don&apos;t have an account?{' '}
           <Button variant="link" asChild className="p-0 h-auto">
-            <Link href="/register">Sign up</Link>
+            <Link href="/welcome/get-started">Sign up</Link>
           </Button>
         </div>
       </CardContent>
     </Card>
   );
 }
-
-    

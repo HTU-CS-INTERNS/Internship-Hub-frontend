@@ -1,3 +1,4 @@
+
 'use client';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -50,7 +51,7 @@ export default function OnboardingStep5Page() {
             </div>
             <div className="flex items-center w-full max-w-xs mx-auto gap-x-2">
                 <Link href="/onboarding/step4" passHref className="flex-1">
-                    <Button variant="ghost" size="sm" className="font-body text-white/80 hover:text-white rounded-lg w-full h-10 sm:h-11 text-xs sm:text-sm group">
+                    <Button variant="link" size="sm" className="font-body text-white/80 hover:text-white rounded-lg w-full h-10 sm:h-11 text-xs sm:text-sm group">
                     <ArrowLeft className="mr-1.5 h-4 w-4 transition-transform group-hover:-translate-x-0.5" /> Back
                     </Button>
                 </Link>

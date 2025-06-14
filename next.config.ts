@@ -27,7 +27,7 @@ const withPWA = withPWAInit({
     name: APP_NAME,
     short_name: "InternHubHTU", 
     description: APP_DESCRIPTION,
-    start_url: "/welcome", // Explicitly set to /welcome
+    start_url: "/", // Explicitly set to root, which is now the welcome page
     display: "standalone",
     scope: "/",
     background_color: "#f5f5f5", 
@@ -74,4 +74,3 @@ const nextConfig: NextConfig = {
 };
 
 export default withPWA(nextConfig);
-    

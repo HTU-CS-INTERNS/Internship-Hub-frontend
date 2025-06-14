@@ -50,12 +50,16 @@ export default function OnboardingStep3Page() {
               <OnboardingStepDot isActive={false} onGradientBg={true}/>
             </div>
             <div className="flex items-center w-full max-w-xs mx-auto gap-x-2">
-                <Button variant="link" asChild className="flex-1 p-0 h-auto font-body text-white/80 hover:text-white rounded-lg text-xs sm:text-sm group">
-                    <Link href="/onboarding/step2"><ArrowLeft className="mr-1.5 h-4 w-4 transition-transform group-hover:-translate-x-0.5" /> Back</Link>
-                </Button>
-                <Button variant="link" asChild className="flex-1 p-0 h-auto font-body text-white/80 hover:text-white rounded-lg text-xs sm:text-sm">
-                    <Link href="/register">Skip</Link>
-                </Button>
+                <Link href="/onboarding/step2" passHref className="flex-1">
+                    <Button variant="link" size="sm" className="font-body text-white/80 hover:text-white rounded-lg w-full h-10 sm:h-11 text-xs sm:text-sm group">
+                        <ArrowLeft className="mr-1.5 h-4 w-4 transition-transform group-hover:-translate-x-0.5" /> Back
+                    </Button>
+                </Link>
+                <Link href="/register" passHref className="flex-1">
+                    <Button variant="link" size="sm" className="font-body text-white/80 hover:text-white rounded-lg w-full h-10 sm:h-11 text-xs sm:text-sm">
+                        Skip
+                    </Button>
+                </Link>
                 <Link href="/onboarding/step4" passHref className="flex-1">
                     <Button variant="default" size="sm" className="font-body bg-white hover:bg-gray-100 text-green-600 shadow-md rounded-lg w-full h-10 sm:h-11 text-xs sm:text-sm group">
                     Next <ArrowRight className="ml-1.5 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
@@ -69,4 +73,3 @@ export default function OnboardingStep3Page() {
     </main>
   );
 }
-    
