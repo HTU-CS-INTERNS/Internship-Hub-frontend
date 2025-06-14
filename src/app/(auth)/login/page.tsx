@@ -7,6 +7,7 @@ import { LogIn } from 'lucide-react';
 export default function LoginPage() {
   return (
     <main className="relative flex flex-col min-h-screen bg-white overflow-hidden">
+      {/* Top Section with Icon and Glow */}
       <div className="flex-grow flex flex-col items-center justify-center text-center pt-10 pb-6 sm:pt-12 px-4">
         <div 
           className="relative w-32 h-32 sm:w-40 sm:h-40 bg-white rounded-full flex items-center justify-center shadow-lg"
@@ -16,6 +17,7 @@ export default function LoginPage() {
         </div>
       </div>
 
+      {/* Bottom Colored Rectangle Section */}
       <div 
         className="relative w-full bg-primary rounded-t-[3rem] shadow-[-10px_-10px_30px_rgba(0,0,0,0.07)] text-primary-foreground flex flex-col"
         style={{ minHeight: '65vh' }} 

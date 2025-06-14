@@ -189,6 +189,8 @@ export function RegistrationForm() {
 
   const facultyName = userDataFromDB ? FACULTIES.find(f => f.id === userDataFromDB.facultyId)?.name : 'N/A';
   const departmentName = userDataFromDB ? DEPARTMENTS.find(d => d.id === userDataFromDB.departmentId)?.name : 'N/A';
+  
+  const inputStyles = "bg-white dark:bg-gray-50 text-gray-900 dark:text-gray-900 placeholder:text-gray-500 dark:placeholder:text-gray-500 border-gray-300 dark:border-gray-400 rounded-lg focus:ring-accent focus:border-accent";
 
   if (step === 1) {
     return (
@@ -202,7 +204,11 @@ export function RegistrationForm() {
                 <FormItem>
                   <FormLabel>School ID / Matriculation Number</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter your unique school ID" {...field} className="rounded-lg border-input"/>
+                    <Input 
+                      placeholder="Enter your unique school ID" 
+                      {...field} 
+                      className={inputStyles}
+                    />
                   </FormControl>
                   <FormDescription>This will be used to verify your Ho Technical University student status.</FormDescription>
                   <FormMessage />
@@ -216,14 +222,19 @@ export function RegistrationForm() {
                 <FormItem>
                   <FormLabel>Ho Technical University Email Address</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="your.id@htu.edu.gh" {...field} className="rounded-lg border-input"/>
+                    <Input 
+                      type="email" 
+                      placeholder="your.id@htu.edu.gh" 
+                      {...field} 
+                      className={inputStyles}
+                    />
                   </FormControl>
                   <FormDescription>Must be your official @htu.edu.gh email. An OTP will be sent here.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-base py-3 rounded-lg" disabled={isLoading}>
+            <Button type="submit" className="w-full bg-accent-foreground hover:bg-accent-foreground/90 text-accent text-base py-3 rounded-lg" disabled={isLoading}>
               {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Verify & Send OTP"}
             </Button>
           </form>
@@ -238,14 +249,14 @@ export function RegistrationForm() {
         <Form {...step2Form}>
           <Card className="bg-muted/50 border-input shadow-inner mb-6">
               <CardHeader className="pb-3">
-                  <CardTitle className="text-lg flex items-center text-primary">
-                      <CheckCircle className="mr-2 h-5 w-5"/> Identity Partially Verified
+                  <CardTitle className="text-lg flex items-center text-accent-foreground">
+                      <CheckCircle className="mr-2 h-5 w-5 text-green-500"/> Identity Partially Verified
                   </CardTitle>
               </CardHeader>
-              <CardContent className="text-sm text-foreground space-y-1">
+              <CardContent className="text-sm text-accent-foreground/90 space-y-1">
                   <p>An OTP has been 'sent' to: <strong>{verifiedSchoolEmail}</strong></p>
-                  <p className="text-xs text-muted-foreground">Please enter the 6-digit code below to confirm your identity. (Simulated OTP: {generatedOtpForVerification})</p>
-                  <p className="text-xs text-muted-foreground mt-2">If this is you, please proceed:</p>
+                  <p className="text-xs text-accent-foreground/70">Please enter the 6-digit code below to confirm your identity. (Simulated OTP: {generatedOtpForVerification})</p>
+                  <p className="text-xs text-accent-foreground/70 mt-2">If this is you, please proceed:</p>
                   <ul className="text-xs list-disc list-inside pl-2">
                       <li><strong>Name:</strong> {userDataFromDB.name}</li>
                       <li><strong>Faculty:</strong> {facultyName}</li>
@@ -264,7 +275,7 @@ export function RegistrationForm() {
                     <Input
                       placeholder="Enter 6-digit OTP"
                       {...field}
-                      className="rounded-lg border-input text-center tracking-[0.5em]"
+                      className={`${inputStyles} text-center tracking-[0.5em]`}
                       maxLength={6}
                     />
                   </FormControl>
@@ -273,10 +284,10 @@ export function RegistrationForm() {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-base py-3 rounded-lg" disabled={isLoading}>
+            <Button type="submit" className="w-full bg-accent-foreground hover:bg-accent-foreground/90 text-accent text-base py-3 rounded-lg" disabled={isLoading}>
               {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Verify OTP & Continue"}
             </Button>
-            <Button type="button" variant="link" onClick={() => setStep(1)} className="w-full text-sm" disabled={isLoading}>
+            <Button type="button" variant="link" onClick={() => setStep(1)} className="w-full text-sm text-accent-foreground/80 hover:text-accent-foreground" disabled={isLoading}>
               Back to School ID/Email Entry
             </Button>
           </form>
@@ -289,7 +300,7 @@ export function RegistrationForm() {
     return (
       <div key="registration-step-3">
         <Form {...step3Form}>
-          <Card className="bg-green-500/10 border-green-500/30 shadow-inner mb-6">
+          <Card className="bg-green-600/10 border-green-600/30 shadow-inner mb-6">
               <CardHeader className="pb-3">
                   <CardTitle className="text-lg flex items-center text-green-700 dark:text-green-300">
                       <KeyRound className="mr-2 h-5 w-5"/> Set Your Password
@@ -308,7 +319,12 @@ export function RegistrationForm() {
                 <FormItem>
                   <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="Choose a strong password" {...field} className="rounded-lg border-input"/>
+                    <Input 
+                      type="password" 
+                      placeholder="Choose a strong password" 
+                      {...field} 
+                      className={inputStyles}
+                    />
                   </FormControl>
                   <FormDescription>Min. 8 characters, incl. uppercase, lowercase, number, and special character.</FormDescription>
                   <FormMessage />
@@ -322,7 +338,12 @@ export function RegistrationForm() {
                 <FormItem>
                   <FormLabel>Confirm Password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="Re-enter your password" {...field} className="rounded-lg border-input"/>
+                    <Input 
+                      type="password" 
+                      placeholder="Re-enter your password" 
+                      {...field} 
+                      className={inputStyles}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -332,26 +353,27 @@ export function RegistrationForm() {
               control={step3Form.control}
               name="termsAccepted"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm bg-muted/30">
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm bg-muted/30 border-input">
                   <FormControl>
                     <Checkbox
                       checked={field.value}
                       onCheckedChange={field.onChange}
+                      className="border-accent-foreground/50 data-[state=checked]:bg-accent-foreground data-[state=checked]:text-accent"
                     />
                   </FormControl>
                   <div className="space-y-1 leading-none">
-                    <FormLabel className="cursor-pointer">
+                    <Label htmlFor={field.name} className="cursor-pointer"> {/* Corrected: Use field.name for htmlFor */}
                       I agree to the InternHub 
-                      <Button variant="link" asChild className="p-0 h-auto ml-1 text-primary hover:underline"><Link href="/terms-placeholder" target="_blank">Terms & Conditions</Link></Button>
+                      <Button variant="link" asChild className="p-0 h-auto ml-1 text-accent-foreground hover:underline"><Link href="/terms-placeholder" target="_blank">Terms & Conditions</Link></Button>
                        {' '}and 
-                      <Button variant="link" asChild className="p-0 h-auto ml-1 text-primary hover:underline"><Link href="/privacy-placeholder" target="_blank">Privacy Policy</Link></Button>.
-                    </FormLabel>
+                      <Button variant="link" asChild className="p-0 h-auto ml-1 text-accent-foreground hover:underline"><Link href="/privacy-placeholder" target="_blank">Privacy Policy</Link></Button>.
+                    </Label>
                     <FormMessage />
                   </div>
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-base py-3 rounded-lg" disabled={isLoading}>
+            <Button type="submit" className="w-full bg-accent-foreground hover:bg-accent-foreground/90 text-accent text-base py-3 rounded-lg" disabled={isLoading}>
               {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Create Account & Proceed"}
             </Button>
           </form>

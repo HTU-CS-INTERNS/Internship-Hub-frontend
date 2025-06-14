@@ -53,9 +53,6 @@ export function LoginForm() {
     await new Promise(resolve => setTimeout(resolve, 1000));
     setIsLoading(false);
 
-    // In a real scenario, the backend would verify credentials
-    // and return user data including their actual role.
-    // For now, we'll use the role selected in the form.
     const selectedRole = values.role as UserRole;
     const nameFromEmail = values.email.split('@')[0];
     const capitalizedName = nameFromEmail.charAt(0).toUpperCase() + nameFromEmail.slice(1);
@@ -65,7 +62,6 @@ export function LoginForm() {
       localStorage.setItem('userRole', selectedRole);
       localStorage.setItem('userEmail', values.email);
       localStorage.setItem('userName', userNameToStore);
-      // Indicate that the user is "logged in" for client-side checks
       localStorage.setItem('isLoggedIn', 'true'); 
     }
 
@@ -82,6 +78,8 @@ export function LoginForm() {
     }
   }
 
+  const inputStyles = "bg-white dark:bg-gray-50 text-gray-900 dark:text-gray-900 placeholder:text-gray-500 dark:placeholder:text-gray-500 border-gray-300 dark:border-gray-400 rounded-lg focus:ring-primary focus:border-primary";
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -92,7 +90,12 @@ export function LoginForm() {
             <FormItem>
               <FormLabel>Email Address</FormLabel>
               <FormControl>
-                <Input type="email" placeholder="your.email@example.com" {...field} />
+                <Input 
+                  type="email" 
+                  placeholder="your.email@example.com" 
+                  {...field} 
+                  className={inputStyles}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -105,7 +108,12 @@ export function LoginForm() {
             <FormItem>
               <FormLabel>Password</FormLabel>
               <FormControl>
-                <Input type="password" placeholder="••••••••" {...field} />
+                <Input 
+                  type="password" 
+                  placeholder="••••••••" 
+                  {...field} 
+                  className={inputStyles}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -126,7 +134,11 @@ export function LoginForm() {
                   {(Object.keys(USER_ROLES) as UserRole[]).map((roleKey) => (
                     <FormItem key={roleKey} className="flex items-center space-x-2 space-y-0">
                       <FormControl>
-                        <RadioGroupItem value={roleKey} id={`role-${roleKey.toLowerCase()}`} />
+                        <RadioGroupItem 
+                          value={roleKey} 
+                          id={`role-${roleKey.toLowerCase()}`} 
+                          className="border-primary-foreground/50 text-primary-foreground data-[state=checked]:border-primary-foreground data-[state=checked]:text-primary-foreground"
+                        />
                       </FormControl>
                       <Label htmlFor={`role-${roleKey.toLowerCase()}`} className="font-normal cursor-pointer">
                         {USER_ROLES[roleKey]}
@@ -141,7 +153,7 @@ export function LoginForm() {
         />
         <Button 
           type="submit" 
-          className="w-full bg-primary-foreground hover:bg-primary-foreground/90 text-primary shadow-md" 
+          className="w-full bg-primary-foreground hover:bg-primary-foreground/90 text-primary shadow-md text-base py-3 rounded-lg" 
           disabled={isLoading}
         >
           {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Login'}
