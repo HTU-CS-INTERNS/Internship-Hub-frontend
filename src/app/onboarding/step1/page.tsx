@@ -50,7 +50,7 @@ export default function OnboardingStep1Page() {
           <OnboardingStepDot isActive={false} />
         </div>
         <div className="flex items-center justify-between space-x-4">
-          <Link href="/onboarding/step5" passHref className="flex-1">
+          <Link href="/register" passHref className="flex-1">
             <Button variant="ghost" size="lg" className="font-body text-muted-foreground hover:text-primary rounded-xl w-full">
               Skip
             </Button>
@@ -62,7 +62,7 @@ export default function OnboardingStep1Page() {
           </Link>
         </div>
       </div>
-      <footer className="py-8 text-center text-sm text-muted-foreground animate-in fade-in-0 duration-500 delay-700">
+      <footer className="flex-shrink-0 py-8 text-center text-sm text-muted-foreground animate-in fade-in-0 duration-500 delay-700">
         <p>&copy; {new Date().getFullYear()} InternHub. Your Success, Our Priority.</p>
       </footer>
     </main>

@@ -55,14 +55,14 @@ export default function OnboardingStep5Page() {
               <ArrowLeft className="mr-2 h-5 w-5 transition-transform group-hover:-translate-x-1" /> Back
             </Button>
           </Link>
-          <Link href="/login" passHref className="flex-1">
+          <Link href="/register" passHref className="flex-1">
             <Button size="lg" className="font-body text-lg px-10 py-3 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg rounded-xl w-full group">
               Let&apos;s Start Your Journey!
             </Button>
           </Link>
         </div>
       </div>
-      <footer className="py-8 text-center text-sm text-muted-foreground animate-in fade-in-0 duration-500 delay-700">
+      <footer className="flex-shrink-0 py-8 text-center text-sm text-muted-foreground animate-in fade-in-0 duration-500 delay-700">
         <p>&copy; {new Date().getFullYear()} InternHub. Your Success, Our Priority.</p>
       </footer>
     </main>

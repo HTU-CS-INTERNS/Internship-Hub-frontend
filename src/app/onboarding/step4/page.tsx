@@ -55,14 +55,26 @@ export default function OnboardingStep4Page() {
               <ArrowLeft className="mr-2 h-5 w-5 transition-transform group-hover:-translate-x-1" /> Back
             </Button>
           </Link>
+           <Link href="/register" passHref className="flex-1 sm:hidden"> {/* Skip for mobile, hidden on larger */}
+            <Button variant="ghost" size="lg" className="font-body text-muted-foreground hover:text-primary rounded-xl w-full">
+              Skip
+            </Button>
+          </Link>
           <Link href="/onboarding/step5" passHref className="flex-1">
             <Button size="lg" className="font-body text-lg px-10 py-3 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg rounded-xl w-full group">
               Next <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
             </Button>
           </Link>
         </div>
+         <div className="hidden sm:flex justify-center mt-4"> {/* Skip for desktop */}
+            <Link href="/register" passHref>
+                <Button variant="ghost" size="sm" className="font-body text-muted-foreground hover:text-primary rounded-xl">
+                Skip
+                </Button>
+            </Link>
+        </div>
       </div>
-      <footer className="py-8 text-center text-sm text-muted-foreground animate-in fade-in-0 duration-500 delay-700">
+      <footer className="flex-shrink-0 py-8 text-center text-sm text-muted-foreground animate-in fade-in-0 duration-500 delay-700">
         <p>&copy; {new Date().getFullYear()} InternHub. Your Success, Our Priority.</p>
       </footer>
     </main>

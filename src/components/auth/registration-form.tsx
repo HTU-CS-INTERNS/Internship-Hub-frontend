@@ -24,12 +24,14 @@ import Link from 'next/link';
 import { FACULTIES, DEPARTMENTS, USER_ROLES } from '@/lib/constants';
 import type { UserRole } from '@/types';
 import { sendOtp } from '@/ai/flows/send-otp-flow';
+import { Checkbox } from '@/components/ui/checkbox'; // Added Checkbox import
+import { Label } from '@/components/ui/label'; // Added Label import
 
 
 const registrationStep1Schema = z.object({
   schoolId: z.string().min(3, { message: 'School ID must be at least 3 characters.' }).max(20, { message: 'School ID too long.'}),
   schoolEmail: z.string().email({ message: 'Please enter a valid school email address.' })
-    .refine(email => email.endsWith('@htu.edu.gh'), { // Updated domain
+    .refine(email => email.endsWith('@htu.edu.gh'), {
       message: 'Email must be a valid @htu.edu.gh address.'
     }),
 });
@@ -45,6 +47,9 @@ const registrationStep3Schema = z.object({
     .regex(/[0-9]/, { message: 'Password must contain at least one number.'})
     .regex(/[^a-zA-Z0-9]/, { message: 'Password must contain at least one special character.'}),
   confirmPassword: z.string().min(8, { message: 'Please confirm your password.' }),
+  termsAccepted: z.boolean().refine(value => value === true, {
+    message: "You must accept the Terms and Conditions to proceed."
+  }),
 }).refine(data => data.password === data.confirmPassword, {
   message: "Passwords don't match.",
   path: ["confirmPassword"],
@@ -90,7 +95,7 @@ export function RegistrationForm() {
 
   const step3Form = useForm<RegistrationStep3Values>({
     resolver: zodResolver(registrationStep3Schema),
-    defaultValues: { password: '', confirmPassword: '' },
+    defaultValues: { password: '', confirmPassword: '', termsAccepted: false },
   });
 
   async function handleStep1Submit(values: RegistrationStep1Values) {
@@ -145,7 +150,7 @@ export function RegistrationForm() {
 
     toast({
       title: 'OTP Verified!',
-      description: `Welcome, ${userDataFromDB?.name}! Please set a secure password for your InternHub account.`, // Updated
+      description: `Welcome, ${userDataFromDB?.name}! Please set a secure password for your InternHub account.`,
       variant: 'default'
     });
     setStep(3);
@@ -175,10 +180,10 @@ export function RegistrationForm() {
 
     toast({
       title: "Registration Successful! (Simulated)",
-      description: `Welcome, ${userDataFromDB.name}! Your InternHub account is created. Please complete your profile.`, // Updated
+      description: `Welcome, ${userDataFromDB.name}! Your InternHub account is created. Please complete your profile.`,
       variant: "default",
     });
-    router.push('/profile');
+    router.push('/profile'); 
     setIsLoading(false);
   }
 
@@ -199,7 +204,7 @@ export function RegistrationForm() {
                   <FormControl>
                     <Input placeholder="Enter your unique school ID" {...field} className="rounded-lg border-input"/>
                   </FormControl>
-                  <FormDescription>This will be used to verify your Ho Technical University student status.</FormDescription> {/* Updated */}
+                  <FormDescription>This will be used to verify your Ho Technical University student status.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -209,11 +214,11 @@ export function RegistrationForm() {
               name="schoolEmail"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Ho Technical University Email Address</FormLabel> {/* Updated */}
+                  <FormLabel>Ho Technical University Email Address</FormLabel>
                   <FormControl>
                     <Input type="email" placeholder="your.id@htu.edu.gh" {...field} className="rounded-lg border-input"/>
                   </FormControl>
-                  <FormDescription>Must be your official @htu.edu.gh email. An OTP will be sent here.</FormDescription> {/* Updated */}
+                  <FormDescription>Must be your official @htu.edu.gh email. An OTP will be sent here.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -263,7 +268,7 @@ export function RegistrationForm() {
                       maxLength={6}
                     />
                   </FormControl>
-                  <FormDescription>Check your @htu.edu.gh email ({verifiedSchoolEmail}) for the code.</FormDescription> {/* Updated */}
+                  <FormDescription>Check your @htu.edu.gh email ({verifiedSchoolEmail}) for the code.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -291,8 +296,8 @@ export function RegistrationForm() {
                   </CardTitle>
               </CardHeader>
               <CardContent className="text-sm text-green-700/90 dark:text-green-300/90 space-y-1">
-                  <p>Welcome, <strong>{userDataFromDB.name}</strong>! Your email <strong>{verifiedSchoolEmail}</strong> and Ho Technical University identity have been verified.</p> {/* Updated */}
-                  <p>Please create a secure password for your InternHub account.</p> {/* Updated */}
+                  <p>Welcome, <strong>{userDataFromDB.name}</strong>! Your email <strong>{verifiedSchoolEmail}</strong> and Ho Technical University identity have been verified.</p>
+                  <p>Please create a secure password for your InternHub account.</p>
               </CardContent>
           </Card>
           <form onSubmit={step3Form.handleSubmit(handleStep3Submit)} className="space-y-6">
@@ -323,8 +328,31 @@ export function RegistrationForm() {
                 </FormItem>
               )}
             />
+             <FormField
+              control={step3Form.control}
+              name="termsAccepted"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm bg-muted/30">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel className="cursor-pointer">
+                      I agree to the InternHub 
+                      <Button variant="link" asChild className="p-0 h-auto ml-1 text-primary hover:underline"><Link href="/terms-placeholder" target="_blank">Terms & Conditions</Link></Button>
+                       {' '}and 
+                      <Button variant="link" asChild className="p-0 h-auto ml-1 text-primary hover:underline"><Link href="/privacy-placeholder" target="_blank">Privacy Policy</Link></Button>.
+                    </FormLabel>
+                    <FormMessage />
+                  </div>
+                </FormItem>
+              )}
+            />
             <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-base py-3 rounded-lg" disabled={isLoading}>
-              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Create Account & Proceed to Profile"}
+              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Create Account & Proceed"}
             </Button>
           </form>
         </Form>
