@@ -7,46 +7,48 @@ import Image from 'next/image';
 
 export default function WelcomePage() {
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-primary/5 via-background to-background p-6 text-center">
-      <div className="space-y-10 max-w-xl w-full">
-        <div className="animate-in fade-in-0 slide-in-from-top-12 duration-1000">
-          <Image
-            src="https://placehold.co/800x600.png"
-            alt="Students collaborating in a modern tech environment"
-            width={800}
-            height={600}
-            className="rounded-2xl shadow-2xl object-cover aspect-[4/3] mx-auto"
-            data-ai-hint="students technology collaboration success"
-            priority
-          />
-        </div>
-
-        <div className="space-y-4 animate-in fade-in-0 slide-in-from-bottom-10 duration-1000 delay-300">
-          <div className="flex justify-center items-center space-x-3">
-            <div className="p-4 bg-primary rounded-full shadow-lg">
-              <GraduationCap className="h-10 w-10 text-primary-foreground" />
-            </div>
+    <main className="flex flex-col min-h-screen bg-gradient-to-br from-primary/5 via-background to-background p-6 text-center">
+      <div className="flex-grow flex flex-col items-center justify-center">
+        <div className="space-y-10 max-w-xl w-full">
+          <div className="animate-in fade-in-0 slide-in-from-top-12 duration-1000">
+            <Image
+              src="https://placehold.co/800x600.png"
+              alt="Students collaborating in a modern tech environment"
+              width={800}
+              height={600}
+              className="rounded-2xl shadow-2xl object-cover aspect-[4/3] mx-auto"
+              data-ai-hint="students technology collaboration success"
+              priority
+            />
           </div>
-          <h1 className="text-4xl md:text-5xl font-headline font-bold text-primary tracking-tight mt-4">
-            Elevate Your Internship Experience
-          </h1>
-          <p className="text-lg md:text-xl text-foreground/80 font-body leading-relaxed max-w-md mx-auto">
-            InternHub: The Official Internship Platform for Ho Technical University.
-          </p>
-        </div>
 
-        <div className="pt-6 animate-in fade-in-0 slide-in-from-bottom-12 duration-1000 delay-500">
-          <Link href="/welcome/get-started" passHref>
-            <Button
-              size="lg"
-              className="font-headline text-xl px-12 py-7 bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl transform hover:scale-105 active:scale-95 transition-transform duration-300 rounded-xl w-full sm:w-auto group"
-            >
-              Discover InternHub <ArrowRight className="ml-2 h-6 w-6 transition-transform group-hover:translate-x-1" />
-            </Button>
-          </Link>
+          <div className="space-y-4 animate-in fade-in-0 slide-in-from-bottom-10 duration-1000 delay-300">
+            <div className="flex justify-center items-center space-x-3">
+              <div className="p-4 bg-primary rounded-full shadow-lg">
+                <GraduationCap className="h-10 w-10 text-primary-foreground" />
+              </div>
+            </div>
+            <h1 className="text-4xl md:text-5xl font-headline font-bold text-primary tracking-tight mt-4">
+              Elevate Your Internship Experience
+            </h1>
+            <p className="text-lg md:text-xl text-foreground/80 font-body leading-relaxed max-w-md mx-auto">
+              InternHub: The Official Internship Platform for Ho Technical University.
+            </p>
+          </div>
+
+          <div className="pt-6 animate-in fade-in-0 slide-in-from-bottom-12 duration-1000 delay-500">
+            <Link href="/welcome/get-started" passHref>
+              <Button
+                size="lg"
+                className="font-headline text-xl px-12 py-7 bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl transform hover:scale-105 active:scale-95 transition-transform duration-300 rounded-xl w-full sm:w-auto group"
+              >
+                Discover InternHub <ArrowRight className="ml-2 h-6 w-6 transition-transform group-hover:translate-x-1" />
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
-      <footer className="absolute bottom-8 text-center text-sm text-muted-foreground animate-in fade-in-0 duration-500 delay-700">
+      <footer className="py-8 text-center text-sm text-muted-foreground animate-in fade-in-0 duration-500 delay-700">
         <p>&copy; {new Date().getFullYear()} InternHub - Ho Technical University. Empowering Futures.</p>
       </footer>
     </main>

@@ -11,35 +11,37 @@ const OnboardingStepDot = ({ isActive }: { isActive: boolean }) => (
 
 export default function OnboardingStep4Page() {
   return (
-    <main className="flex flex-col items-center justify-between min-h-screen bg-gradient-to-br from-primary/5 via-background to-background p-6">
-      <div className="w-full max-w-md text-center mt-auto">
-        <div className="flex justify-center mb-8">
-          <Image 
-            src="https://placehold.co/600x400.png"
-            alt="Location pin with shield or check-in confirmation"
-            width={300}
-            height={200}
-            className="rounded-xl shadow-xl object-contain aspect-[3/2]"
-            data-ai-hint="location security trust check-in"
-          />
-        </div>
-        
-        <div className="space-y-3 mb-10">
-          <div className="flex justify-center items-center space-x-3">
-            <div className="p-3 bg-primary rounded-full shadow-lg">
-              <ShieldCheck className="h-8 w-8 text-primary-foreground" />
-            </div>
+    <main className="flex flex-col min-h-screen bg-gradient-to-br from-primary/5 via-background to-background p-6">
+      <div className="flex-grow flex flex-col items-center justify-center">
+        <div className="w-full max-w-md text-center">
+          <div className="flex justify-center mb-8">
+            <Image 
+              src="https://placehold.co/600x400.png"
+              alt="Location pin with shield or check-in confirmation"
+              width={300}
+              height={200}
+              className="rounded-xl shadow-xl object-contain aspect-[3/2]"
+              data-ai-hint="location security trust check-in"
+            />
           </div>
-          <h1 className="text-2xl font-headline font-bold text-primary tracking-tight mt-4">
-            Build Your Verifiable Professional Record
-          </h1>
-          <p className="text-md text-foreground/80 font-body leading-relaxed">
-            Securely check-in at your internship site and verify your presence to build a strong, trusted record of your dedication. Your privacy is paramount.
-          </p>
+          
+          <div className="space-y-3 mb-10">
+            <div className="flex justify-center items-center space-x-3">
+              <div className="p-3 bg-primary rounded-full shadow-lg">
+                <ShieldCheck className="h-8 w-8 text-primary-foreground" />
+              </div>
+            </div>
+            <h1 className="text-2xl font-headline font-bold text-primary tracking-tight mt-4">
+              Build Your Verifiable Professional Record
+            </h1>
+            <p className="text-md text-foreground/80 font-body leading-relaxed">
+              Securely check-in at your internship site and verify your presence to build a strong, trusted record of your dedication. Your privacy is paramount.
+            </p>
+          </div>
         </div>
       </div>
 
-      <div className="w-full max-w-md text-center mb-6 mt-auto">
+      <div className="w-full max-w-md text-center py-6">
         <div className="flex justify-center items-center space-x-2 mb-8">
           <OnboardingStepDot isActive={false} />
           <OnboardingStepDot isActive={false} />
@@ -60,6 +62,9 @@ export default function OnboardingStep4Page() {
           </Link>
         </div>
       </div>
+      <footer className="py-8 text-center text-sm text-muted-foreground animate-in fade-in-0 duration-500 delay-700">
+        <p>&copy; {new Date().getFullYear()} InternHub. Your Success, Our Priority.</p>
+      </footer>
     </main>
   );
 }
