@@ -3,11 +3,9 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { GraduationCap, ArrowRight, LogIn } from 'lucide-react';
-// Removed TopWave import for this page as it has a full primary background
 
 export default function WelcomePage() {
   return (
-    // Full primary background for this specific page
     <main className="flex flex-col min-h-screen bg-primary text-primary-foreground p-4">
       <div className="flex-grow flex flex-col items-center justify-center text-center pt-[5vh] sm:pt-[8vh]">
         <div className="relative z-10 mb-6 animate-in fade-in-0 slide-in-from-top-12 duration-1000">
@@ -28,7 +26,7 @@ export default function WelcomePage() {
         </div>
       </div>
       <div className="w-full max-w-xs mx-auto text-center py-4 z-0 animate-in fade-in-0 slide-in-from-bottom-12 duration-1000 delay-500">
-        <div className="flex flex-col items-center space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4 sm:justify-center">
+        <div className="flex flex-col items-center space-y-3 sm:flex-row sm:space-y-0 sm:space-x-3 sm:justify-center">
           <Link href="/welcome/get-started" passHref className="w-full sm:w-auto">
             <Button
               className="font-body text-sm px-6 py-2.5 bg-primary-foreground hover:bg-primary-foreground/90 text-primary shadow-md rounded-lg w-full group h-10"
