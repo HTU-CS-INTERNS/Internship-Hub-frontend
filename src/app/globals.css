@@ -19,7 +19,7 @@ body {
     --popover-foreground: 0 0% 15%; /* Darker text for popovers */
 
     /* Primary color - Soft Blue */
-    --primary: 207 90% 69%; /* hsl(207, 90%, 69%) for #64B5F6 - THIS IS THE KEY LINE */
+    --primary: 207 90% 69%; /* hsl(207, 90%, 69%) for #64B5F6 */
     --primary-foreground: 0 0% 100%; /* White text on primary */
     
     /* Accent color - Warm Orange */

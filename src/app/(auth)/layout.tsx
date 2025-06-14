@@ -13,7 +13,7 @@ export default function AuthLayout({
 }) {
   return (
     // The main background is white, specific colored panels are in page.tsx
-    <main className="relative flex flex-col min-h-screen bg-white overflow-x-hidden">
+    <main className="relative flex flex-col min-h-screen bg-white overflow-hidden">
       {children}
     </main>
   );

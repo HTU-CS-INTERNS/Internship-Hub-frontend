@@ -11,7 +11,8 @@ export default function RegisterPage() {
       <div className="flex-grow flex flex-col items-center justify-center text-center pt-10 pb-6 sm:pt-12 px-4">
         <div 
           className="relative w-32 h-32 sm:w-40 sm:h-40 bg-white rounded-full flex items-center justify-center"
-          style={{ filter: 'drop-shadow(0px 0px 25px rgba(255, 183, 77, 0.35))' }} // Warm Orange glow (Accent color)
+          // Warm Orange glow (Accent color HSL 33 100% 67% -> RGB 255, 183, 77)
+          style={{ filter: 'drop-shadow(0px 0px 25px rgba(255, 183, 77, 0.35))' }}
         >
           <UserPlus className="h-16 w-16 sm:h-20 sm:w-20 text-accent" strokeWidth={1.5} />
         </div>
@@ -20,7 +21,7 @@ export default function RegisterPage() {
       {/* Bottom colored rectangle using accent color */}
       <div 
         className="relative w-full bg-accent rounded-t-[3rem] shadow-[-10px_-10px_30px_rgba(0,0,0,0.07)] text-accent-foreground flex flex-col"
-        style={{ minHeight: '70vh' }} // Adjust height as needed for multi-step form
+        style={{ minHeight: '70vh' }} 
       >
         <div className="relative z-10 w-full max-w-md mx-auto flex flex-col flex-grow p-6 sm:p-8">
           <div className="text-center mb-6 sm:mb-8">

@@ -11,7 +11,8 @@ export default function LoginPage() {
       <div className="flex-grow flex flex-col items-center justify-center text-center pt-10 pb-6 sm:pt-12 px-4">
         <div 
           className="relative w-32 h-32 sm:w-40 sm:h-40 bg-white rounded-full flex items-center justify-center"
-          style={{ filter: 'drop-shadow(0px 0px 25px rgba(100, 181, 246, 0.35))' }} // Soft Blue glow (Primary color)
+          // Soft Blue glow (Primary color HSL 207 90% 69% -> RGB 100, 181, 246)
+          style={{ filter: 'drop-shadow(0px 0px 25px rgba(100, 181, 246, 0.35))' }} 
         >
           <LogIn className="h-16 w-16 sm:h-20 sm:w-20 text-primary" strokeWidth={1.5} />
         </div>
