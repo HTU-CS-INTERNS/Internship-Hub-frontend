@@ -9,7 +9,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import TopWave from '@/components/shared/top-wave';
 
 export default function WelcomeGetStartedPage() {
   const [termsAccepted, setTermsAccepted] = React.useState(false);
@@ -62,9 +61,8 @@ export default function WelcomeGetStartedPage() {
   };
 
   return (
-    <main className="relative flex flex-col min-h-screen bg-background overflow-x-clip p-4">
-      <TopWave />
-      <div className="flex-grow flex flex-col items-center justify-center z-0 pt-12 sm:pt-16">
+    <main className="flex flex-col min-h-screen bg-background p-4">
+      <div className="flex-grow flex flex-col items-center justify-center pt-12 sm:pt-16">
         <div className="space-y-3 max-w-xs w-full text-center">
           <div className="animate-in fade-in-0 slide-in-from-top-8 duration-700">
             <div className="flex justify-center items-center space-x-2 mb-3">
@@ -130,7 +128,7 @@ export default function WelcomeGetStartedPage() {
           <div className="pt-2 animate-in fade-in-0 slide-in-from-bottom-10 duration-700 delay-400">
             <Link href="/onboarding/step1" passHref>
               <Button
-                className="font-body text-sm px-6 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground shadow-md rounded-lg w-full group h-10"
+                className="font-body text-sm bg-primary hover:bg-primary/90 text-primary-foreground shadow-md rounded-lg w-full group h-10"
                 disabled={!termsAccepted}
                 aria-disabled={!termsAccepted}
               >
