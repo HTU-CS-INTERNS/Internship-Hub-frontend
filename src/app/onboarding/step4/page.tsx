@@ -13,11 +13,11 @@ export default function OnboardingStep4Page() {
   return (
     <main className="relative flex flex-col min-h-screen bg-background overflow-hidden p-4">
       {/* Top Blob SVG - Orange (Accent) */}
-      <svg viewBox="0 0 200 100" className="absolute top-0 left-0 w-[50%] sm:w-[35%] md:w-[30%] max-w-[220px] h-auto z-0" fill="hsl(var(--accent))" xmlns="http://www.w3.org/2000/svg">
+      <svg viewBox="0 0 200 100" className="absolute top-0 left-0 w-[50%] sm:w-[35%] md:w-[30%] max-w-[220px] h-auto z-[-1]" fill="hsl(var(--accent))" xmlns="http://www.w3.org/2000/svg">
         <path d="M0 0 C70 70 130 -30 200 70 L200 0 Z" />
       </svg>
 
-      <div className="flex-grow flex flex-col items-center justify-center text-center z-10 pt-16 sm:pt-20">
+      <div className="flex-grow flex flex-col items-center justify-center text-center z-0 pt-12 sm:pt-16">
         <div className="w-full max-w-xs">
           <div className="flex justify-center mb-4 sm:mb-5">
             <Image
@@ -34,25 +34,25 @@ export default function OnboardingStep4Page() {
       </div>
 
       {/* Bottom Blob with Text and Next Button - Orange (Accent) */}
-      <div className="relative w-full h-[45vh] sm:h-[40vh] md:h-[35vh] z-10 flex flex-col items-center justify-end">
+      <div className="relative w-full h-[45vh] sm:h-[40vh] md:h-[35vh] z-0 flex flex-col items-center justify-end">
         <svg viewBox="0 0 1440 300" className="absolute bottom-0 left-0 w-full h-full z-0" fill="hsl(var(--accent))" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
           <path d="M0,70 C180,170 380,40 720,80 C1000,130 1150,0 1440,60 L1440,300 L0,300 Z" />
         </svg>
-        <div className="relative z-10 p-6 pb-4 text-center text-accent-foreground w-full max-w-md mx-auto mb-[calc(2rem+16px)]">
-          <div className="flex justify-center items-center space-x-2 mb-2">
+        <div className="relative z-10 p-4 text-center text-accent-foreground w-full max-w-xs mx-auto mb-[calc(2rem+16px)] pr-12 sm:pr-14">
+          <div className="flex justify-center items-center space-x-2 mb-1">
             <div className="p-1.5 bg-accent-foreground/20 rounded-full shadow-md">
               <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5 text-accent-foreground" />
             </div>
           </div>
-          <h1 className="text-lg sm:text-xl font-headline font-bold tracking-tight">
+          <h1 className="text-lg font-headline font-bold tracking-tight">
             Build Your Verifiable Professional Record
           </h1>
-          <p className="text-xs sm:text-sm font-body leading-normal mt-1 opacity-90">
+          <p className="text-xs font-body leading-normal mt-1 opacity-90 max-w-[90%] mx-auto">
             Securely check-in at your internship site and verify your presence to build a strong, trusted record of your dedication. Your privacy is paramount.
           </p>
           <Link href="/onboarding/step5" passHref>
-            <Button variant="ghost" size="icon" className="absolute bottom-4 right-4 bg-accent-foreground/20 hover:bg-accent-foreground/30 text-accent-foreground rounded-full h-10 w-10 sm:h-12 sm:w-12">
-              <ArrowRight className="h-5 w-5 sm:h-6 sm:w-6" />
+            <Button variant="ghost" size="icon" className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 bg-accent-foreground/20 hover:bg-accent-foreground/30 text-accent-foreground rounded-full h-9 w-9 sm:h-10 sm:w-10">
+              <ArrowRight className="h-5 w-5" />
             </Button>
           </Link>
         </div>
