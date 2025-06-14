@@ -6,71 +6,71 @@ import { ArrowRight, ArrowLeft, MessageSquare } from 'lucide-react';
 import Image from 'next/image';
 
 const OnboardingStepDot = ({ isActive }: { isActive: boolean }) => (
-  <div className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${isActive ? 'bg-primary scale-125' : 'bg-muted'}`} />
+  <div className={`w-2 h-2 rounded-full transition-all duration-300 ${isActive ? 'bg-primary scale-110' : 'bg-muted'}`} />
 );
 
 export default function OnboardingStep3Page() {
   return (
-    <main className="flex flex-col min-h-screen bg-gradient-to-br from-primary/5 via-background to-background p-6">
+    <main className="flex flex-col min-h-screen bg-gradient-to-br from-primary/5 via-background to-background p-4">
       <div className="flex-grow flex flex-col items-center justify-center">
-        <div className="w-full max-w-md text-center">
-          <div className="flex justify-center mb-8">
+        <div className="w-full max-w-xs text-center">
+          <div className="flex justify-center mb-6">
             <Image 
-              src="https://placehold.co/600x400.png"
+              src="https://placehold.co/400x250.png"
               alt="Chat bubbles between student, supervisor, and lecturer avatars"
-              width={300}
-              height={200}
-              className="rounded-xl shadow-xl object-contain aspect-[3/2]"
+              width={280}
+              height={175}
+              className="rounded-lg shadow-lg object-contain aspect-[16/10]"
               data-ai-hint="communication chat feedback avatars"
             />
           </div>
           
-          <div className="space-y-3 mb-10">
-            <div className="flex justify-center items-center space-x-3">
-              <div className="p-3 bg-primary rounded-full shadow-lg">
-                <MessageSquare className="h-8 w-8 text-primary-foreground" />
+          <div className="space-y-2 mb-6">
+            <div className="flex justify-center items-center space-x-2">
+              <div className="p-2 bg-primary rounded-full shadow-md">
+                <MessageSquare className="h-6 w-6 text-primary-foreground" />
               </div>
             </div>
-            <h1 className="text-2xl font-headline font-bold text-primary tracking-tight mt-4">
+            <h1 className="text-xl font-headline font-bold text-primary tracking-tight mt-2">
               Stay Connected, Get Guided
             </h1>
-            <p className="text-md text-foreground/80 font-body leading-relaxed">
-              Communicate directly with your company supervisor and university lecturer. Receive timely feedback and get the support you need.
+            <p className="text-sm text-foreground/80 font-body leading-normal">
+              Communicate with supervisors and lecturers. Receive timely feedback and support.
             </p>
           </div>
         </div>
       </div>
 
-      <div className="w-full max-w-md mx-auto text-center py-6">
-        <div className="flex justify-center items-center space-x-2 mb-8">
+      <div className="w-full max-w-xs mx-auto text-center py-4">
+        <div className="flex justify-center items-center space-x-1.5 mb-6">
           <OnboardingStepDot isActive={false} />
           <OnboardingStepDot isActive={false} />
           <OnboardingStepDot isActive={true} />
           <OnboardingStepDot isActive={false} />
           <OnboardingStepDot isActive={false} />
         </div>
-         <div className="flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:space-x-4">
+         <div className="flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:space-x-3">
           <Link href="/onboarding/step2" passHref className="w-full sm:w-auto flex-1">
-            <Button variant="ghost" className="font-body text-primary hover:bg-primary/10 rounded-xl w-full h-auto py-3 group">
-              <ArrowLeft className="mr-2 h-5 w-5 transition-transform group-hover:-translate-x-1" /> Back
+            <Button variant="ghost" className="font-body text-primary hover:bg-primary/10 rounded-lg w-full h-auto py-2.5 group">
+              <ArrowLeft className="mr-1.5 h-4 w-4 transition-transform group-hover:-translate-x-0.5" /> Back
             </Button>
           </Link>
           <Link href="/onboarding/step4" passHref className="w-full sm:w-auto flex-1">
-            <Button className="font-body text-base px-8 py-3 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg rounded-xl w-full group">
-              Next <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+            <Button className="font-body text-sm px-6 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground shadow-md rounded-lg w-full group">
+              Next <ArrowRight className="ml-1.5 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </Button>
           </Link>
         </div>
-         <div className="mt-4">
+         <div className="mt-3">
              <Link href="/register" passHref>
-                <Button variant="link" size="sm" className="font-body text-muted-foreground hover:text-primary rounded-xl h-auto py-2">
+                <Button variant="link" size="sm" className="font-body text-muted-foreground hover:text-primary rounded-lg h-auto py-2 text-xs">
                 Skip to Registration
                 </Button>
             </Link>
         </div>
       </div>
-      <footer className="flex-shrink-0 py-8 text-center text-sm text-muted-foreground animate-in fade-in-0 duration-500 delay-700">
-        <p>&copy; {new Date().getFullYear()} InternHub - Ho Technical University. Your Success, Our Priority.</p>
+      <footer className="flex-shrink-0 py-4 text-center text-xs text-muted-foreground">
+        <p>&copy; {new Date().getFullYear()} InternHub - HTU</p>
       </footer>
     </main>
   );
