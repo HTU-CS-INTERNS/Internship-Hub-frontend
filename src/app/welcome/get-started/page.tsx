@@ -10,23 +10,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-
-const TopWave = () => (
-  <div className="absolute top-0 left-0 w-full overflow-hidden leading-none -z-[1]">
-    <svg
-      viewBox="0 0 1440 280" // Adjusted viewBox for a potentially smaller wave here
-      xmlns="http://www.w3.org/2000/svg"
-      className="relative block w-full h-[150px] sm:h-[200px]" // Smaller wave
-    >
-      <path
-        fill="hsl(195, 47%, 32%)" // Dark Teal/Blue
-        fillOpacity="1"
-        d="M0,128L60,138.7C120,149,240,171,360,165.3C480,160,600,128,720,112C840,96,960,96,1080,106.7C1200,117,1320,139,1380,149.3L1440,160L1440,0L1380,0C1320,0,1200,0,1080,0C960,0,840,0,720,0C600,0,480,0,360,0C240,0,120,0,60,0L0,0Z"
-      ></path>
-    </svg>
-  </div>
-);
-
+import TopWave from '@/components/shared/top-wave';
 
 export default function WelcomeGetStartedPage() {
   const [termsAccepted, setTermsAccepted] = React.useState(false);
@@ -81,30 +65,30 @@ export default function WelcomeGetStartedPage() {
   return (
     <main className="relative flex flex-col min-h-screen bg-background overflow-x-clip p-4">
       <TopWave />
-      <div className="flex-grow flex flex-col items-center justify-center z-0"> {/* Added z-0 */}
+      <div className="flex-grow flex flex-col items-center justify-center z-0 pt-12 sm:pt-16"> {/* Adjusted top padding */}
         <div className="space-y-3 max-w-xs w-full text-center">
           <div className="animate-in fade-in-0 slide-in-from-top-8 duration-700">
             <div className="flex justify-center items-center space-x-2 mb-3">
               <div className="p-2 bg-primary rounded-full shadow-md">
-                <ShieldCheck className="h-6 w-6 text-primary-foreground" />
+                <ShieldCheck className="h-5 w-5 sm:h-6 sm:w-6 text-primary-foreground" />
               </div>
             </div>
-            <h1 className="text-xl font-headline font-bold text-primary tracking-tight">
+            <h1 className="text-lg sm:text-xl font-headline font-bold text-primary tracking-tight">
               Final Steps Before You Start
             </h1>
-            <p className="text-sm text-foreground/80 font-body leading-normal">
+            <p className="text-xs sm:text-sm text-foreground/80 font-body leading-normal">
               Review essential information to begin your journey with InternHub.
             </p>
           </div>
 
-          <Card className="bg-card/90 backdrop-blur-sm shadow-lg rounded-xl text-left animate-in fade-in-0 slide-in-from-bottom-8 duration-700 delay-200 w-full">
+          <Card className="bg-card/90 backdrop-blur-sm shadow-lg rounded-xl text-left animate-in fade-in-0 slide-in-from-bottom-8 duration-700 delay-200 w-full mt-4">
             <CardHeader className="p-3">
-              <CardTitle className="text-sm font-semibold text-foreground">Consents & Permissions</CardTitle>
+              <CardTitle className="text-xs sm:text-sm font-semibold text-foreground">Consents & Permissions</CardTitle>
             </CardHeader>
-            <CardContent className="p-3 pt-0 space-y-2.5">
+            <CardContent className="p-3 pt-0 space-y-2">
               <div className="items-top flex space-x-2 p-2 border rounded-lg bg-muted/50">
                 <Checkbox id="terms" checked={termsAccepted} onCheckedChange={(checked) => setTermsAccepted(checked as boolean)} className="mt-0.5"/>
-                <div className="grid gap-1 leading-none">
+                <div className="grid gap-0.5 leading-none">
                   <Label htmlFor="terms" className="text-xs font-medium text-foreground cursor-pointer">
                     I agree to InternHub's
                     <Button variant="link" asChild className="p-0 h-auto ml-1 text-primary hover:underline text-xs"><Link href="/terms-placeholder" target="_blank">Terms</Link></Button>
@@ -117,7 +101,7 @@ export default function WelcomeGetStartedPage() {
               <div className="p-2 border rounded-lg bg-muted/50">
                 <div className="flex items-center justify-between">
                   <Label className="text-xs font-medium text-foreground flex items-center">
-                    <MapPin className="mr-1.5 h-3.5 w-3.5 text-primary" /> Location Services
+                    <MapPin className="mr-1.5 h-3 w-3 text-primary" /> Location Services
                   </Label>
                   {locationPermissionStatus === 'idle' && (
                     <Button size="xs" variant="outline" onClick={handleRequestLocationPermission} className="rounded-md text-xs h-6 px-1.5">
@@ -135,9 +119,9 @@ export default function WelcomeGetStartedPage() {
                   )}
                 </div>
               </div>
-               <div className="flex items-start space-x-1.5 p-2 border-l-2 border-blue-500 bg-blue-500/10 rounded-r-md">
-                  <Info className="h-3.5 w-3.5 text-blue-600 mt-0.5 flex-shrink-0" />
-                  <p className="text-xs text-blue-700">
+               <div className="flex items-start space-x-1 p-2 border-l-2 border-blue-500 bg-blue-500/10 rounded-r-md">
+                  <Info className="h-3 w-3 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <p className="text-[10px] sm:text-xs text-blue-700 leading-tight">
                       Proceeding means consent to data use as per our Policy.
                   </p>
               </div>
@@ -147,7 +131,7 @@ export default function WelcomeGetStartedPage() {
           <div className="pt-2 animate-in fade-in-0 slide-in-from-bottom-10 duration-700 delay-400">
             <Link href="/onboarding/step1" passHref>
               <Button
-                className="font-body text-sm px-6 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground shadow-md rounded-lg w-full group"
+                className="font-body text-sm px-6 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground shadow-md rounded-lg w-full group h-10"
                 disabled={!termsAccepted}
                 aria-disabled={!termsAccepted}
               >
@@ -166,4 +150,3 @@ export default function WelcomeGetStartedPage() {
     </main>
   );
 }
-    

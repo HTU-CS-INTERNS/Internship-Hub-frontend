@@ -4,22 +4,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, ArrowLeft, MessageSquare } from 'lucide-react';
 import Image from 'next/image';
-
-const TopWave = () => (
-  <div className="absolute top-0 left-0 w-full overflow-hidden leading-none -z-[1]">
-    <svg
-      viewBox="0 0 1440 260" 
-      xmlns="http://www.w3.org/2000/svg"
-      className="relative block w-full h-[180px] sm:h-[220px]"
-    >
-      <path
-        fill="hsl(195, 47%, 32%)" 
-        fillOpacity="1"
-        d="M0,128L60,138.7C120,149,240,171,360,165.3C480,160,600,128,720,112C840,96,960,96,1080,106.7C1200,117,1320,139,1380,149.3L1440,160L1440,0L1380,0C1320,0,1200,0,1080,0C960,0,840,0,720,0C600,0,480,0,360,0C240,0,120,0,60,0L0,0Z"
-      ></path>
-    </svg>
-  </div>
-);
+import TopWave from '@/components/shared/top-wave';
 
 const OnboardingStepDot = ({ isActive }: { isActive: boolean }) => (
   <div className={`w-2 h-2 rounded-full transition-all duration-300 ${isActive ? 'bg-primary scale-110' : 'bg-muted'}`} />
@@ -29,11 +14,11 @@ export default function OnboardingStep3Page() {
   return (
     <main className="relative flex flex-col min-h-screen bg-background overflow-x-clip p-4">
       <TopWave />
-      <div className="flex-grow flex flex-col items-center justify-center text-center z-0 pt-8">
+      <div className="flex-grow flex flex-col items-center justify-center text-center z-0 pt-12 sm:pt-16">
         <div className="w-full max-w-xs">
-          <div className="flex justify-center mb-5">
-            <Image 
-              src="https://placehold.co/400x250.png"
+          <div className="flex justify-center mb-4 sm:mb-5">
+            <Image
+              src="https://placehold.co/250x156.png"
               alt="Chat bubbles between student, supervisor, and lecturer avatars"
               width={250}
               height={156}
@@ -41,17 +26,17 @@ export default function OnboardingStep3Page() {
               data-ai-hint="communication chat feedback avatars"
             />
           </div>
-          
-          <div className="space-y-1.5 mb-5">
+
+          <div className="space-y-1 sm:space-y-1.5 mb-4 sm:mb-5">
             <div className="flex justify-center items-center space-x-2">
               <div className="p-2 bg-primary rounded-full shadow-md">
                 <MessageSquare className="h-5 w-5 text-primary-foreground" />
               </div>
             </div>
-            <h1 className="text-lg font-headline font-bold text-primary tracking-tight mt-1">
+            <h1 className="text-lg sm:text-xl font-headline font-bold text-primary tracking-tight mt-1">
               Stay Connected, Get Guided
             </h1>
-            <p className="text-xs text-foreground/80 font-body leading-normal">
+            <p className="text-xs sm:text-sm text-foreground/80 font-body leading-normal">
               Communicate directly with your company supervisor and university lecturer. Receive timely feedback and get the support you need.
             </p>
           </div>
@@ -59,7 +44,7 @@ export default function OnboardingStep3Page() {
       </div>
 
       <div className="w-full max-w-xs mx-auto text-center py-4 z-0">
-        <div className="flex justify-center items-center space-x-1.5 mb-5">
+        <div className="flex justify-center items-center space-x-1.5 mb-4 sm:mb-5">
           <OnboardingStepDot isActive={false} />
           <OnboardingStepDot isActive={false} />
           <OnboardingStepDot isActive={true} />
@@ -86,10 +71,9 @@ export default function OnboardingStep3Page() {
             </Link>
         </div>
       </div>
-      <footer className="flex-shrink-0 py-3 text-center text-xs text-muted-foreground z-0">
+      <footer className="flex-shrink-0 py-4 text-center text-xs text-muted-foreground z-0">
         <p>&copy; {new Date().getFullYear()} InternHub - HTU</p>
       </footer>
     </main>
   );
 }
-    
