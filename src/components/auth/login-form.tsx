@@ -139,7 +139,11 @@ export function LoginForm() {
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isLoading}>
+        <Button 
+          type="submit" 
+          className="w-full bg-primary-foreground hover:bg-primary-foreground/90 text-primary shadow-md" 
+          disabled={isLoading}
+        >
           {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Login'}
         </Button>
       </form>
