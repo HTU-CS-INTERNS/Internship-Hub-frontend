@@ -7,18 +7,15 @@ import { UserPlus } from 'lucide-react';
 export default function RegisterPage() {
   return (
     <main className="relative flex flex-col min-h-screen bg-white overflow-hidden">
-      {/* Top white section for the icon */}
       <div className="flex-grow flex flex-col items-center justify-center text-center pt-10 pb-6 sm:pt-12 px-4">
         <div 
           className="relative w-32 h-32 sm:w-40 sm:h-40 bg-white rounded-full flex items-center justify-center"
-          // Warm Orange glow (Accent color HSL 33 100% 67% -> RGB 255, 183, 77)
-          style={{ filter: 'drop-shadow(0px 0px 25px rgba(255, 183, 77, 0.35))' }}
+          style={{ filter: 'drop-shadow(0px 0px 25px rgba(217, 38, 38, 0.35))' }} // Glow with HTU Red RGBA
         >
-          <UserPlus className="h-16 w-16 sm:h-20 sm:w-20 text-accent" strokeWidth={1.5} />
+          <UserPlus className="h-16 w-16 sm:h-20 sm:w-20 text-accent" strokeWidth={1.5} /> {/* Icon color from accent CSS var */}
         </div>
       </div>
 
-      {/* Bottom colored rectangle using accent color */}
       <div 
         className="relative w-full bg-accent rounded-t-[3rem] shadow-[-10px_-10px_30px_rgba(0,0,0,0.07)] text-accent-foreground flex flex-col"
         style={{ minHeight: '70vh' }} 

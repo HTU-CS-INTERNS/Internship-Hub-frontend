@@ -7,21 +7,18 @@ import { LogIn } from 'lucide-react';
 export default function LoginPage() {
   return (
     <main className="relative flex flex-col min-h-screen bg-white overflow-hidden">
-      {/* Top white section for the icon */}
       <div className="flex-grow flex flex-col items-center justify-center text-center pt-10 pb-6 sm:pt-12 px-4">
         <div 
           className="relative w-32 h-32 sm:w-40 sm:h-40 bg-white rounded-full flex items-center justify-center"
-          // Soft Blue glow (Primary color HSL 207 90% 69% -> RGB 100, 181, 246)
-          style={{ filter: 'drop-shadow(0px 0px 25px rgba(100, 181, 246, 0.35))' }} 
+          style={{ filter: 'drop-shadow(0px 0px 25px rgba(32, 64, 96, 0.35))' }} // Glow with HTU Navy Blue RGBA
         >
-          <LogIn className="h-16 w-16 sm:h-20 sm:w-20 text-primary" strokeWidth={1.5} />
+          <LogIn className="h-16 w-16 sm:h-20 sm:w-20 text-primary" strokeWidth={1.5} /> {/* Icon color from primary CSS var */}
         </div>
       </div>
 
-      {/* Bottom colored rectangle using primary color */}
       <div 
         className="relative w-full bg-primary rounded-t-[3rem] shadow-[-10px_-10px_30px_rgba(0,0,0,0.07)] text-primary-foreground flex flex-col"
-        style={{ minHeight: '65vh' }} // Ensure it takes up significant lower screen
+        style={{ minHeight: '65vh' }} 
       >
         <div className="relative z-10 w-full max-w-md mx-auto flex flex-col flex-grow p-6 sm:p-8">
           <div className="text-center mb-6 sm:mb-8">

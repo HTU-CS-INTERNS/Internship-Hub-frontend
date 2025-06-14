@@ -18,10 +18,11 @@ import {
 import { Button } from '@/components/ui/button';
 import { NAV_LINKS, BOTTOM_NAV_LINKS, USER_ROLES } from '@/lib/constants';
 import type { NavItem, UserRole } from '@/types';
-import { GraduationCap, LogOut, ChevronLeft, ChevronRight, UserCircle } from 'lucide-react';
+import { LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import Image from 'next/image'; // Import NextImage
 
-const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
+const getInitials = (name: string) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase() : 'U';
 
 interface AppSidebarProps {
   userRole: UserRole;
@@ -36,11 +37,10 @@ export default function AppSidebar({ userRole }: AppSidebarProps) {
 
   React.useEffect(() => {
     if (typeof window !== "undefined") {
-      setUserName(localStorage.getItem('userName') || DUMMY_USER.name);
+      setUserName(localStorage.getItem('userName') || 'User');
     }
   }, []);
 
-  // DUMMY_USER fallback if localStorage is not set yet
   const DUMMY_USER = {
     name: userName,
     avatarUrl: `https://placehold.co/100x100.png?text=${getInitials(userName)}`,
@@ -58,7 +58,7 @@ export default function AppSidebar({ userRole }: AppSidebarProps) {
     router.push('/login');
   };
 
-  const navSections = ["Main", "Tools", "Management", "Administration", "Settings"]; // Added Administration
+  const navSections = ["Main", "Tools", "Management", "Administration", "Settings"];
 
   const renderNavItemsForSection = (section: string, links: NavItem[]) => {
     const sectionLinks = links.filter(link => link.section === section && link.roles.includes(userRole));
@@ -71,7 +71,7 @@ export default function AppSidebar({ userRole }: AppSidebarProps) {
             {section}
           </span>
         </div>
-         <div className="px-2 group-data-[collapsible=icon]:px-0.5 group-data-[collapsible=icon]:mt-2"> {/* Icon only padding */}
+         <div className="px-2 group-data-[collapsible=icon]:px-0.5 group-data-[collapsible=icon]:mt-2">
             <SidebarMenu>
             {sectionLinks.map(item => {
                 const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
@@ -106,8 +106,14 @@ export default function AppSidebar({ userRole }: AppSidebarProps) {
     >
       <SidebarHeader className="p-4 border-b border-sidebar-border flex items-center justify-between group-data-[collapsible=icon]:justify-center">
         <Link href="/dashboard" className="flex items-center gap-2 group">
-          <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shadow-md">
-            <GraduationCap className="h-6 w-6 text-primary-foreground" />
+          <div className="w-10 h-10 rounded-full bg-primary-foreground/10 flex items-center justify-center shadow-md p-1">
+            <Image 
+              src="https://firebase.so/docs/studio/guides/images/internship-track-logo.png" 
+              alt="HTU Logo" 
+              width={32} 
+              height={32} 
+              className="h-full w-full object-contain"
+            />
           </div>
           <span className="font-headline text-xl font-bold text-primary-foreground group-hover:text-primary-foreground/80 transition-colors group-data-[collapsible=icon]:hidden">
             InternHub
@@ -158,3 +164,4 @@ export default function AppSidebar({ userRole }: AppSidebarProps) {
     </Sidebar>
   );
 }
+    

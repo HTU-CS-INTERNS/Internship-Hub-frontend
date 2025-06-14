@@ -18,43 +18,43 @@ body {
     --popover: 0 0% 100%; /* White */
     --popover-foreground: 0 0% 15%; /* Darker text for popovers */
 
-    /* Primary color - Soft Blue */
-    --primary: 207 90% 69%; /* hsl(207, 90%, 69%) for #64B5F6 */
-    --primary-foreground: 0 0% 100%; /* White text on primary */
+    /* Primary color - HTU Navy Blue */
+    --primary: 215 50% 25%; /* Approx. from logo: hsl(215, 50%, 25%) rgb(32, 64, 96) */
+    --primary-foreground: 0 0% 98%; /* Off-white text on primary */
     
-    /* Accent color - Warm Orange */
-    --accent: 33 100% 67%; /* hsl(33, 100%, 67%) for #FFB74D */
-    --accent-foreground: 0 0% 20%; /* Dark text on accent */
+    /* Accent color - HTU Red */
+    --accent: 0 70% 50%; /* Approx. from logo flame: hsl(0, 70%, 50%) rgb(217, 38, 38) */
+    --accent-foreground: 0 0% 100%; /* White text on accent */
 
-    --secondary: 207 70% 95%; /* Lighter soft blue for secondary elements */
-    --secondary-foreground: 207 50% 25%; /* Darker text for secondary */
+    --secondary: 215 30% 90%; /* Lighter shade of primary for secondary elements */
+    --secondary-foreground: 215 50% 20%; /* Darker text for secondary */
 
     --muted: 0 0% 90%; /* Muted gray */
     --muted-foreground: 0 0% 45.1%; /* Default medium gray */
 
-    --destructive: 0 72% 51%; /* Standard destructive red */
+    --destructive: 0 72% 51%; /* Standard destructive red (can be same as accent if desired) */
     --destructive-foreground: 0 0% 98%;
 
     --border: 0 0% 88%; /* Light gray border #E0E0E0 */
     --input: 0 0% 88%; /* Consistent with border */
-    --ring: 207 90% 62%; /* Ring color based on primary (soft blue) */
+    --ring: 215 50% 45%; /* Ring color based on primary (HTU Navy) */
 
-    --chart-1: 207 90% 69%; /* Primary soft blue */
-    --chart-2: 33 100% 67%; /* Accent warm orange */
+    --chart-1: 215 50% 25%; /* Primary HTU Navy */
+    --chart-2: 0 70% 50%;   /* Accent HTU Red */
     --chart-3: 145 63% 49%; /* A complementary green */
     --chart-4: 260 80% 70%; /* A contrasting purple */
-    --chart-5: 320 70% 65%; /* A pink/magenta */
+    --chart-5: 45 100% 55%; /* A bright yellow/gold */
     --radius: 0.5rem;
 
     /* Sidebar specific variables */
-    --sidebar-background: 207 73% 30%; /* Darker shade of soft blue */
+    --sidebar-background: 215 50% 18%; /* Darker shade of HTU Navy */
     --sidebar-foreground: 0 0% 95%;   
     --sidebar-primary: 0 0% 100%;   
-    --sidebar-primary-foreground: 207 73% 20%; 
-    --sidebar-accent: 207 73% 40%;    
+    --sidebar-primary-foreground: 215 50% 10%; 
+    --sidebar-accent: 215 50% 28%;    
     --sidebar-accent-foreground: 0 0% 100%; 
-    --sidebar-border: 207 73% 25%;    
-    --sidebar-ring: 207 73% 57%;      
+    --sidebar-border: 215 50% 15%;    
+    --sidebar-ring: 215 50% 50%;      
 
     /* Mobile layout variables */
     --mobile-header-height: 3.75rem; /* 60px */
@@ -62,48 +62,48 @@ body {
   }
 
   .dark {
-    --background: 0 0% 10%; 
-    --foreground: 0 0% 90%; 
+    --background: 0 0% 8%; 
+    --foreground: 0 0% 92%; 
 
-    --card: 0 0% 15%; 
-    --card-foreground: 0 0% 90%; 
+    --card: 0 0% 12%; 
+    --card-foreground: 0 0% 92%; 
 
-    --popover: 0 0% 15%; 
-    --popover-foreground: 0 0% 90%; 
+    --popover: 0 0% 12%; 
+    --popover-foreground: 0 0% 92%; 
 
-    --primary: 207 90% 60%; /* Dark theme primary soft blue (derived from 207 90% 69%) */
-    --primary-foreground: 0 0% 10%; 
+    --primary: 215 50% 35%; /* Dark theme primary HTU Navy */
+    --primary-foreground: 0 0% 95%; 
 
-    --secondary: 207 30% 25%; 
-    --secondary-foreground: 0 0% 90%;
+    --secondary: 215 30% 22%; 
+    --secondary-foreground: 0 0% 92%;
 
-    --muted: 0 0% 20%;
-    --muted-foreground: 0 0% 60%;
+    --muted: 0 0% 18%;
+    --muted-foreground: 0 0% 65%;
 
-    --accent: 33 100% 60%; /* Dark theme accent warm orange */
-    --accent-foreground: 0 0% 10%;
+    --accent: 0 70% 55%; /* Dark theme accent HTU Red */
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 70% 55%;
-    --destructive-foreground: 0 0% 90%;
+    --destructive-foreground: 0 0% 92%;
 
-    --border: 0 0% 25%;
-    --input: 0 0% 25%;
-    --ring: 207 90% 60%; /* Ring color for dark theme */
+    --border: 0 0% 22%;
+    --input: 0 0% 22%;
+    --ring: 215 50% 40%; 
     
-    --chart-1: 207 90% 60%;
-    --chart-2: 33 100% 60%;
-    --chart-3: 145 50% 55%;
-    --chart-4: 260 70% 65%;
-    --chart-5: 320 60% 60%;
+    --chart-1: 215 50% 35%;
+    --chart-2: 0 70% 55%;
+    --chart-3: 145 50% 50%;
+    --chart-4: 260 70% 60%;
+    --chart-5: 45 100% 50%;
 
-    --sidebar-background: 207 40% 18%; 
-    --sidebar-foreground: 0 0% 85%;   
-    --sidebar-primary: 0 0% 95%;   
-    --sidebar-primary-foreground: 207 40% 10%; 
-    --sidebar-accent: 207 40% 28%;    
-    --sidebar-accent-foreground: 0 0% 95%; 
-    --sidebar-border: 207 40% 15%;    
-    --sidebar-ring: 207 73% 65%;     
+    --sidebar-background: 215 50% 15%; 
+    --sidebar-foreground: 0 0% 90%;   
+    --sidebar-primary: 0 0% 98%;   
+    --sidebar-primary-foreground: 215 50% 8%; 
+    --sidebar-accent: 215 50% 25%;    
+    --sidebar-accent-foreground: 0 0% 98%; 
+    --sidebar-border: 215 50% 12%;    
+    --sidebar-ring: 215 50% 45%;     
   }
 }
 
@@ -118,7 +118,7 @@ body {
   }
 }
 
-/* Animations from mockup */
+/* Animations */
 .slide-in {
   animation: slideIn 0.3s ease-out forwards;
 }
@@ -144,28 +144,6 @@ body {
 @keyframes pulseOnce {
   0%, 100% { box-shadow: 0 0 0 0 hsl(var(--primary)/ 0.4); opacity: 1; }
   50% { box-shadow: 0 0 0 10px hsl(var(--primary)/ 0); opacity: 0.7; }
-}
-
-
-.geofence-indicator {
-  position: relative;
-}
-
-.geofence-indicator::after {
-  content: '';
-  position: absolute;
-  top: -5px;
-  left: -5px;
-  right: -5px;
-  bottom: -5px;
-  border-radius: 50%;
-  border: 2px dashed hsl(var(--primary)/0.5);
-  animation: rotateGeoFence 10s linear infinite;
-}
-
-@keyframes rotateGeoFence {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
 }
 
 .shadow-top-md {

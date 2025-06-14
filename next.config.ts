@@ -1,25 +1,19 @@
 
 import type { NextConfig } from 'next';
-// Correctly import the default export from @ducanh2912/next-pwa
 import withPWAInit from '@ducanh2912/next-pwa';
 
-const APP_NAME = "InternHub"; 
+const APP_NAME = "InternHub - HTU"; 
 const APP_DESCRIPTION = "Streamlining Internship Management for Ho Technical University Students, Lecturers, and Companies.";
 
 const withPWA = withPWAInit({
   dest: 'public',
   register: true,
   skipWaiting: true,
-  disable: process.env.NODE_ENV === 'development', // Disable PWA in development
+  disable: process.env.NODE_ENV === 'development', 
   workboxOptions: {
-    disableDevLogs: true, // Disable Workbox logs in development
-    // importScripts: ['/custom-sw.js'], // Removed custom service worker for troubleshooting
+    disableDevLogs: true, 
   },
-  fallbacks: {
-    // document: '/offline', // example: fallbacks to /_offline if the page is not cached
-    // image: '/static/images/fallback.png',
-    // font: '/static/fonts/fallback.woff2',
-  },
+  fallbacks: {},
   cacheOnFrontEndNav: true, 
   aggressiveFrontEndNavCaching: true, 
   reloadOnOnline: true, 
@@ -27,11 +21,11 @@ const withPWA = withPWAInit({
     name: APP_NAME,
     short_name: "InternHubHTU", 
     description: APP_DESCRIPTION,
-    start_url: "/", // Explicitly set to root, which is now the welcome page
+    start_url: "/", 
     display: "standalone",
     scope: "/",
-    background_color: "#f5f5f5", 
-    theme_color: "#4f46e5",     
+    background_color: "#ffffff", // Assuming primary background for PWA is white for the splash
+    theme_color: "hsl(215, 50%, 25%)", // HTU Navy Blue     
     icons: [
       {
         src: "/icons/icon-192x192.png",
@@ -54,7 +48,6 @@ const withPWA = withPWAInit({
 });
 
 const nextConfig: NextConfig = {
-  /* config options here */
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -69,8 +62,15 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'firebase.so', // Added for HTU logo
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
 };
 
 export default withPWA(nextConfig);
+    
