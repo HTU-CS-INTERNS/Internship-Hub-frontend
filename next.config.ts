@@ -12,9 +12,12 @@ const withPWA = withPWAInit({
   disable: process.env.NODE_ENV === 'development', 
   workboxOptions: {
     disableDevLogs: true, 
-    // Removed importScripts: ['/custom-sw.js']
   },
-  fallbacks: {},
+  fallbacks: {
+    document: '/offline', // Fallback for document/HTML requests when offline
+    // You can also add fallbacks for images, fonts, etc. if needed
+    // image: '/offline-placeholder.png', 
+  },
   cacheOnFrontEndNav: true, 
   aggressiveFrontEndNavCaching: true, 
   reloadOnOnline: true, 
@@ -22,7 +25,7 @@ const withPWA = withPWAInit({
     name: APP_NAME,
     short_name: "InternHubHTU", 
     description: APP_DESCRIPTION,
-    start_url: "/", // Changed from /welcome
+    start_url: "/", 
     display: "standalone",
     scope: "/",
     background_color: "#ffffff", 
@@ -63,7 +66,6 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
-      // Removed firebase.so hostname as logo is no longer used from there
     ],
   },
 };
