@@ -190,7 +190,11 @@ export function RegistrationForm() {
   const facultyName = userDataFromDB ? FACULTIES.find(f => f.id === userDataFromDB.facultyId)?.name : 'N/A';
   const departmentName = userDataFromDB ? DEPARTMENTS.find(d => d.id === userDataFromDB.departmentId)?.name : 'N/A';
   
-  const inputStyles = "bg-white dark:bg-gray-50 text-gray-900 dark:text-gray-900 placeholder:text-gray-500 dark:placeholder:text-gray-500 border-gray-300 dark:border-gray-400 rounded-lg focus:ring-accent focus:border-accent";
+  // Input styles consistent for light background on dark panel
+  const inputStyles = "bg-white dark:bg-gray-50 text-gray-900 dark:text-gray-900 placeholder:text-gray-500 dark:placeholder:text-gray-500 border-gray-300 dark:border-gray-400 rounded-lg focus:ring-primary focus:border-primary";
+  // Button styles for primary panel (light text on dark panel)
+  const primaryButtonStyles = "w-full bg-primary-foreground hover:bg-primary-foreground/90 text-primary text-base py-3 rounded-lg";
+  const linkButtonStyles = "w-full text-sm text-primary-foreground/80 hover:text-primary-foreground";
 
   if (step === 1) {
     return (
@@ -234,7 +238,7 @@ export function RegistrationForm() {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full bg-accent-foreground hover:bg-accent-foreground/90 text-accent text-base py-3 rounded-lg" disabled={isLoading}>
+            <Button type="submit" className={primaryButtonStyles} disabled={isLoading}>
               {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Verify & Send OTP"}
             </Button>
           </form>
@@ -247,16 +251,17 @@ export function RegistrationForm() {
     return (
       <div key="registration-step-2">
         <Form {...step2Form}>
-          <Card className="bg-muted/50 border-input shadow-inner mb-6">
+          {/* Card styling updated for primary panel */}
+          <Card className="bg-primary-foreground/10 border-primary-foreground/20 shadow-inner mb-6">
               <CardHeader className="pb-3">
-                  <CardTitle className="text-lg flex items-center text-accent-foreground">
-                      <CheckCircle className="mr-2 h-5 w-5 text-green-500"/> Identity Partially Verified
+                  <CardTitle className="text-lg flex items-center text-primary-foreground">
+                      <CheckCircle className="mr-2 h-5 w-5 text-green-400"/> Identity Partially Verified
                   </CardTitle>
               </CardHeader>
-              <CardContent className="text-sm text-accent-foreground/90 space-y-1">
+              <CardContent className="text-sm text-primary-foreground/90 space-y-1">
                   <p>An OTP has been 'sent' to: <strong>{verifiedSchoolEmail}</strong></p>
-                  <p className="text-xs text-accent-foreground/70">Please enter the 6-digit code below to confirm your identity. (Simulated OTP: {generatedOtpForVerification})</p>
-                  <p className="text-xs text-accent-foreground/70 mt-2">If this is you, please proceed:</p>
+                  <p className="text-xs text-primary-foreground/70">Please enter the 6-digit code below to confirm your identity. (Simulated OTP: {generatedOtpForVerification})</p>
+                  <p className="text-xs text-primary-foreground/70 mt-2">If this is you, please proceed:</p>
                   <ul className="text-xs list-disc list-inside pl-2">
                       <li><strong>Name:</strong> {userDataFromDB.name}</li>
                       <li><strong>Faculty:</strong> {facultyName}</li>
@@ -284,10 +289,10 @@ export function RegistrationForm() {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full bg-accent-foreground hover:bg-accent-foreground/90 text-accent text-base py-3 rounded-lg" disabled={isLoading}>
+            <Button type="submit" className={primaryButtonStyles} disabled={isLoading}>
               {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Verify OTP & Continue"}
             </Button>
-            <Button type="button" variant="link" onClick={() => setStep(1)} className="w-full text-sm text-accent-foreground/80 hover:text-accent-foreground" disabled={isLoading}>
+            <Button type="button" variant="link" onClick={() => setStep(1)} className={linkButtonStyles} disabled={isLoading}>
               Back to School ID/Email Entry
             </Button>
           </form>
@@ -300,13 +305,14 @@ export function RegistrationForm() {
     return (
       <div key="registration-step-3">
         <Form {...step3Form}>
-          <Card className="bg-green-600/10 border-green-600/30 shadow-inner mb-6">
+          {/* Card styling updated for primary panel */}
+          <Card className="bg-primary-foreground/10 border-primary-foreground/20 shadow-inner mb-6">
               <CardHeader className="pb-3">
-                  <CardTitle className="text-lg flex items-center text-green-700 dark:text-green-300">
-                      <KeyRound className="mr-2 h-5 w-5"/> Set Your Password
+                  <CardTitle className="text-lg flex items-center text-primary-foreground">
+                      <KeyRound className="mr-2 h-5 w-5 text-primary"/> Set Your Password
                   </CardTitle>
               </CardHeader>
-              <CardContent className="text-sm text-green-700/90 dark:text-green-300/90 space-y-1">
+              <CardContent className="text-sm text-primary-foreground/90 space-y-1">
                   <p>Welcome, <strong>{userDataFromDB.name}</strong>! Your email <strong>{verifiedSchoolEmail}</strong> and Ho Technical University identity have been verified.</p>
                   <p>Please create a secure password for your InternHub account.</p>
               </CardContent>
@@ -353,27 +359,27 @@ export function RegistrationForm() {
               control={step3Form.control}
               name="termsAccepted"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm bg-muted/30 border-input">
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm bg-primary-foreground/10 border-primary-foreground/20">
                   <FormControl>
                     <Checkbox
                       checked={field.value}
                       onCheckedChange={field.onChange}
-                      className="border-accent-foreground/50 data-[state=checked]:bg-accent-foreground data-[state=checked]:text-accent"
+                      className="border-primary-foreground/50 data-[state=checked]:bg-primary-foreground data-[state=checked]:text-primary"
                     />
                   </FormControl>
                   <div className="space-y-1 leading-none">
-                    <Label htmlFor={field.name} className="cursor-pointer"> {/* Corrected: Use field.name for htmlFor */}
+                    <Label htmlFor={field.name} className="cursor-pointer text-primary-foreground"> 
                       I agree to the InternHub 
-                      <Button variant="link" asChild className="p-0 h-auto ml-1 text-accent-foreground hover:underline"><Link href="/terms-placeholder" target="_blank">Terms & Conditions</Link></Button>
+                      <Button variant="link" asChild className="p-0 h-auto ml-1 text-primary-foreground hover:underline"><Link href="/terms-placeholder" target="_blank">Terms & Conditions</Link></Button>
                        {' '}and 
-                      <Button variant="link" asChild className="p-0 h-auto ml-1 text-accent-foreground hover:underline"><Link href="/privacy-placeholder" target="_blank">Privacy Policy</Link></Button>.
+                      <Button variant="link" asChild className="p-0 h-auto ml-1 text-primary-foreground hover:underline"><Link href="/privacy-placeholder" target="_blank">Privacy Policy</Link></Button>.
                     </Label>
                     <FormMessage />
                   </div>
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full bg-accent-foreground hover:bg-accent-foreground/90 text-accent text-base py-3 rounded-lg" disabled={isLoading}>
+            <Button type="submit" className={primaryButtonStyles} disabled={isLoading}>
               {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Create Account & Proceed"}
             </Button>
           </form>

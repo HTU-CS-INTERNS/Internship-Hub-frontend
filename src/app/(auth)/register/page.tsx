@@ -11,21 +11,27 @@ export default function RegisterPage() {
       <div className="flex-grow flex flex-col items-center justify-center text-center pt-10 pb-6 sm:pt-12 px-4">
         <div 
           className="relative w-32 h-32 sm:w-40 sm:h-40 bg-white rounded-full flex items-center justify-center shadow-lg"
-          style={{ filter: 'drop-shadow(0px 0px 25px rgba(255, 183, 77, 0.35))' }} 
+          // Primary color glow (Navy Blue: approx rgb(38, 50, 78))
+          style={{ filter: 'drop-shadow(0px 0px 25px rgba(38, 50, 78, 0.4))' }} 
         >
-          <UserPlus className="h-16 w-16 sm:h-20 sm:w-20 text-accent" strokeWidth={1.5} /> 
+          {/* Icon color changed to primary to match new panel color theme */}
+          <UserPlus className="h-16 w-16 sm:h-20 sm:w-20 text-primary" strokeWidth={1.5} /> 
         </div>
       </div>
 
-      {/* Bottom Colored Rectangle Section */}
+      {/* Bottom Colored Rectangle Section - Changed to Primary Color */}
       <div 
-        className="relative w-full bg-accent rounded-t-[3rem] shadow-[-10px_-10px_30px_rgba(0,0,0,0.07)] text-accent-foreground flex flex-col"
-        // Using accent-foreground because it's usually white/light for good contrast on orange.
-        // If accent-foreground is dark, direct text-white might be needed for labels.
+        className="relative w-full bg-primary rounded-t-[3rem] shadow-[-10px_-10px_30px_rgba(0,0,0,0.07)] text-primary-foreground flex flex-col"
         style={{ minHeight: '70vh' }} 
       >
         <div className="relative z-10 w-full max-w-md mx-auto flex flex-col flex-grow p-6 sm:p-8">
           <div className="text-center mb-6 sm:mb-8">
+            {/* Small introductory icon above title, styled for primary panel */}
+            <div className="flex justify-center items-center mb-2">
+              <div className="p-1.5 bg-primary-foreground/20 rounded-full shadow-md">
+                 <UserPlus className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+              </div>
+            </div>
             <h1 className="text-xl sm:text-2xl md:text-3xl font-headline font-bold tracking-tight">
               Create Your InternHub Account
             </h1>
@@ -37,11 +43,12 @@ export default function RegisterPage() {
           <RegistrationForm />
           
           <div className="mt-auto pt-6 text-center text-sm">
-            <span className="opacity-80">Already have an account? </span>
-            <Button variant="link" asChild className="p-0 h-auto text-accent-foreground hover:text-accent-foreground/90 underline">
+            {/* Text color updated for primary panel */}
+            <span className="text-primary-foreground/80">Already have an account? </span>
+            <Button variant="link" asChild className="p-0 h-auto text-primary-foreground hover:text-primary-foreground/90 underline">
               <Link href="/login">Log in</Link>
             </Button>
-             <p className="text-xs opacity-70 mt-6">&copy; {new Date().getFullYear()} InternHub - HTU</p>
+             <p className="text-xs text-primary-foreground/70 mt-6">&copy; {new Date().getFullYear()} InternHub - HTU</p>
           </div>
         </div>
       </div>
