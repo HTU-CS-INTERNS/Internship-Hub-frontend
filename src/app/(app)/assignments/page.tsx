@@ -2,7 +2,7 @@
 'use client';
 import * as React from 'react';
 import PageHeader from '@/components/shared/page-header';
-import { Users, UserCheck, ListFilter, Eye, Briefcase, Landmark, Building as BuildingIcon } from 'lucide-react';
+import { Users, UserCheck, ListFilter, Eye, Briefcase, Landmark, Building as BuildingIcon, User } from 'lucide-react'; // Added User here
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -224,5 +224,4 @@ export default function AssignmentsPage() {
     </div>
   );
 }
-
     
