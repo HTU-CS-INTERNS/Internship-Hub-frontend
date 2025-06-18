@@ -4,8 +4,8 @@
 import * as React from 'react';
 import PageHeader from '@/components/shared/page-header';
 import { 
-    LayoutDashboard, User, Briefcase, Building, CalendarCheck, FileText as FileTextLucide, MapPinIcon, StarIcon, ClockIcon, AlertOctagonIcon, UsersIcon, SchoolIcon, CheckCircle2, CircleDot, PlusCircle, CalendarDays, UploadCloud, Edit, MessageSquarePlus, BarChart3, SettingsIcon, UserCheck, FileUp, Users2, Activity, CheckSquare, Contact, Eye
-} from 'lucide-react';
+    LayoutDashboard, User, Briefcase, Building, CalendarCheck, FileText as FileTextLucide, MapPin, StarIcon, ClockIcon, AlertOctagonIcon, UsersIcon, SchoolIcon, CheckCircle2, CircleDot, PlusCircle, CalendarDays, UploadCloud, Edit, MessageSquarePlus, BarChart3, SettingsIcon, UserCheck, FileUp, Users2, Activity, CheckSquare, Contact, Eye, ListChecks
+} from 'lucide-react'; // Added ListChecks and MapPin
 import type { UserRole } from '@/types';
 import { USER_ROLES, FACULTIES, DEPARTMENTS, DUMMY_STUDENTS_DATA } from '@/lib/constants';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -189,11 +189,21 @@ const StudentDashboard: React.FC<{ userName: string }> = ({ userName }) => {
                     <h2 className="text-2xl font-bold mb-1">Welcome back, {userName.split(' ')[0]}!</h2>
                     <p className="opacity-90 text-sm">You have 2 pending tasks and 1 report to submit today.</p>
                 </div>
-                <Link href="/student/tasks" passHref>
-                    <Button className="mt-3 md:mt-0 bg-primary-foreground text-primary hover:bg-primary-foreground/90 font-medium transition shrink-0 rounded-lg">
-                    View Tasks
-                    </Button>
-                </Link>
+                <div className="flex-shrink-0 mt-3 md:mt-0">
+                    {isCheckedInToday ? (
+                        <Link href="/student/tasks" passHref>
+                            <Button className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 font-medium transition rounded-lg px-4 py-2 text-sm">
+                                <ListChecks className="mr-2 h-4 w-4" /> View Tasks
+                            </Button>
+                        </Link>
+                    ) : (
+                        <Link href="/student/check-in" passHref>
+                            <Button className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 font-medium transition rounded-lg px-4 py-2 text-sm animate-pulse">
+                                <MapPin className="mr-2 h-4 w-4" /> Check-in Now
+                            </Button>
+                        </Link>
+                    )}
+                </div>
                 </div>
             </Card>
 
@@ -284,7 +294,7 @@ const StudentDashboard: React.FC<{ userName: string }> = ({ userName }) => {
                     <Card className="shadow-lg rounded-xl overflow-hidden bg-card text-card-foreground">
                         <CardHeader className="border-b border-border">
                             <CardTitle className="font-headline text-lg flex items-center">
-                                <MapPinIcon className="mr-2 h-5 w-5 text-primary"/> Check-in Status
+                                <MapPin className="mr-2 h-5 w-5 text-primary"/> Check-in Status
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="p-4">
