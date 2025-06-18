@@ -269,7 +269,7 @@ const StudentDashboard: React.FC<{ userName: string }> = ({ userName }) => {
                             <label htmlFor="work-summary" className="block text-sm font-medium text-foreground mb-1">Work Summary</label>
                             <Textarea id="work-summary" value={reportSummary} onChange={(e) => setReportSummary(e.target.value)} placeholder="Briefly describe what you accomplished..." rows={3} className="border-input text-foreground rounded-lg" />
                         </div>
-                        <div className="flex justify-end space-x-2">
+                        <div className="flex justify-center space-x-2">
                             <Button variant="outline" className="border-input text-foreground hover:bg-muted hover:text-muted-foreground rounded-lg" onClick={() => toast({title: "Draft Saved!", description: "Your quick report draft has been saved."})}>Save Draft</Button>
                             <Button className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg" onClick={handleQuickReportSubmit}>
                                 Submit Quick Report
