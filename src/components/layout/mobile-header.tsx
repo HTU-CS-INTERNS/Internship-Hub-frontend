@@ -26,7 +26,7 @@ interface MobileHeaderProps {
   userRole: UserRole | null;
 }
 
-export default function MobileHeader({ userRole }: MobileHeaderProps) {
+const MobileHeaderComponent: React.FC<MobileHeaderProps> = ({ userRole }) => {
   const router = useRouter();
   const [userName, setUserName] = React.useState('User');
 
@@ -107,3 +107,8 @@ export default function MobileHeader({ userRole }: MobileHeaderProps) {
     </header>
   );
 }
+
+const MobileHeader = React.memo(MobileHeaderComponent);
+MobileHeader.displayName = 'MobileHeader';
+
+export default MobileHeader;
