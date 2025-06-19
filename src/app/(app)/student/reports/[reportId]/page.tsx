@@ -2,7 +2,7 @@
 'use client';
 import * as React from 'react';
 import PageHeader from '@/components/shared/page-header';
-import { FileText, Calendar, Edit3, MessageSquare, Paperclip, ThumbsUp, AlertTriangle, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { FileText, Calendar, Edit3, MessageSquare, Paperclip, ThumbsUp, AlertTriangle, Image as ImageIconLucide, Loader2 } from 'lucide-react'; // Renamed ImageIcon to avoid conflict
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,9 +12,8 @@ import type { DailyReport } from '@/types';
 import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import NextImage from 'next/image'; 
-import { DUMMY_REPORTS } from '@/app/(app)/student/reports/page'; // Updated import path
+import { DUMMY_REPORTS } from '@/app/(app)/student/reports/page';
 import { useParams, useRouter } from 'next/navigation';
-
 
 const statusColors: Record<DailyReport['status'], string> = {
   PENDING: 'bg-[hsl(var(--accent)/0.1)] text-[hsl(var(--accent))] border-[hsl(var(--accent)/0.2)]',
@@ -23,19 +22,16 @@ const statusColors: Record<DailyReport['status'], string> = {
   REJECTED: 'bg-[hsl(var(--destructive)/0.1)] text-[hsl(var(--destructive))] border-[hsl(var(--destructive)/0.2)]',
 };
 
-type ExtendedDailyReport = DailyReport & { 
-  title?: string; 
-  challengesFaced?: string; 
-  securePhotoUrl?: string;
-};
+// DailyReport already includes optional 'title', 'challengesFaced', 'securePhotoUrl' due to extending DailyTask
+// No need for ExtendedDailyReport if types are aligned.
 
 export default function ReportDetailPage({ params }: { params: { reportId: string } }) {
   const router = useRouter();
-  const [report, setReport] = React.useState<ExtendedDailyReport | null>(null);
+  const [report, setReport] = React.useState<DailyReport | null>(null); // Using DailyReport directly
   const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
-    const foundReport = DUMMY_REPORTS.find(r => r.id === params.reportId) as ExtendedDailyReport | undefined;
+    const foundReport = DUMMY_REPORTS.find(r => r.id === params.reportId); // DUMMY_REPORTS items should match DailyReport
     if (foundReport) {
       setReport(foundReport);
     }
@@ -148,7 +144,7 @@ export default function ReportDetailPage({ params }: { params: { reportId: strin
           
           {report.securePhotoUrl && (
             <div>
-                <h3 className="text-lg font-semibold text-foreground mb-2 flex items-center"><ImageIcon className="mr-2 h-5 w-5 text-primary" />Secure Photo</h3>
+                <h3 className="text-lg font-semibold text-foreground mb-2 flex items-center"><ImageIconLucide className="mr-2 h-5 w-5 text-primary" />Secure Photo</h3>
                 <div className="relative w-full max-w-md aspect-video rounded-lg overflow-hidden border shadow-sm" data-ai-hint="workplace photo">
                     <NextImage src={report.securePhotoUrl} alt="Securely captured photo" layout="fill" objectFit="cover" />
                 </div>
@@ -159,11 +155,11 @@ export default function ReportDetailPage({ params }: { params: { reportId: strin
             <div>
               <h3 className="text-lg font-semibold text-foreground mb-2 flex items-center"><Paperclip className="mr-2 h-5 w-5 text-primary" />Attachments</h3>
               <ul className="list-none space-y-2">
-                {report.attachments.map((file, index) => (
+                {report.attachments.map((att, index) => (
                   <li key={index}>
                     <Button variant="link" className="p-0 h-auto text-base text-accent hover:text-accent/80 font-normal" asChild>
-                      <a href={`/placeholder-download/${file}`} target="_blank" rel="noopener noreferrer" data-ai-hint="document file">
-                        <Paperclip className="mr-1 h-4 w-4" /> {file}
+                      <a href={att.dataUri} target="_blank" rel="noopener noreferrer" download={att.name} data-ai-hint="document file">
+                        <Paperclip className="mr-1 h-4 w-4" /> {att.name} ({(att.size / 1024).toFixed(1)} KB)
                       </a>
                     </Button>
                   </li>
@@ -188,3 +184,4 @@ export default function ReportDetailPage({ params }: { params: { reportId: strin
     </div>
   );
 }
+    

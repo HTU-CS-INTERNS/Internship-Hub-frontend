@@ -2,7 +2,7 @@
 'use client';
 import * as React from 'react';
 import PageHeader from '@/components/shared/page-header';
-import { ClipboardList, PlusCircle, Filter } from 'lucide-react';
+import { ClipboardList, PlusCircle, Filter, Eye, Edit3, Loader2 } from 'lucide-react'; // Added Loader2
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import Link from 'next/link';
@@ -11,13 +11,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { DailyTask } from '@/types';
 import { cn } from '@/lib/utils';
-
-export const DUMMY_TASKS: DailyTask[] = [
-  { id: 'task1', date: '2024-07-28', description: 'Develop user authentication module.', outcomes: 'Authentication flow completed.', learningObjectives: 'Learned JWT implementation.', studentId: 'stu1', status: 'APPROVED', departmentOutcomeLink: "DO1.2" },
-  { id: 'task2', date: '2024-07-29', description: 'Design database schema for posts.', outcomes: 'Schema designed and reviewed.', learningObjectives: 'Understanding of relational databases.', studentId: 'stu1', status: 'SUBMITTED' },
-  { id: 'task3', date: '2024-07-30', description: 'Write API documentation.', outcomes: 'Initial draft completed.', learningObjectives: 'API documentation best practices.', studentId: 'stu1', status: 'PENDING' },
-  { id: 'task4', date: '2024-07-27', description: 'Refactor old legacy code module for payments.', outcomes: 'Improved performance by 15%.', learningObjectives: 'Code refactoring strategies.', studentId: 'stu1', status: 'REJECTED' },
-];
+import { useIsMobile } from '@/hooks/use-mobile';
+import { format, parseISO } from 'date-fns';
+import { getTasksByStudent, initializeDefaultTasksIfNeeded } from '@/lib/services/task.service'; // Import service
 
 const statusColors: Record<DailyTask['status'], string> = {
   PENDING: 'bg-[hsl(var(--accent)/0.1)] text-[hsl(var(--accent))] border-[hsl(var(--accent)/0.2)]',
@@ -27,21 +23,89 @@ const statusColors: Record<DailyTask['status'], string> = {
 };
 
 export default function TasksPage() {
-  const [filteredTasks, setFilteredTasks] = React.useState<DailyTask[]>(DUMMY_TASKS);
+  const [allTasks, setAllTasks] = React.useState<DailyTask[]>([]);
+  const [filteredTasks, setFilteredTasks] = React.useState<DailyTask[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
   const [statusFilter, setStatusFilter] = React.useState<Record<DailyTask['status'], boolean>>({
     PENDING: true,
     SUBMITTED: true,
     APPROVED: true,
     REJECTED: true,
   });
+  const isMobile = useIsMobile();
+  const [studentId, setStudentId] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    setFilteredTasks(DUMMY_TASKS.filter(task => statusFilter[task.status]));
-  }, [statusFilter]);
+    if (typeof window !== "undefined") {
+      const id = localStorage.getItem('userEmail'); // Assuming studentId is stored as email
+      setStudentId(id);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    async function loadTasks() {
+      if (!studentId) return;
+      setIsLoading(true);
+      await initializeDefaultTasksIfNeeded(); // Ensure some data exists for demo
+      const tasksFromService = await getTasksByStudent(studentId);
+      setAllTasks(tasksFromService);
+      setFilteredTasks(tasksFromService.filter(task => statusFilter[task.status]));
+      setIsLoading(false);
+    }
+    loadTasks();
+  }, [studentId, statusFilter]); // Re-fetch if studentId changes or filter changes
   
   const handleStatusFilterChange = (status: DailyTask['status']) => {
-    setStatusFilter(prev => ({ ...prev, [status]: !prev[status] }));
+    setStatusFilter(prev => {
+        const newFilter = { ...prev, [status]: !prev[status] };
+        setFilteredTasks(allTasks.filter(task => newFilter[task.status]));
+        return newFilter;
+    });
   };
+
+  const TaskCardMobile: React.FC<{ task: DailyTask }> = ({ task }) => (
+    <Card className="shadow-lg rounded-xl overflow-hidden border-l-4" style={{borderColor: `hsl(var(--${task.status === 'APPROVED' ? 'chart-3' : task.status === 'SUBMITTED' ? 'primary' : task.status === 'REJECTED' ? 'destructive' : 'accent'}))`}}>
+      <CardHeader className="p-3 bg-muted/30">
+        <div className="flex justify-between items-start">
+          <CardTitle className="text-sm font-semibold text-foreground">Task: {format(parseISO(task.date), "PPP")}</CardTitle>
+          <Badge variant="outline" className={cn("text-xs px-2 py-0.5", statusColors[task.status])}>
+            {task.status}
+          </Badge>
+        </div>
+        <CardDescription className="text-xs text-muted-foreground">{format(parseISO(task.date), "EEEE")}</CardDescription>
+      </CardHeader>
+      <CardContent className="p-3 text-xs">
+        <p className="text-muted-foreground mb-1">Description:</p>
+        <p className="text-foreground line-clamp-3">{task.description}</p>
+      </CardContent>
+      <CardFooter className="p-3 border-t bg-muted/20 flex gap-2">
+          <Link href={`/student/tasks/${task.id}`} passHref className="flex-1">
+            <Button variant="outline" size="sm" className="w-full rounded-lg text-xs">
+              <Eye className="mr-1.5 h-3.5 w-3.5" /> View Details
+            </Button>
+          </Link>
+          {task.status === 'PENDING' && (
+            <Link href={`/student/tasks/edit/${task.id}`} passHref className="flex-1">
+              <Button variant="default" size="sm" className="w-full rounded-lg text-xs bg-primary hover:bg-primary/90 text-primary-foreground">
+                <Edit3 className="mr-1.5 h-3.5 w-3.5" /> Edit
+              </Button>
+            </Link>
+          )}
+      </CardFooter>
+    </Card>
+  );
+
+  if (isLoading && !studentId) {
+    return <div className="p-6 text-center">Authenticating...</div>;
+  }
+  if (isLoading && studentId) {
+    return (
+        <div className="flex items-center justify-center h-full p-6">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="ml-2 text-lg">Loading tasks...</p>
+        </div>
+      );
+  }
 
   return (
     <div className="space-y-8 p-4 md:p-6">
@@ -54,7 +118,7 @@ export default function TasksPage() {
           <div className="flex gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="bg-card hover:bg-accent hover:text-accent-foreground">
+                <Button variant="outline" className="bg-card hover:bg-accent hover:text-accent-foreground rounded-lg">
                   <Filter className="mr-2 h-4 w-4" /> Filter Status
                 </Button>
               </DropdownMenuTrigger>
@@ -73,7 +137,7 @@ export default function TasksPage() {
               </DropdownMenuContent>
             </DropdownMenu>
             <Link href="/student/tasks/new" passHref>
-              <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
+              <Button className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg">
                 <PlusCircle className="mr-2 h-4 w-4" /> Declare New Task
               </Button>
             </Link>
@@ -81,13 +145,18 @@ export default function TasksPage() {
         }
       />
 
-      <Card className="shadow-lg rounded-xl overflow-hidden">
-        <CardHeader>
-          <CardTitle className="font-headline text-lg">Task History</CardTitle>
-          <CardDescription>A log of all your declared daily tasks.</CardDescription>
-        </CardHeader>
-        <CardContent className="p-0">
+      <Card className={cn("shadow-lg rounded-xl", isMobile ? "bg-transparent border-none shadow-none" : "overflow-hidden")}>
+        {!isMobile && (
+            <CardHeader>
+            <CardTitle className="font-headline text-lg">Task History</CardTitle>
+            <CardDescription>A log of all your declared daily tasks.</CardDescription>
+            </CardHeader>
+        )}
+        <CardContent className={cn(isMobile && filteredTasks.length > 0 ? "p-0 space-y-4" : "p-0")}>
           {filteredTasks.length > 0 ? (
+             isMobile ? (
+                filteredTasks.map((task) => <TaskCardMobile key={task.id} task={task} />)
+              ) : (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -100,36 +169,43 @@ export default function TasksPage() {
               <TableBody>
                 {filteredTasks.map((task) => (
                   <TableRow key={task.id}>
-                    <TableCell>{new Date(task.date).toLocaleDateString()}</TableCell>
+                    <TableCell>{format(parseISO(task.date), "PPP")}</TableCell>
                     <TableCell className="max-w-xs truncate">{task.description}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className={cn("text-xs", statusColors[task.status])}>
                         {task.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right space-x-1">
                       <Link href={`/student/tasks/${task.id}`} passHref>
-                        <Button variant="ghost" size="sm">View</Button>
+                        <Button variant="ghost" size="sm" className="rounded-md"><Eye className="mr-1 h-4 w-4"/>View</Button>
                       </Link>
+                       {task.status === 'PENDING' && (
+                        <Link href={`/student/tasks/edit/${task.id}`} passHref>
+                            <Button variant="ghost" size="sm" className="rounded-md"><Edit3 className="mr-1 h-4 w-4"/>Edit</Button>
+                        </Link>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
+             )
           ) : (
-            <div className="text-center py-12 text-muted-foreground p-6">
-              <ClipboardList className="mx-auto h-12 w-12 mb-4" />
+            <div className={cn("text-center py-12 text-muted-foreground", isMobile ? "p-0 pt-8" : "p-6")}>
+              <ClipboardList className="mx-auto h-12 w-12 mb-4 opacity-30" />
               <p className="text-lg font-semibold">No tasks found.</p>
               <p>Declare a new task or adjust your filters.</p>
             </div>
           )}
         </CardContent>
-         {filteredTasks.length > 0 && (
+         {!isMobile && filteredTasks.length > 0 && (
           <CardFooter className="justify-end p-4 border-t">
-             <p className="text-sm text-muted-foreground">Showing {filteredTasks.length} of {DUMMY_TASKS.length} tasks</p>
+             <p className="text-sm text-muted-foreground">Showing {filteredTasks.length} of {allTasks.length} tasks</p>
           </CardFooter>
         )}
       </Card>
     </div>
   );
 }
+    

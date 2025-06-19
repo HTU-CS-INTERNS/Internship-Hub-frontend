@@ -21,11 +21,19 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, CheckCircle, AlertTriangle, KeyRound } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
-import { FACULTIES, DEPARTMENTS } from '@/lib/constants';
+import { FACULTIES, DEPARTMENTS, USER_ROLES } from '@/lib/constants';
+import type { UserRole } from '@/types';
+import { sendOtp } from '@/ai/flows/send-otp-flow';
+import { Checkbox } from '@/components/ui/checkbox'; 
+import { Label } from '@/components/ui/label'; 
+
 
 const registrationStep1Schema = z.object({
   schoolId: z.string().min(3, { message: 'School ID must be at least 3 characters.' }).max(20, { message: 'School ID too long.'}),
-  schoolEmail: z.string().email({ message: 'Please enter a valid school email address.' }),
+  schoolEmail: z.string().email({ message: 'Please enter a valid school email address.' })
+    .refine(email => email.endsWith('@htu.edu.gh'), {
+      message: 'Email must be a valid @htu.edu.gh address.'
+    }),
 });
 
 const registrationStep2Schema = z.object({
@@ -39,6 +47,9 @@ const registrationStep3Schema = z.object({
     .regex(/[0-9]/, { message: 'Password must contain at least one number.'})
     .regex(/[^a-zA-Z0-9]/, { message: 'Password must contain at least one special character.'}),
   confirmPassword: z.string().min(8, { message: 'Please confirm your password.' }),
+  termsAccepted: z.boolean().refine(value => value === true, {
+    message: "You must accept the Terms and Conditions to proceed."
+  }),
 }).refine(data => data.password === data.confirmPassword, {
   message: "Passwords don't match.",
   path: ["confirmPassword"],
@@ -55,15 +66,13 @@ const fetchStudentDataFromSchoolDB = async (schoolId: string): Promise<{name: st
   }
   const faculty = FACULTIES.find(f => f.name.includes("Engineering")) || FACULTIES[0];
   const department = DEPARTMENTS.find(d => d.facultyId === faculty.id) || DEPARTMENTS.find(d => d.id === "D005");
-  
-  return { 
+
+  return {
     name: `Student ${schoolId.substring(0,5)}`,
-    facultyId: faculty.id, 
-    departmentId: department?.id || DEPARTMENTS[0].id 
+    facultyId: faculty.id,
+    departmentId: department?.id || DEPARTMENTS[0].id
   };
 };
-
-const SIMULATED_OTP = "123456"; // For testing
 
 export function RegistrationForm() {
   const router = useRouter();
@@ -72,6 +81,7 @@ export function RegistrationForm() {
   const [step, setStep] = React.useState(1);
   const [verifiedSchoolEmail, setVerifiedSchoolEmail] = React.useState('');
   const [userDataFromDB, setUserDataFromDB] = React.useState<{name: string, facultyId: string, departmentId: string} | null>(null);
+  const [generatedOtpForVerification, setGeneratedOtpForVerification] = React.useState<string | null>(null);
 
   const step1Form = useForm<RegistrationStep1Values>({
     resolver: zodResolver(registrationStep1Schema),
@@ -85,7 +95,7 @@ export function RegistrationForm() {
 
   const step3Form = useForm<RegistrationStep3Values>({
     resolver: zodResolver(registrationStep3Schema),
-    defaultValues: { password: '', confirmPassword: '' },
+    defaultValues: { password: '', confirmPassword: '', termsAccepted: false },
   });
 
   async function handleStep1Submit(values: RegistrationStep1Values) {
@@ -93,34 +103,41 @@ export function RegistrationForm() {
     const studentData = await fetchStudentDataFromSchoolDB(values.schoolId);
 
     if (!studentData) {
-      toast({ 
-        title: 'School ID Verification Failed', 
-        description: 'The School ID provided was not found or is invalid. Please check and try again.', 
-        variant: 'destructive' 
+      toast({
+        title: 'School ID Verification Failed',
+        description: 'The School ID provided was not found or is invalid. Please check and try again.',
+        variant: 'destructive'
       });
       step1Form.setError("schoolId", { type: "manual", message: "Invalid School ID."});
       setIsLoading(false);
       return;
     }
-    
+
     setUserDataFromDB(studentData);
     setVerifiedSchoolEmail(values.schoolEmail);
-    
-    toast({ 
-      title: 'OTP Sent!', 
-      description: `An OTP (simulated as ${SIMULATED_OTP}) has been sent to ${values.schoolEmail}. Please enter it below.`,
-      variant: "default",
-      duration: 7000,
-    });
-    setStep(2); 
+
+    try {
+      const otpResponse = await sendOtp({ email: values.schoolEmail });
+      setGeneratedOtpForVerification(otpResponse.otp);
+      toast({
+        title: 'OTP Sent! (Simulated)',
+        description: `An OTP (simulated as ${otpResponse.otp}) has been 'sent' to ${values.schoolEmail}. Please enter it below.`,
+        variant: "default",
+        duration: 7000,
+      });
+      setStep(2);
+    } catch (error) {
+      console.error("Error sending OTP:", error);
+      toast({ title: "OTP Error", description: "Could not send OTP. Please try again.", variant: "destructive"});
+    }
     setIsLoading(false);
   }
 
   async function handleStep2Submit(values: RegistrationStep2Values) {
     setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 700)); 
-    
-    if (values.otp !== SIMULATED_OTP) {
+    await new Promise(resolve => setTimeout(resolve, 700));
+
+    if (values.otp !== generatedOtpForVerification) {
       toast({
         title: 'Invalid OTP',
         description: 'The OTP you entered is incorrect. Please try again.',
@@ -133,7 +150,7 @@ export function RegistrationForm() {
 
     toast({
       title: 'OTP Verified!',
-      description: `Welcome, ${userDataFromDB?.name}! Please set a secure password for your account.`,
+      description: `Welcome, ${userDataFromDB?.name}! Please set a secure password for your InternHub account.`,
       variant: 'default'
     });
     setStep(3);
@@ -142,28 +159,42 @@ export function RegistrationForm() {
 
   async function handleStep3Submit(values: RegistrationStep3Values) {
     setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    if (!userDataFromDB) {
+        toast({ title: "Error", description: "User data not found. Please restart registration.", variant: "destructive"});
+        setIsLoading(false);
+        setStep(1);
+        return;
+    }
 
-    if (typeof window !== "undefined" && userDataFromDB) {
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    if (typeof window !== "undefined") {
       localStorage.setItem('userRole', 'STUDENT');
       localStorage.setItem('userName', userDataFromDB.name);
-      localStorage.setItem('userEmail', verifiedSchoolEmail); 
+      localStorage.setItem('userEmail', verifiedSchoolEmail);
       localStorage.setItem('userFacultyId', userDataFromDB.facultyId);
       localStorage.setItem('userDepartmentId', userDataFromDB.departmentId);
       localStorage.removeItem('onboardingComplete');
+      localStorage.setItem('isLoggedIn', 'true');
     }
-    
+
     toast({
-      title: "Registration Successful!",
-      description: `Welcome, ${userDataFromDB?.name || 'Student'}! Your account is created. Please complete your profile.`,
+      title: "Registration Successful! (Simulated)",
+      description: `Welcome, ${userDataFromDB.name}! Your InternHub account is created. Please complete your profile.`,
       variant: "default",
     });
+    router.push('/profile'); 
     setIsLoading(false);
-    router.push('/profile');
   }
 
   const facultyName = userDataFromDB ? FACULTIES.find(f => f.id === userDataFromDB.facultyId)?.name : 'N/A';
   const departmentName = userDataFromDB ? DEPARTMENTS.find(d => d.id === userDataFromDB.departmentId)?.name : 'N/A';
+  
+  // Input styles consistent for light background on dark panel
+  const inputStyles = "bg-white dark:bg-gray-50 text-gray-900 dark:text-gray-900 placeholder:text-gray-500 dark:placeholder:text-gray-500 border-gray-300 dark:border-gray-400 rounded-lg focus:ring-primary focus:border-primary";
+  // Button styles for primary panel (light text on dark panel)
+  const primaryButtonStyles = "w-full bg-primary-foreground hover:bg-primary-foreground/90 text-primary text-base py-3 rounded-lg";
+  const linkButtonStyles = "w-full text-sm text-primary-foreground/80 hover:text-primary-foreground";
 
   if (step === 1) {
     return (
@@ -177,9 +208,13 @@ export function RegistrationForm() {
                 <FormItem>
                   <FormLabel>School ID / Matriculation Number</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter your unique school ID" {...field} className="rounded-lg border-input"/>
+                    <Input 
+                      placeholder="Enter your unique school ID" 
+                      {...field} 
+                      className={inputStyles}
+                    />
                   </FormControl>
-                  <FormDescription>This will be used to verify your student status.</FormDescription>
+                  <FormDescription>This will be used to verify your Ho Technical University student status.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -189,16 +224,21 @@ export function RegistrationForm() {
               name="schoolEmail"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>School Email Address</FormLabel>
+                  <FormLabel>Ho Technical University Email Address</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="your.id@school.domain" {...field} className="rounded-lg border-input"/>
+                    <Input 
+                      type="email" 
+                      placeholder="your.id@htu.edu.gh" 
+                      {...field} 
+                      className={inputStyles}
+                    />
                   </FormControl>
-                  <FormDescription>An OTP will be sent to this school email address.</FormDescription>
+                  <FormDescription>Must be your official @htu.edu.gh email. An OTP will be sent here.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-base py-3 rounded-lg" disabled={isLoading}>
+            <Button type="submit" className={primaryButtonStyles} disabled={isLoading}>
               {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Verify & Send OTP"}
             </Button>
           </form>
@@ -211,16 +251,17 @@ export function RegistrationForm() {
     return (
       <div key="registration-step-2">
         <Form {...step2Form}>
-          <Card className="bg-muted/50 border-input shadow-inner mb-6">
+          {/* Card styling updated for primary panel */}
+          <Card className="bg-primary-foreground/10 border-primary-foreground/20 shadow-inner mb-6">
               <CardHeader className="pb-3">
-                  <CardTitle className="text-lg flex items-center text-primary">
-                      <CheckCircle className="mr-2 h-5 w-5"/> Identity Partially Verified
+                  <CardTitle className="text-lg flex items-center text-primary-foreground">
+                      <CheckCircle className="mr-2 h-5 w-5 text-green-400"/> Identity Partially Verified
                   </CardTitle>
               </CardHeader>
-              <CardContent className="text-sm text-foreground space-y-1">
-                  <p>An OTP has been sent to: <strong>{verifiedSchoolEmail}</strong></p>
-                  <p className="text-xs text-muted-foreground">Please enter the 6-digit code below to confirm your identity.</p>
-                  <p className="text-xs text-muted-foreground mt-2">If this is you, please proceed:</p>
+              <CardContent className="text-sm text-primary-foreground/90 space-y-1">
+                  <p>An OTP has been 'sent' to: <strong>{verifiedSchoolEmail}</strong></p>
+                  <p className="text-xs text-primary-foreground/70">Please enter the 6-digit code below to confirm your identity. (Simulated OTP: {generatedOtpForVerification})</p>
+                  <p className="text-xs text-primary-foreground/70 mt-2">If this is you, please proceed:</p>
                   <ul className="text-xs list-disc list-inside pl-2">
                       <li><strong>Name:</strong> {userDataFromDB.name}</li>
                       <li><strong>Faculty:</strong> {facultyName}</li>
@@ -236,22 +277,22 @@ export function RegistrationForm() {
                 <FormItem>
                   <FormLabel>Enter OTP Code</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="Enter 6-digit OTP" 
-                      {...field} 
-                      className="rounded-lg border-input text-center tracking-[0.5em]" 
+                    <Input
+                      placeholder="Enter 6-digit OTP"
+                      {...field}
+                      className={`${inputStyles} text-center tracking-[0.5em]`}
                       maxLength={6}
                     />
                   </FormControl>
-                  <FormDescription>Check your school email ({verifiedSchoolEmail}) for the code.</FormDescription>
+                  <FormDescription>Check your @htu.edu.gh email ({verifiedSchoolEmail}) for the code.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-base py-3 rounded-lg" disabled={isLoading}>
+            <Button type="submit" className={primaryButtonStyles} disabled={isLoading}>
               {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Verify OTP & Continue"}
             </Button>
-            <Button type="button" variant="link" onClick={() => setStep(1)} className="w-full text-sm" disabled={isLoading}>
+            <Button type="button" variant="link" onClick={() => setStep(1)} className={linkButtonStyles} disabled={isLoading}>
               Back to School ID/Email Entry
             </Button>
           </form>
@@ -264,15 +305,16 @@ export function RegistrationForm() {
     return (
       <div key="registration-step-3">
         <Form {...step3Form}>
-          <Card className="bg-green-500/10 border-green-500/30 shadow-inner mb-6">
+          {/* Card styling updated for primary panel */}
+          <Card className="bg-primary-foreground/10 border-primary-foreground/20 shadow-inner mb-6">
               <CardHeader className="pb-3">
-                  <CardTitle className="text-lg flex items-center text-green-700 dark:text-green-300">
-                      <KeyRound className="mr-2 h-5 w-5"/> Set Your Password
+                  <CardTitle className="text-lg flex items-center text-primary-foreground">
+                      <KeyRound className="mr-2 h-5 w-5 text-primary"/> Set Your Password
                   </CardTitle>
               </CardHeader>
-              <CardContent className="text-sm text-green-700/90 dark:text-green-300/90 space-y-1">
-                  <p>Welcome, <strong>{userDataFromDB.name}</strong>! Your email <strong>{verifiedSchoolEmail}</strong> and school identity have been verified.</p>
-                  <p>Please create a secure password for your InternshipTrack account.</p>
+              <CardContent className="text-sm text-primary-foreground/90 space-y-1">
+                  <p>Welcome, <strong>{userDataFromDB.name}</strong>! Your email <strong>{verifiedSchoolEmail}</strong> and Ho Technical University identity have been verified.</p>
+                  <p>Please create a secure password for your InternHub account.</p>
               </CardContent>
           </Card>
           <form onSubmit={step3Form.handleSubmit(handleStep3Submit)} className="space-y-6">
@@ -283,7 +325,12 @@ export function RegistrationForm() {
                 <FormItem>
                   <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="Choose a strong password" {...field} className="rounded-lg border-input"/>
+                    <Input 
+                      type="password" 
+                      placeholder="Choose a strong password" 
+                      {...field} 
+                      className={inputStyles}
+                    />
                   </FormControl>
                   <FormDescription>Min. 8 characters, incl. uppercase, lowercase, number, and special character.</FormDescription>
                   <FormMessage />
@@ -297,22 +344,51 @@ export function RegistrationForm() {
                 <FormItem>
                   <FormLabel>Confirm Password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="Re-enter your password" {...field} className="rounded-lg border-input"/>
+                    <Input 
+                      type="password" 
+                      placeholder="Re-enter your password" 
+                      {...field} 
+                      className={inputStyles}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-base py-3 rounded-lg" disabled={isLoading}>
-              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Create Account & Proceed to Profile"}
+             <FormField
+              control={step3Form.control}
+              name="termsAccepted"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm bg-primary-foreground/10 border-primary-foreground/20">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      className="border-primary-foreground/50 data-[state=checked]:bg-primary-foreground data-[state=checked]:text-primary"
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <Label htmlFor={field.name} className="cursor-pointer text-primary-foreground"> 
+                      I agree to the InternHub 
+                      <Button variant="link" asChild className="p-0 h-auto ml-1 text-primary-foreground hover:underline"><Link href="/terms-placeholder" target="_blank">Terms & Conditions</Link></Button>
+                       {' '}and 
+                      <Button variant="link" asChild className="p-0 h-auto ml-1 text-primary-foreground hover:underline"><Link href="/privacy-placeholder" target="_blank">Privacy Policy</Link></Button>.
+                    </Label>
+                    <FormMessage />
+                  </div>
+                </FormItem>
+              )}
+            />
+            <Button type="submit" className={primaryButtonStyles} disabled={isLoading}>
+              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Create Account & Proceed"}
             </Button>
           </form>
         </Form>
       </div>
     );
   }
-  
-  if ((step === 2 || step === 3) && !userDataFromDB) { 
+
+  if ((step === 2 || step === 3) && !userDataFromDB) {
       return (
           <div className="text-center space-y-4 p-4 border border-destructive/50 rounded-lg bg-destructive/10" key="registration-error-fallback">
               <AlertTriangle className="mx-auto h-10 w-10 text-destructive"/>
@@ -327,4 +403,3 @@ export function RegistrationForm() {
 
   return null;
 }
-    

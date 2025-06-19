@@ -11,6 +11,7 @@ import type { UserRole } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useIsMobile } from '@/hooks/use-mobile';
 import AppLoadingScreen from '@/components/shared/app-loading-screen'; 
+// Removed Firebase Auth import
 
 function AppLayoutContent({ children }: { children: React.ReactNode }) {
   const [userRole, setUserRole] = React.useState<UserRole | null>(null);
@@ -19,15 +20,16 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
   const isMobileView = useIsMobile();
 
   React.useEffect(() => {
+    // Revert to localStorage for auth state management for prototype
     const storedRole = typeof window !== "undefined" ? localStorage.getItem('userRole') as UserRole : null;
-    if (storedRole) {
+    const isLoggedIn = typeof window !== "undefined" ? localStorage.getItem('isLoggedIn') === 'true' : false;
+
+    if (isLoggedIn && storedRole) {
       setUserRole(storedRole);
-      setIsLoading(false); 
     } else {
-      
-      setIsLoading(false); 
       router.push('/login');
     }
+    setIsLoading(false);
   }, [router]);
 
   if (isLoading) {
@@ -42,16 +44,13 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
      );
   }
 
-  
   if (!userRole) {
     return null; 
   }
 
-
   if (isMobileView) {
     return (
       <div className="flex flex-col min-h-screen bg-background">
-        {/* Define CSS variable for app header height for use in calc() */}
         <style jsx global>{`
           :root {
             --app-header-height: var(--mobile-header-height);
@@ -68,10 +67,9 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen bg-background">
-      {/* Define CSS variable for app header height for use in calc() */}
       <style jsx global>{`
         :root {
-          --app-header-height: 4rem; /* Standard desktop header height */
+          --app-header-height: 4rem; 
         }
       `}</style>
       <AppSidebar userRole={userRole} />
@@ -92,5 +90,3 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     </SidebarProvider>
   );
 }
-
-    

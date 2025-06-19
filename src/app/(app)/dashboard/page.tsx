@@ -4,8 +4,8 @@
 import * as React from 'react';
 import PageHeader from '@/components/shared/page-header';
 import { 
-    LayoutDashboard, User, Briefcase, Building, CalendarCheck, FileText as FileTextLucide, MapPinIcon, StarIcon, ClockIcon, AlertOctagonIcon, UsersIcon, SchoolIcon, CheckCircle2, CircleDot, PlusCircle, CalendarDays, UploadCloud, Edit, MessageSquarePlus, BarChart3, SettingsIcon, UserCheck, FileUp, Users2, Activity, CheckSquare, Contact
-} from 'lucide-react';
+    LayoutDashboard, User, Briefcase, Building, CalendarCheck, FileText as FileTextLucide, MapPin, StarIcon, ClockIcon, AlertOctagonIcon, UsersIcon, SchoolIcon, CheckCircle2, CircleDot, PlusCircle, CalendarDays, UploadCloud, Edit, MessageSquarePlus, BarChart3, SettingsIcon, UserCheck, FileUp, Users2, Activity, CheckSquare, Contact, Eye, ListChecks
+} from 'lucide-react'; // Added ListChecks and MapPin
 import type { UserRole } from '@/types';
 import { USER_ROLES, FACULTIES, DEPARTMENTS, DUMMY_STUDENTS_DATA } from '@/lib/constants';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -18,11 +18,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { PieChart, Pie, Cell } from "recharts";
 import { useToast } from '@/hooks/use-toast';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
+import type { CheckIn } from '@/types';
 
 const getInitials = (name: string) => {
     if (!name) return 'U';
@@ -66,7 +69,6 @@ const DashboardStatsCard: React.FC<{ title: string; value: string | number; icon
   </Card>
 );
 
-// Student Dashboard Components
 const StudentTaskItem: React.FC<{ title: string; description: string; status: 'Completed' | 'Pending' | 'Overdue'; dueDate: string, statusIcon?: React.ElementType }> = ({ title, description, status, dueDate }) => {
   const statusStyles = {
     Completed: { icon: CheckCircle2, color: 'text-green-500 dark:text-green-400', badge: 'bg-green-100 text-green-700 border-green-500/30 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700/50' },
@@ -99,63 +101,15 @@ const StudentTaskItem: React.FC<{ title: string; description: string; status: 'C
   );
 };
 
-const StudentDeadlineItem: React.FC<{title: string; dueText: string; date: string; icon: React.ElementType; iconBg: string; iconColor: string}> = ({ title, dueText, date, icon: Icon, iconBg, iconColor}) => (
-    <div className="p-3 hover:bg-muted/30 transition-colors">
-        <div className="flex items-start">
-            <div className={`flex-shrink-0 mt-1 w-8 h-8 rounded-full ${iconBg} flex items-center justify-center ${iconColor}`}>
-                <Icon className="h-4 w-4" />
-            </div>
-            <div className="ml-3">
-                <h4 className="font-medium text-sm text-foreground">{title}</h4>
-                <p className="text-muted-foreground text-xs mt-0.5">{dueText}</p>
-                <div className="mt-1 flex items-center text-xs text-muted-foreground">
-                    <CalendarDays className="mr-1 h-3 w-3" />
-                    <span>{date}</span>
-                </div>
-            </div>
-        </div>
-    </div>
-);
-
-const StudentFeedbackItem: React.FC<{name: string; role: string; comment: string; time: string; avatarUrl?: string; avatarFallback: string; icon: React.ElementType; status?: 'Approved' | 'Pending' | 'Rejected'}> = ({name, role, comment, time, avatarUrl, avatarFallback, icon: Icon, status}) => {
-    const statusColors: Record<string, string> = {
-        Approved: 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300',
-        Pending: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-300',
-        Rejected: 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300',
-    };
-    return(
-    <div className="flex items-start p-3 hover:bg-muted/30 transition-colors">
-        <Avatar className="h-10 w-10 border">
-            <AvatarImage src={avatarUrl} alt={name} data-ai-hint="person portrait"/>
-            <AvatarFallback className="bg-primary/20 text-primary">{avatarFallback}</AvatarFallback>
-        </Avatar>
-        <div className="ml-3">
-            <div className="flex items-center">
-                <h4 className="font-medium text-sm text-foreground">{name}</h4>
-                {status && <Badge variant="outline" className={`ml-2 text-xs ${statusColors[status!]}`}>{status}</Badge>}
-            </div>
-            <p className="text-muted-foreground text-xs mt-0.5">{role}</p>
-            <div className="mt-1 text-xs text-foreground/80 bg-muted/50 p-2 rounded-md shadow-inner">
-                "{comment}"
-            </div>
-            <div className="mt-1 flex items-center text-xs text-muted-foreground">
-                <ClockIcon className="mr-1 h-3 w-3" />
-                <span>{time}</span>
-                 <Button variant="ghost" size="icon" className="ml-auto h-6 w-6 text-muted-foreground hover:text-primary">
-                    <MessageSquarePlus className="h-3.5 w-3.5" />
-                    <span className="sr-only">Reply</span>
-                 </Button>
-            </div>
-        </div>
-    </div>
-)};
-
 interface StoredCheckinData {
   time: string;
   location: string;
   date: string; 
   photoPreview?: string | null;
+  isGpsVerified?: boolean;
 }
+
+const CHECKINS_STORAGE_KEY = 'internshipTrack_checkIns_v1';
 
 const StudentDashboard: React.FC<{ userName: string }> = ({ userName }) => {
     const [reportDate, setReportDate] = React.useState<Date | undefined>(new Date());
@@ -164,23 +118,39 @@ const StudentDashboard: React.FC<{ userName: string }> = ({ userName }) => {
     const [isCheckedInToday, setIsCheckedInToday] = React.useState(false);
     const [checkinDetails, setCheckinDetails] = React.useState<StoredCheckinData | null>(null);
 
-    const getTodayDateString = () => format(new Date(), 'yyyy-MM-dd');
+    const getTodayDateString = React.useCallback(() => format(new Date(), 'yyyy-MM-dd'), []);
 
     React.useEffect(() => {
         const todayDateStr = getTodayDateString();
-        const storedCheckinRaw = typeof window !== "undefined" ? localStorage.getItem('internshipTrack_checkin') : null;
-        if (storedCheckinRaw) {
+        const studentId = typeof window !== "undefined" ? localStorage.getItem('userEmail') || 'unknown_student' : 'unknown_student';
+
+        const checkInsRaw = typeof window !== "undefined" ? localStorage.getItem(CHECKINS_STORAGE_KEY) : null;
+        if (checkInsRaw) {
             try {
-                const storedCheckin: StoredCheckinData = JSON.parse(storedCheckinRaw);
-                if (storedCheckin.date === todayDateStr) {
+                const allCheckIns: CheckIn[] = JSON.parse(checkInsRaw);
+                const todayCheckInsForStudent = allCheckIns.filter(
+                    ci => ci.student_id === studentId && format(parseISO(ci.check_in_timestamp), 'yyyy-MM-dd') === todayDateStr
+                );
+
+                if (todayCheckInsForStudent.length > 0) {
+                    const latestCheckIn = todayCheckInsForStudent.sort((a, b) =>
+                        new Date(b.check_in_timestamp).getTime() - new Date(a.check_in_timestamp).getTime()
+                    )[0];
+
                     setIsCheckedInToday(true);
-                    setCheckinDetails(storedCheckin);
+                    setCheckinDetails({
+                        time: format(parseISO(latestCheckIn.check_in_timestamp), 'p'),
+                        location: latestCheckIn.address_resolved || latestCheckIn.manual_reason || 'Checked In',
+                        date: format(parseISO(latestCheckIn.check_in_timestamp), 'yyyy-MM-dd'),
+                        photoPreview: latestCheckIn.photo_url,
+                        isGpsVerified: latestCheckIn.is_gps_verified,
+                    });
                 } else {
                     setIsCheckedInToday(false);
                     setCheckinDetails(null);
                 }
             } catch (e) {
-                console.error("Failed to parse stored check-in data for dashboard", e);
+                console.error("Failed to parse check-in data for dashboard", e);
                 setIsCheckedInToday(false);
                 setCheckinDetails(null);
             }
@@ -188,7 +158,7 @@ const StudentDashboard: React.FC<{ userName: string }> = ({ userName }) => {
             setIsCheckedInToday(false);
             setCheckinDetails(null);
         }
-    }, []);
+    }, [getTodayDateString]);
     
     const studentCheckInChartData = isCheckedInToday 
         ? [{ name: 'Checked In', value: 100, fill: 'hsl(var(--primary))' }]
@@ -219,11 +189,21 @@ const StudentDashboard: React.FC<{ userName: string }> = ({ userName }) => {
                     <h2 className="text-2xl font-bold mb-1">Welcome back, {userName.split(' ')[0]}!</h2>
                     <p className="opacity-90 text-sm">You have 2 pending tasks and 1 report to submit today.</p>
                 </div>
-                <Link href="/student/tasks" passHref>
-                    <Button className="mt-3 md:mt-0 bg-primary-foreground text-primary hover:bg-primary-foreground/90 font-medium transition shrink-0 rounded-lg">
-                    View Tasks
-                    </Button>
-                </Link>
+                <div className="flex-shrink-0 mt-3 md:mt-0">
+                    {isCheckedInToday ? (
+                        <Link href="/student/tasks" passHref>
+                            <Button className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 font-medium transition rounded-lg px-4 py-2 text-sm">
+                                <ListChecks className="mr-2 h-4 w-4" /> View Tasks
+                            </Button>
+                        </Link>
+                    ) : (
+                        <Link href="/student/check-in" passHref>
+                            <Button className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 font-medium transition rounded-lg px-4 py-2 text-sm animate-pulse">
+                                <MapPin className="mr-2 h-4 w-4" /> Check-in Now
+                            </Button>
+                        </Link>
+                    )}
+                </div>
                 </div>
             </Card>
 
@@ -299,7 +279,7 @@ const StudentDashboard: React.FC<{ userName: string }> = ({ userName }) => {
                             <label htmlFor="work-summary" className="block text-sm font-medium text-foreground mb-1">Work Summary</label>
                             <Textarea id="work-summary" value={reportSummary} onChange={(e) => setReportSummary(e.target.value)} placeholder="Briefly describe what you accomplished..." rows={3} className="border-input text-foreground rounded-lg" />
                         </div>
-                        <div className="flex justify-end space-x-2">
+                        <div className="flex justify-center space-x-2">
                             <Button variant="outline" className="border-input text-foreground hover:bg-muted hover:text-muted-foreground rounded-lg" onClick={() => toast({title: "Draft Saved!", description: "Your quick report draft has been saved."})}>Save Draft</Button>
                             <Button className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg" onClick={handleQuickReportSubmit}>
                                 Submit Quick Report
@@ -314,7 +294,7 @@ const StudentDashboard: React.FC<{ userName: string }> = ({ userName }) => {
                     <Card className="shadow-lg rounded-xl overflow-hidden bg-card text-card-foreground">
                         <CardHeader className="border-b border-border">
                             <CardTitle className="font-headline text-lg flex items-center">
-                                <MapPinIcon className="mr-2 h-5 w-5 text-primary"/> Check-in Status
+                                <MapPin className="mr-2 h-5 w-5 text-primary"/> Check-in Status
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="p-4">
@@ -397,33 +377,124 @@ const StudentDashboard: React.FC<{ userName: string }> = ({ userName }) => {
                             </Link>
                         </CardFooter>
                     </Card>
-
-                    <Card className="shadow-lg rounded-xl overflow-hidden bg-card text-card-foreground">
-                        <CardHeader className="border-b border-border">
-                        <CardTitle className="font-headline text-lg">Upcoming Deadlines</CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-0 divide-y divide-border">
-                            <StudentDeadlineItem title="Final Project Submission" dueText="Due in 3 days" date="July 15, 2024" icon={AlertOctagonIcon} iconBg="bg-red-100 dark:bg-red-900/70" iconColor="text-red-600 dark:text-red-300" />
-                            <StudentDeadlineItem title="Mid-term Evaluation" dueText="Due in 7 days" date="July 19, 2024" icon={FileTextLucide} iconBg="bg-yellow-100 dark:bg-yellow-900/70" iconColor="text-yellow-600 dark:text-yellow-300" />
-                        </CardContent>
-                    </Card>
-                    
-                    <Card className="shadow-lg rounded-xl overflow-hidden bg-card text-card-foreground">
-                        <CardHeader className="border-b border-border">
-                        <CardTitle className="font-headline text-lg">Recent Feedback</CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-0 divide-y divide-border">
-                            <StudentFeedbackItem name="Mr. Smith" role="Company Supervisor" comment="Great progress on the documentation. Just a few minor corrections needed on section 3.2." time="2 hours ago" avatarUrl="https://placehold.co/100x100.png" data-ai-hint="person portrait" avatarFallback="MS" icon={Briefcase} status="Approved"/>
-                        </CardContent>
-                    </Card>
                 </div>
             </div>
         </>
     );
 }
 
+interface AssignedStudent {
+  id: string; name: string; department: string; avatar: string; dataAiHint: string; overdueTasks: number; pendingReports: number;
+}
+interface SupervisorIntern {
+  id: string; name: string; university: string; avatar: string; dataAiHint: string; pendingTasks: number; pendingReports: number;
+}
+interface HODStudent {
+  id: string; name: string; avatarUrl: string; faculty: string; department: string; compliance: string; issues: number;
+}
+
+const LecturerStudentCardMobile: React.FC<{ student: AssignedStudent }> = ({ student }) => (
+  <Card className="shadow-lg rounded-xl overflow-hidden">
+    <CardHeader className="p-3 bg-muted/30 border-b">
+      <div className="flex items-center gap-3">
+        <Avatar className="h-10 w-10 border">
+          <AvatarImage src={student.avatar} alt={student.name} data-ai-hint={student.dataAiHint} />
+          <AvatarFallback className="bg-primary/10 text-primary">{getInitials(student.name)}</AvatarFallback>
+        </Avatar>
+        <div>
+          <CardTitle className="text-sm font-semibold text-foreground">{student.name}</CardTitle>
+          <CardDescription className="text-xs text-muted-foreground">{student.department}</CardDescription>
+        </div>
+      </div>
+    </CardHeader>
+    <CardContent className="p-3 space-y-1.5 text-xs">
+      <div className="flex justify-between items-center">
+        <span className="text-muted-foreground">Overdue Tasks:</span>
+        <Badge variant={student.overdueTasks > 0 ? "destructive" : "secondary"} className="text-xs px-1.5 py-0.5">{student.overdueTasks}</Badge>
+      </div>
+      <div className="flex justify-between items-center">
+        <span className="text-muted-foreground">Pending Reports:</span>
+        <Badge variant={student.pendingReports > 0 ? "destructive" : "secondary"} className="text-xs px-1.5 py-0.5">{student.pendingReports}</Badge>
+      </div>
+    </CardContent>
+    <CardFooter className="p-3 border-t bg-muted/20">
+      <Link href={`/assignments/student/${student.id}`} passHref className="w-full">
+        <Button variant="outline" size="sm" className="w-full rounded-lg text-xs py-2">
+          <Eye className="mr-1.5 h-3.5 w-3.5" /> View Details
+        </Button>
+      </Link>
+    </CardFooter>
+  </Card>
+);
+
+const SupervisorInternCardMobile: React.FC<{ intern: SupervisorIntern }> = ({ intern }) => (
+  <Card className="shadow-lg rounded-xl overflow-hidden">
+    <CardHeader className="p-3 bg-muted/30 border-b">
+      <div className="flex items-center gap-3">
+        <Avatar className="h-10 w-10 border">
+          <AvatarImage src={intern.avatar} alt={intern.name} data-ai-hint={intern.dataAiHint} />
+          <AvatarFallback className="bg-primary/10 text-primary">{getInitials(intern.name)}</AvatarFallback>
+        </Avatar>
+        <div>
+          <CardTitle className="text-sm font-semibold text-foreground">{intern.name}</CardTitle>
+          <CardDescription className="text-xs text-muted-foreground">{intern.university}</CardDescription>
+        </div>
+      </div>
+    </CardHeader>
+    <CardContent className="p-3 space-y-1.5 text-xs">
+      <div className="flex justify-between items-center">
+        <span className="text-muted-foreground">Pending Tasks:</span>
+        <Badge variant={intern.pendingTasks > 0 ? "destructive" : "secondary"} className="text-xs px-1.5 py-0.5">{intern.pendingTasks}</Badge>
+      </div>
+      <div className="flex justify-between items-center">
+        <span className="text-muted-foreground">Pending Reports:</span>
+        <Badge variant={intern.pendingReports > 0 ? "destructive" : "secondary"} className="text-xs px-1.5 py-0.5">{intern.pendingReports}</Badge>
+      </div>
+    </CardContent>
+    <CardFooter className="p-3 border-t bg-muted/20">
+      <Link href={`/supervisor/interns/details/${intern.id}`} passHref className="w-full">
+        <Button variant="outline" size="sm" className="w-full rounded-lg text-xs py-2">
+          <Eye className="mr-1.5 h-3.5 w-3.5" /> View Profile
+        </Button>
+      </Link>
+    </CardFooter>
+  </Card>
+);
+
+const HODStudentCardMobile: React.FC<{ student: HODStudent }> = ({ student }) => (
+  <Card className="shadow-lg rounded-xl overflow-hidden">
+    <CardHeader className="p-3 bg-muted/30 border-b">
+      <div className="flex items-center gap-3">
+        <Avatar className="h-10 w-10 border">
+          <AvatarImage src={student.avatarUrl} alt={student.name} data-ai-hint="person student" />
+          <AvatarFallback className="bg-primary/10 text-primary">{getInitials(student.name)}</AvatarFallback>
+        </Avatar>
+        <div>
+          <CardTitle className="text-sm font-semibold text-foreground">{student.name}</CardTitle>
+          <CardDescription className="text-xs text-muted-foreground">{student.department}</CardDescription>
+        </div>
+      </div>
+    </CardHeader>
+    <CardContent className="p-3 space-y-1.5 text-xs">
+      <div className="flex items-center gap-1.5"><SchoolIcon className="h-3.5 w-3.5 text-muted-foreground" /> <span className="text-muted-foreground">Faculty:</span> {student.faculty}</div>
+      <div className="flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5 text-muted-foreground" /> <span className="text-muted-foreground">Compliance:</span> {student.compliance}</div>
+      <Progress value={parseInt(student.compliance)} className="h-1.5 mt-1" />
+      <div className="flex items-center gap-1.5"><AlertOctagonIcon className="h-3.5 w-3.5 text-muted-foreground" /> <span className="text-muted-foreground">Open Issues:</span> <Badge variant={student.issues > 0 ? "destructive" : "secondary"} className="text-xs px-1.5 py-0.5">{student.issues}</Badge></div>
+    </CardContent>
+    <CardFooter className="p-3 border-t bg-muted/20">
+      <Link href={`/analytics?studentId=${student.id}`} passHref className="w-full">
+        <Button variant="outline" size="sm" className="w-full rounded-lg text-xs py-2">
+          <Eye className="mr-1.5 h-3.5 w-3.5" /> View Details
+        </Button>
+      </Link>
+    </CardFooter>
+  </Card>
+);
+
+
 const LecturerDashboard: React.FC<{ userName: string }> = ({ userName }) => {
-    const assignedStudents = [
+    const isMobile = useIsMobile();
+    const assignedStudents: AssignedStudent[] = [
         { id: 'std1', name: 'Alice Wonderland', department: 'Software Engineering', avatar: 'https://placehold.co/100x100.png', dataAiHint: 'person portrait', overdueTasks: 1, pendingReports: 0 },
         { id: 'std2', name: 'Bob The Intern', department: 'Mechanical Engineering', avatar: 'https://placehold.co/100x100.png', dataAiHint: 'person portrait', overdueTasks: 0, pendingReports: 1 },
         { id: 'std3', name: 'Charlie Brown', department: 'Marketing', avatar: 'https://placehold.co/100x100.png', dataAiHint: 'person portrait', overdueTasks: 2, pendingReports: 2 },
@@ -432,7 +503,7 @@ const LecturerDashboard: React.FC<{ userName: string }> = ({ userName }) => {
         <>
             <Card className="bg-gradient-to-r from-primary to-accent rounded-xl p-6 text-primary-foreground shadow-lg">
                 <h2 className="text-2xl font-bold mb-1">Welcome, {userName.split(' ')[0]}!</h2>
-                <p className="opacity-90 text-sm">Oversee your assigned students and their progress.</p>
+                <p className="opacity-90 text-sm">Oversee your assigned students and their progress on InternHub.</p>
             </Card>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <DashboardStatsCard title="Assigned Students" value={assignedStudents.length} icon={UsersIcon} iconBgColor="bg-blue-100 dark:bg-blue-900" iconColor="text-blue-500 dark:text-blue-300" actionLink="/assignments" actionLabel="Manage Assignments"/>
@@ -444,43 +515,47 @@ const LecturerDashboard: React.FC<{ userName: string }> = ({ userName }) => {
                     <CardTitle className="font-headline text-lg">My Students</CardTitle>
                     <CardDescription>Quick overview of students you are supervising.</CardDescription>
                 </CardHeader>
-                <CardContent className="p-0">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Student</TableHead>
-                                <TableHead>Department</TableHead>
-                                <TableHead className="text-center">Overdue Tasks</TableHead>
-                                <TableHead className="text-center">Pending Reports</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {assignedStudents.map(student => (
-                                <TableRow key={student.id}>
-                                    <TableCell>
-                                        <div className="flex items-center gap-3">
-                                            <Avatar className="h-9 w-9">
-                                                <AvatarImage src={student.avatar} alt={student.name} data-ai-hint={student.dataAiHint} />
-                                                <AvatarFallback>{getInitials(student.name)}</AvatarFallback>
-                                            </Avatar>
-                                            <div>
-                                                <p className="font-medium">{student.name}</p>
-                                            </div>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>{student.department}</TableCell>
-                                    <TableCell className="text-center"><Badge variant={student.overdueTasks > 0 ? "destructive" : "secondary"}>{student.overdueTasks}</Badge></TableCell>
-                                    <TableCell className="text-center"><Badge variant={student.pendingReports > 0 ? "destructive" : "secondary"}>{student.pendingReports}</Badge></TableCell>
-                                    <TableCell className="text-right">
-                                        <Link href={`/assignments/student/${student.id}`} passHref>
-                                            <Button variant="ghost" size="sm">View Details</Button>
-                                        </Link>
-                                    </TableCell>
+                <CardContent className={cn(isMobile ? "p-0 space-y-4" : "p-0")}>
+                    {isMobile ? (
+                        assignedStudents.map(student => <LecturerStudentCardMobile key={student.id} student={student} />)
+                    ) : (
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Student</TableHead>
+                                    <TableHead>Department</TableHead>
+                                    <TableHead className="text-center">Overdue Tasks</TableHead>
+                                    <TableHead className="text-center">Pending Reports</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                            </TableHeader>
+                            <TableBody>
+                                {assignedStudents.map(student => (
+                                    <TableRow key={student.id}>
+                                        <TableCell>
+                                            <div className="flex items-center gap-3">
+                                                <Avatar className="h-9 w-9">
+                                                    <AvatarImage src={student.avatar} alt={student.name} data-ai-hint={student.dataAiHint} />
+                                                    <AvatarFallback>{getInitials(student.name)}</AvatarFallback>
+                                                </Avatar>
+                                                <div>
+                                                    <p className="font-medium">{student.name}</p>
+                                                </div>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>{student.department}</TableCell>
+                                        <TableCell className="text-center"><Badge variant={student.overdueTasks > 0 ? "destructive" : "secondary"}>{student.overdueTasks}</Badge></TableCell>
+                                        <TableCell className="text-center"><Badge variant={student.pendingReports > 0 ? "destructive" : "secondary"}>{student.pendingReports}</Badge></TableCell>
+                                        <TableCell className="text-right">
+                                            <Link href={`/assignments/student/${student.id}`} passHref>
+                                                <Button variant="ghost" size="sm">View Details</Button>
+                                            </Link>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    )}
                 </CardContent>
                  <CardFooter className="justify-end p-4 border-t">
                     <Button variant="outline" size="sm" asChild><Link href="/assignments">View All Students</Link></Button>
@@ -491,7 +566,8 @@ const LecturerDashboard: React.FC<{ userName: string }> = ({ userName }) => {
 }
 
 const SupervisorDashboard: React.FC<{ userName: string }> = ({ userName }) => {
-     const supervisedInterns = [
+    const isMobile = useIsMobile();
+    const supervisedInterns: SupervisorIntern[] = [
         { id: 'intern1', name: 'Samuel Green', university: 'State University - CompSci', avatar: 'https://placehold.co/100x100.png', dataAiHint: 'person portrait', pendingTasks: 2, pendingReports: 1 },
         { id: 'intern2', name: 'Olivia Blue', university: 'Tech Institute - Design', avatar: 'https://placehold.co/100x100.png', dataAiHint: 'person portrait', pendingTasks: 0, pendingReports: 0 },
     ];
@@ -499,7 +575,7 @@ const SupervisorDashboard: React.FC<{ userName: string }> = ({ userName }) => {
         <>
             <Card className="bg-gradient-to-r from-primary to-accent rounded-xl p-6 text-primary-foreground shadow-lg">
                 <h2 className="text-2xl font-bold mb-1">Welcome, {userName.split(' ')[0]}!</h2>
-                <p className="opacity-90 text-sm">Manage your assigned interns and their submissions.</p>
+                <p className="opacity-90 text-sm">Manage your assigned interns and their submissions on InternHub.</p>
             </Card>
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <DashboardStatsCard title="Assigned Interns" value={supervisedInterns.length} icon={Users2} iconBgColor="bg-green-100 dark:bg-green-900" iconColor="text-green-500 dark:text-green-300" actionLink="/supervisor/interns" actionLabel="View My Interns"/>
@@ -511,7 +587,10 @@ const SupervisorDashboard: React.FC<{ userName: string }> = ({ userName }) => {
                     <CardTitle className="font-headline text-lg">My Interns</CardTitle>
                     <CardDescription>Quick overview of interns you are supervising.</CardDescription>
                 </CardHeader>
-                <CardContent className="p-0">
+                <CardContent className={cn(isMobile ? "p-0 space-y-4" : "p-0")}>
+                    {isMobile ? (
+                        supervisedInterns.map(intern => <SupervisorInternCardMobile key={intern.id} intern={intern} />)
+                    ) : (
                      <Table>
                         <TableHeader>
                             <TableRow>
@@ -548,6 +627,7 @@ const SupervisorDashboard: React.FC<{ userName: string }> = ({ userName }) => {
                             ))}
                         </TableBody>
                     </Table>
+                    )}
                 </CardContent>
                  <CardFooter className="justify-end p-4 border-t">
                     <Button variant="outline" size="sm" asChild><Link href="/supervisor/interns">View All Interns</Link></Button>
@@ -558,15 +638,17 @@ const SupervisorDashboard: React.FC<{ userName: string }> = ({ userName }) => {
 }
 
 const HODDashboard: React.FC<{ userName: string }> = ({ userName }) => {
+    const isMobile = useIsMobile();
     const hodFacultyId = FACULTIES.length > 0 ? FACULTIES[0].id : '';
     const hodDepartment = DEPARTMENTS.find(d => d.facultyId === hodFacultyId);
     const hodDepartmentId = hodDepartment ? hodDepartment.id : '';
     const hodDepartmentName = hodDepartment ? hodDepartment.name : 'N/A';
 
-    const departmentStudents = DUMMY_STUDENTS_DATA.filter(student => 
+    const departmentStudents: HODStudent[] = DUMMY_STUDENTS_DATA.filter(student => 
         student.department === hodDepartmentName 
     ).map(student => ({ 
         ...student,
+        faculty: FACULTIES.find(f => f.id === hodFacultyId)?.name || 'N/A',
         compliance: `${Math.floor(Math.random() * 30) + 70}%`, 
         issues: Math.random() > 0.7 ? Math.floor(Math.random() * 3) : 0 
     }));
@@ -578,7 +660,7 @@ const HODDashboard: React.FC<{ userName: string }> = ({ userName }) => {
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
                     <div>
                         <h2 className="text-2xl font-bold mb-1">Welcome, {userName.split(' ')[0]}!</h2>
-                        <p className="opacity-90 text-sm">Departmental Internship Overview: {hodDepartmentName}</p>
+                        <p className="opacity-90 text-sm">Departmental Internship Overview: {hodDepartmentName} on InternHub.</p>
                     </div>
                     <Link href="/analytics" passHref>
                         <Button className="mt-3 md:mt-0 bg-primary-foreground text-primary hover:bg-primary-foreground/90 font-medium transition shrink-0 rounded-lg">
@@ -598,41 +680,45 @@ const HODDashboard: React.FC<{ userName: string }> = ({ userName }) => {
                     <CardTitle className="font-headline text-lg">{hodDepartmentName} Student Overview</CardTitle>
                     <CardDescription>Summary of student progress within your department.</CardDescription>
                 </CardHeader>
-                <CardContent className="p-0">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Student</TableHead>
-                                <TableHead>Faculty</TableHead>
-                                <TableHead>Compliance</TableHead>
-                                <TableHead className="text-center">Open Issues</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {departmentStudents.map(student => (
-                                <TableRow key={student.id}>
-                                    <TableCell>
-                                        <div className="flex items-center gap-3">
-                                            <Avatar className="h-9 w-9">
-                                                <AvatarImage src={student.avatarUrl} alt={student.name} data-ai-hint="person student" />
-                                                <AvatarFallback>{getInitials(student.name)}</AvatarFallback>
-                                            </Avatar>
-                                            <p className="font-medium">{student.name}</p>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>{FACULTIES.find(f => f.id === hodFacultyId)?.name || 'N/A'}</TableCell>
-                                    <TableCell><Progress value={parseInt(student.compliance)} className="h-2" /> <span className="text-xs">{student.compliance}</span></TableCell>
-                                    <TableCell className="text-center"><Badge variant={student.issues > 0 ? "destructive" : "default"}>{student.issues}</Badge></TableCell>
-                                    <TableCell className="text-right">
-                                        <Link href={`/analytics?studentId=${student.id}`} passHref> 
-                                            <Button variant="ghost" size="sm">View Details</Button>
-                                        </Link>
-                                    </TableCell>
+                <CardContent className={cn(isMobile ? "p-0 space-y-4" : "p-0")}>
+                    {isMobile ? (
+                        departmentStudents.map(student => <HODStudentCardMobile key={student.id} student={student} />)
+                    ) : (
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Student</TableHead>
+                                    <TableHead>Faculty</TableHead>
+                                    <TableHead>Compliance</TableHead>
+                                    <TableHead className="text-center">Open Issues</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                            </TableHeader>
+                            <TableBody>
+                                {departmentStudents.map(student => (
+                                    <TableRow key={student.id}>
+                                        <TableCell>
+                                            <div className="flex items-center gap-3">
+                                                <Avatar className="h-9 w-9">
+                                                    <AvatarImage src={student.avatarUrl} alt={student.name} data-ai-hint="person student" />
+                                                    <AvatarFallback>{getInitials(student.name)}</AvatarFallback>
+                                                </Avatar>
+                                                <p className="font-medium">{student.name}</p>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>{FACULTIES.find(f => f.id === hodFacultyId)?.name || 'N/A'}</TableCell>
+                                        <TableCell><Progress value={parseInt(student.compliance)} className="h-2" /> <span className="text-xs">{student.compliance}</span></TableCell>
+                                        <TableCell className="text-center"><Badge variant={student.issues > 0 ? "destructive" : "default"}>{student.issues}</Badge></TableCell>
+                                        <TableCell className="text-right">
+                                            <Link href={`/analytics?studentId=${student.id}`} passHref> 
+                                                <Button variant="ghost" size="sm">View Details</Button>
+                                            </Link>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    )}
                 </CardContent>
                 <CardFooter className="p-4 border-t">
                      <Link href="/assignments" className="w-full sm:w-auto mr-auto">
@@ -676,6 +762,9 @@ export default function DashboardPage() {
       case 'HOD':
         return <HODDashboard userName={userName} />;
       default:
+        if (userRole === 'ADMIN') {
+            return <div className="text-center p-8"><p>Redirecting to Admin Dashboard...</p><script>{`setTimeout(() => window.location.href = '/admin/dashboard', 100);`}</script></div>;
+        }
         return <div className="text-center p-8"><p>No dashboard available for this role or role not identified.</p></div>;
     }
   };
@@ -688,7 +777,7 @@ export default function DashboardPage() {
     <div className="space-y-6 p-4 md:p-6 bg-background text-foreground">
         <PageHeader
             title={`${USER_ROLES[userRole!] || 'User'} Dashboard`}
-            description={`Welcome to your InternshipTrack ${USER_ROLES[userRole!]?.toLowerCase()} dashboard.`}
+            description={`Welcome to your InternHub ${USER_ROLES[userRole!]?.toLowerCase()} dashboard.`}
             icon={LayoutDashboard}
         />
         {renderDashboardContent()}

@@ -21,6 +21,7 @@ import { useToast } from '@/hooks/use-toast';
 import { FACULTIES, DEPARTMENTS } from '@/lib/constants';
 import type { Department, Faculty, UserRole, ProfileFormValues } from '@/types';
 import { Loader2 } from 'lucide-react';
+// Removed Firebase imports: auth, db, doc, setDoc, serverTimestamp
 
 const profileSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }).max(100, { message: 'Name too long (max 100).' }),
@@ -31,9 +32,6 @@ const profileSchema = z.object({
   supervisorCompanyName: z.string().min(2, { message: 'Company name must be at least 2 characters.'}).max(100).optional().or(z.literal('')),
   supervisorCompanyAddress: z.string().min(5, {message: 'Company address must be at least 5 characters.'}).max(200).optional().or(z.literal('')),
 });
-
-// Use the imported ProfileFormValues type
-// export type ProfileFormValues = z.infer<typeof profileSchema>; 
 
 interface ProfileSetupFormProps {
   defaultValues?: Partial<ProfileFormValues>;
@@ -108,7 +106,6 @@ export default function ProfileSetupForm({ defaultValues, onSuccess, userRole }:
     });
   }, [defaultValues, form, userRole]);
 
-
   async function onSubmit(values: ProfileFormValues) {
     setIsLoading(true);
     const submissionValues: ProfileFormValues = { ...values };
@@ -120,13 +117,14 @@ export default function ProfileSetupForm({ defaultValues, onSuccess, userRole }:
         submissionValues.supervisorCompanyName = undefined;
         submissionValues.supervisorCompanyAddress = undefined;
     }
-
-
+    
+    // Simulate API call to a custom backend
+    console.log("Simulating profile update to backend:", submissionValues);
     await new Promise(resolve => setTimeout(resolve, 1000)); 
     setIsLoading(false);
 
     toast({
-      title: 'Profile Updated!',
+      title: 'Profile Updated! (Simulated)',
       description: 'Your profile information has been successfully saved.',
       variant: "default",
     });

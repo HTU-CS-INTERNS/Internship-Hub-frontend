@@ -2,7 +2,7 @@
 'use client';
 import * as React from 'react';
 import PageHeader from '@/components/shared/page-header';
-import { FileText, PlusCircle, Filter, Eye, Archive } from 'lucide-react'; 
+import { FileText, PlusCircle, Filter, Eye, Archive, Edit3 } from 'lucide-react'; 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import Link from 'next/link';
@@ -13,6 +13,7 @@ import type { DailyReport } from '@/types';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile'; 
 import { useToast } from '@/hooks/use-toast';
+import { format, parseISO } from 'date-fns';
 
 export const DUMMY_REPORTS: (DailyReport & { title?: string; challengesFaced?: string; securePhotoUrl?: string; attachments?: string[]; supervisorComments?: string })[] = [
   { 
@@ -102,30 +103,35 @@ export default function ReportsPage() {
     });
   };
 
-  const ReportCardMobile: React.FC<{ report: DailyReport }> = ({ report }) => (
+  const ReportCardMobile: React.FC<{ report: DailyReport & { title?: string} }> = ({ report }) => (
     <Card className="shadow-lg rounded-xl overflow-hidden border-l-4" style={{borderColor: `hsl(var(--${report.status === 'APPROVED' ? 'chart-3' : report.status === 'SUBMITTED' ? 'primary' : report.status === 'REJECTED' ? 'destructive' : 'accent'}))`}}>
-      <CardContent className="p-4 space-y-2">
+      <CardHeader className="p-3 bg-muted/30">
         <div className="flex justify-between items-start">
-          <div>
-            <p className="text-xs text-muted-foreground">Report Date</p>
-            <p className="font-semibold text-foreground">{new Date(report.date).toLocaleDateString()}</p>
-          </div>
+          <CardTitle className="text-sm font-semibold text-foreground">{report.title || `Report: ${format(parseISO(report.date), "PPP")}`}</CardTitle>
           <Badge variant="outline" className={cn("text-xs px-2 py-0.5", statusColors[report.status])}>
             {report.status}
           </Badge>
         </div>
-        <div>
-          <p className="text-xs text-muted-foreground">Summary</p>
-          <p className="text-sm text-foreground line-clamp-2">{report.description}</p>
-        </div>
-        <div className="pt-2">
-          <Link href={`/student/reports/${report.id}`} passHref>
-            <Button variant="outline" size="sm" className="w-full rounded-md">
-              <Eye className="mr-2 h-4 w-4" /> View Details
+        <CardDescription className="text-xs text-muted-foreground">{format(parseISO(report.date), "EEEE, MMMM d, yyyy")}</CardDescription>
+      </CardHeader>
+      <CardContent className="p-3 text-xs">
+        <p className="text-muted-foreground mb-1">Summary:</p>
+        <p className="text-foreground line-clamp-3">{report.description}</p>
+      </CardContent>
+      <CardFooter className="p-3 border-t bg-muted/20 flex gap-2">
+          <Link href={`/student/reports/${report.id}`} passHref className="flex-1">
+            <Button variant="outline" size="sm" className="w-full rounded-lg text-xs">
+              <Eye className="mr-1.5 h-3.5 w-3.5" /> View Details
             </Button>
           </Link>
-        </div>
-      </CardContent>
+          {report.status === 'PENDING' && (
+             <Link href={`/student/reports/edit/${report.id}`} passHref className="flex-1">
+                <Button variant="default" size="sm" className="w-full rounded-lg text-xs bg-primary hover:bg-primary/90 text-primary-foreground">
+                    <Edit3 className="mr-1.5 h-3.5 w-3.5" /> Edit
+                </Button>
+            </Link>
+          )}
+      </CardFooter>
     </Card>
   );
 
@@ -180,18 +186,16 @@ export default function ReportsPage() {
             <CardDescription>A log of all your submitted work reports.</CardDescription>
             </CardHeader>
         )}
-        <CardContent className={cn(isMobile ? "p-0" : "p-0")}>
+        <CardContent className={cn(isMobile && filteredReports.length > 0 ? "p-0 space-y-4" : "p-0")}>
           {filteredReports.length > 0 ? (
             isMobile ? (
-              <div className="space-y-4">
-                {filteredReports.map((report) => <ReportCardMobile key={report.id} report={report} />)}
-              </div>
+                filteredReports.map((report) => <ReportCardMobile key={report.id} report={report} />)
             ) : (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Date</TableHead>
-                  <TableHead>Summary</TableHead>
+                  <TableHead>Title/Summary</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -199,17 +203,25 @@ export default function ReportsPage() {
               <TableBody>
                 {filteredReports.map((report) => (
                   <TableRow key={report.id}>
-                    <TableCell>{new Date(report.date).toLocaleDateString()}</TableCell>
-                    <TableCell className="max-w-xs truncate">{report.description}</TableCell>
+                    <TableCell>{format(parseISO(report.date), "PPP")}</TableCell>
+                    <TableCell className="max-w-sm truncate">
+                      <span className="font-medium">{(report as any).title || 'Daily Report'}</span>
+                      <p className="text-xs text-muted-foreground truncate">{(report as any).description}</p>
+                    </TableCell>
                     <TableCell>
                       <Badge variant="outline" className={cn("text-xs", statusColors[report.status])}>
                         {report.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right space-x-1">
                        <Link href={`/student/reports/${report.id}`} passHref>
-                        <Button variant="ghost" size="sm">View</Button>
+                        <Button variant="ghost" size="sm" className="rounded-md"><Eye className="mr-1 h-4 w-4"/>View</Button>
                       </Link>
+                      {report.status === 'PENDING' && (
+                        <Link href={`/student/reports/edit/${report.id}`} passHref>
+                            <Button variant="ghost" size="sm" className="rounded-md"><Edit3 className="mr-1 h-4 w-4"/>Edit</Button>
+                        </Link>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -218,7 +230,7 @@ export default function ReportsPage() {
             )
           ) : (
              <div className={cn("text-center py-12 text-muted-foreground", isMobile ? "p-0 pt-8" : "p-6")}>
-              <FileText className="mx-auto h-12 w-12 mb-4" />
+              <FileText className="mx-auto h-12 w-12 mb-4 opacity-30" />
               <p className="text-lg font-semibold">No reports found.</p>
               <p>Submit a new report or adjust your filters.</p>
             </div>
@@ -233,3 +245,5 @@ export default function ReportsPage() {
     </div>
   );
 }
+
+    

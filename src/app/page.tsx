@@ -1,62 +1,76 @@
 
+'use client';
+
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Building, GraduationCap } from 'lucide-react';
-import Image from 'next/image';
+import { ArrowRight, LogIn, GraduationCap } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import AppLoadingScreen from '@/components/shared/app-loading-screen';
 
-export default function HomePage() {
+export default function WelcomePage() {
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+      if (isLoggedIn) {
+        router.replace('/dashboard'); 
+      } else {
+        setIsLoading(false); 
+      }
+    } else {
+      setIsLoading(false); 
+    }
+  }, [router]);
+
+  if (isLoading) {
+    return <AppLoadingScreen />;
+  }
+
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-primary/10 via-background to-background p-6 sm:p-8">
-      <div className="text-center space-y-8 max-w-3xl">
-        <div className="flex justify-center items-center space-x-4 mb-6">
-          <GraduationCap className="h-14 w-14 sm:h-16 sm:w-16 text-primary" />
-          <h1 className="text-4xl sm:text-5xl font-headline font-bold text-primary">
-            InternshipTrack
+    <main className="relative flex flex-col min-h-screen bg-primary text-primary-foreground p-4 overflow-hidden">
+      <div className="flex-grow flex flex-col items-center justify-center text-center pt-[5vh] sm:pt-[8vh] z-0">
+        <div className="relative z-10 mb-6 animate-in fade-in-0 slide-in-from-top-12 duration-1000">
+          <div className="p-3 bg-primary-foreground/20 rounded-full inline-block shadow-lg backdrop-blur-sm">
+            <GraduationCap className="h-12 w-12 sm:h-14 sm:w-14 text-primary-foreground" />
+          </div>
+          <h1 className="mt-3 text-3xl sm:text-4xl font-headline font-bold text-primary-foreground tracking-tight">
+            InternHub
           </h1>
         </div>
-        <p className="text-lg sm:text-xl text-foreground/80 font-body leading-relaxed">
-          Streamlining internship management for students, lecturers, and companies. Track progress, submit reports, and foster collaboration seamlessly.
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-8">
-            <div className="relative w-full h-72 rounded-xl shadow-xl overflow-hidden transform hover:scale-105 transition-transform duration-300 group">
-                <Image 
-                  src="https://placehold.co/600x400.png" 
-                  alt="Student working on internship" 
-                  layout="fill"
-                  objectFit="cover"
-                  className="group-hover:opacity-90 transition-opacity"
-                  data-ai-hint="student computer"
-                />
-                <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center p-4">
-                    <h3 className="text-2xl font-headline font-semibold text-white mb-2">Students</h3>
-                    <p className="text-sm text-center text-white/90">Manage your tasks, submit daily reports, and communicate with your supervisors.</p>
-                </div>
-            </div>
-            <div className="relative w-full h-72 rounded-xl shadow-xl overflow-hidden transform hover:scale-105 transition-transform duration-300 group">
-                <Image 
-                  src="https://placehold.co/600x400.png" 
-                  alt="Professional meeting" 
-                  layout="fill"
-                  objectFit="cover"
-                  className="group-hover:opacity-90 transition-opacity"
-                  data-ai-hint="faculty meeting"
-                />
-                <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center p-4">
-                    <h3 className="text-2xl font-headline font-semibold text-white mb-2">Faculty & Supervisors</h3>
-                    <p className="text-sm text-center text-white/90">Assign lecturers, oversee progress, and provide valuable feedback.</p>
-                </div>
-            </div>
+        <div className="space-y-2 animate-in fade-in-0 slide-in-from-bottom-10 duration-1000 delay-300 mt-4 sm:mt-6 max-w-xs mx-auto">
+          <h2 className="text-lg sm:text-xl font-semibold text-primary-foreground tracking-tight">
+            Elevate Your Internship Experience
+          </h2>
+          <p className="text-xs sm:text-sm text-primary-foreground/80 font-body leading-normal">
+            The Official Internship Platform for Ho Technical University.
+          </p>
         </div>
-        <Link href="/login" passHref>
-          <Button size="lg" className="mt-10 font-headline text-lg px-10 py-6 bg-accent hover:bg-accent/90 text-accent-foreground shadow-lg transform hover:scale-105 transition-transform duration-300 rounded-lg">
-            Get Started
-          </Button>
-        </Link>
       </div>
-      <footer className="absolute bottom-6 sm:bottom-8 text-center text-foreground/60 font-body text-sm">
-        <p>&copy; {new Date().getFullYear()} InternshipTrack. All rights reserved.</p>
-        <p>Built with Next.js, ShadCN UI, and Tailwind CSS.</p>
+      <div className="w-full max-w-xs mx-auto text-center py-4 z-0 animate-in fade-in-0 slide-in-from-bottom-12 duration-1000 delay-500">
+        <div className="flex flex-col items-center space-y-3 sm:flex-row sm:space-y-0 sm:space-x-3 sm:justify-center">
+          <Link href="/welcome/features" passHref className="w-full sm:w-auto">
+            <Button
+              className="font-body text-sm px-6 py-2.5 bg-primary-foreground hover:bg-primary-foreground/90 text-primary shadow-md rounded-lg w-full group h-10"
+            >
+              Discover InternHub <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </Button>
+          </Link>
+          <Link href="/login" passHref className="w-full sm:w-auto">
+            <Button
+              className="font-body text-sm px-6 py-2.5 bg-primary-foreground text-primary hover:bg-primary-foreground/90 shadow-md rounded-lg w-full group h-10"
+            >
+              <LogIn className="mr-2 h-4 w-4"/> Login
+            </Button>
+          </Link>
+        </div>
+      </div>
+      <footer className="flex-shrink-0 py-6 text-center text-xs text-primary-foreground/70 z-0">
+        <p>&copy; {new Date().getFullYear()} InternHub - Ho Technical University. Empowering Futures.</p>
       </footer>
     </main>
   );
 }
+    

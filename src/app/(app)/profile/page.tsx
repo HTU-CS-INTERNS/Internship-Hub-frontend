@@ -2,7 +2,7 @@
 'use client';
 import * as React from 'react';
 import PageHeader from '@/components/shared/page-header';
-import { User as UserIcon, Briefcase, BookOpen, Edit3, GraduationCap, Building, Phone as PhoneIcon, AlertTriangle, CheckCircle, Clock, Landmark } from 'lucide-react';
+import { User as UserIcon, Briefcase, BookOpen, Edit3, GraduationCap, Building, Phone as PhoneIcon, AlertTriangle, CheckCircle, Clock, Landmark, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -11,10 +11,11 @@ import ProfileSetupForm from '@/components/forms/profile-setup-form';
 import InternshipDetailsForm from '@/components/forms/internship-details-form';
 import type { UserRole, InternshipDetails, InternshipStatus, ProfileFormValues } from '@/types';
 import { USER_ROLES, FACULTIES, DEPARTMENTS } from '@/lib/constants';
-import { useRouter } from 'next/navigation'; 
+import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from '@/lib/utils';
 import { format, parseISO, isValid } from 'date-fns';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const getInitials = (name: string) => {
     if (!name) return 'U';
@@ -28,153 +29,153 @@ const statusAlertColors: Record<InternshipStatus, { bg: string, border: string, 
     NOT_SUBMITTED: { bg: "bg-blue-500/10 dark:bg-blue-800/30", border: "border-blue-500/50 dark:border-blue-700/50", iconColor: "text-blue-600 dark:text-blue-400", icon: Edit3 },
 };
 
-
 export default function ProfilePage() {
-  const router = useRouter(); 
+  const router = useRouter();
   const [userRole, setUserRole] = React.useState<UserRole | null>(null);
   const [isEditingProfile, setIsEditingProfile] = React.useState(false);
   const [isEditingInternship, setIsEditingInternship] = React.useState(false);
-  
+  const [isLoadingData, setIsLoadingData] = React.useState(true);
+  const [profileError, setProfileError] = React.useState<string | null>(null);
+
   const [userData, setUserData] = React.useState<ProfileFormValues & {
     avatarUrl: string;
     facultyName: string;
     departmentName: string;
     internship: InternshipDetails;
   }>({
-    name: 'User',
-    email: 'user@example.com',
+    name: '',
+    email: '',
     avatarUrl: '',
     facultyId: '',
-    facultyName: 'Not Set',
-    departmentId: '',
-    departmentName: 'Not Set',
+    facultyName: '',
+    departmentName: '',
     contactNumber: '',
     supervisorCompanyName: '',
     supervisorCompanyAddress: '',
     internship: {
-      companyName: '',
-      companyAddress: '',
-      supervisorName: '',
-      supervisorEmail: '',
-      startDate: '',
-      endDate: '',
-      location: '',
-      status: 'NOT_SUBMITTED',
-      rejectionReason: '',
+      companyName: '', companyAddress: '', supervisorName: '', supervisorEmail: '',
+      startDate: '', endDate: '', location: '', status: 'NOT_SUBMITTED', rejectionReason: ''
     }
   });
 
   React.useEffect(() => {
-    const storedRole = typeof window !== "undefined" ? localStorage.getItem('userRole') as UserRole : null;
-    setUserRole(storedRole);
+    const fetchData = async () => {
+      setIsLoadingData(true);
+      setProfileError(null);
+      const storedRoleFromAuth = localStorage.getItem('userRole') as UserRole | null;
+      setUserRole(storedRoleFromAuth);
 
-    const storedName = typeof window !== "undefined" ? localStorage.getItem('userName') || (storedRole === 'SUPERVISOR' ? 'New Supervisor' : 'New User') : 'New User';
-    const storedEmail = typeof window !== "undefined" ? localStorage.getItem('userEmail') || 'email@example.com' : 'email@example.com';
-    const storedFacultyId = typeof window !== "undefined" ? localStorage.getItem('userFacultyId') || '' : '';
-    const storedDepartmentId = typeof window !== "undefined" ? localStorage.getItem('userDepartmentId') || '' : '';
-    const storedContactNumber = typeof window !== "undefined" ? localStorage.getItem('userContactNumber') || '' : '';
-    const storedSupervisorCompanyName = typeof window !== "undefined" ? localStorage.getItem('supervisorCompanyName') || '' : '';
-    const storedSupervisorCompanyAddress = typeof window !== "undefined" ? localStorage.getItem('supervisorCompanyAddress') || '' : '';
+      if (!storedRoleFromAuth || localStorage.getItem('isLoggedIn') !== 'true') {
+        router.push('/login');
+        return;
+      }
 
-    let storedInternship: InternshipDetails = {
-        companyName: '', companyAddress: '', supervisorName: '', supervisorEmail: '',
-        startDate: '', endDate: '', location: '', status: 'NOT_SUBMITTED', rejectionReason: ''
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      try {
+        const fetchedUserName = localStorage.getItem('userName') || 'User';
+        const fetchedUserEmail = localStorage.getItem('userEmail') || 'email@example.com';
+        const fetchedFacultyId = localStorage.getItem('userFacultyId') || '';
+        const fetchedDepartmentId = localStorage.getItem('userDepartmentId') || '';
+        const fetchedContactNumber = localStorage.getItem('userContactNumber') || '';
+        const fetchedSupervisorCompanyName = localStorage.getItem('supervisorCompanyName') || '';
+        const fetchedSupervisorCompanyAddress = localStorage.getItem('supervisorCompanyAddress') || '';
+
+        let fetchedInternship: InternshipDetails = {
+            companyName: '', companyAddress: '', supervisorName: '', supervisorEmail: '',
+            startDate: '', endDate: '', location: '', status: 'NOT_SUBMITTED', rejectionReason: ''
+        };
+
+        if (storedRoleFromAuth === 'STUDENT') {
+            const internshipDetailsRaw = localStorage.getItem(`userInternshipDetails_${fetchedUserEmail}`);
+            if (internshipDetailsRaw) {
+                fetchedInternship = JSON.parse(internshipDetailsRaw);
+            }
+        }
+
+        const faculty = FACULTIES.find(f => f.id === fetchedFacultyId);
+        const department = DEPARTMENTS.find(d => d.id === fetchedDepartmentId && d.facultyId === fetchedFacultyId);
+
+        setUserData({
+            name: fetchedUserName,
+            email: fetchedUserEmail,
+            facultyId: fetchedFacultyId,
+            departmentId: fetchedDepartmentId,
+            contactNumber: fetchedContactNumber,
+            supervisorCompanyName: fetchedSupervisorCompanyName,
+            supervisorCompanyAddress: fetchedSupervisorCompanyAddress,
+            avatarUrl: `https://placehold.co/150x150.png?text=${getInitials(fetchedUserName)}`,
+            facultyName: storedRoleFromAuth === 'STUDENT' ? (faculty?.name || 'Not Set') : '',
+            departmentName: storedRoleFromAuth === 'STUDENT' ? (department?.name || 'Not Set') : '',
+            internship: storedRoleFromAuth === 'STUDENT' ? fetchedInternship : userData.internship,
+        });
+
+        const onboardingComplete = localStorage.getItem('onboardingComplete') === 'true';
+        const supervisorProfileComplete = localStorage.getItem('supervisorProfileComplete') === 'true';
+
+        if (storedRoleFromAuth === 'STUDENT' && !onboardingComplete) {
+            if (!fetchedFacultyId || !fetchedDepartmentId || fetchedFacultyId === 'Not Set' || fetchedDepartmentId === 'Not Set' || !fetchedUserName || fetchedUserName === 'User' || !fetchedUserEmail || !fetchedContactNumber) {
+                setIsEditingProfile(true);
+                setIsEditingInternship(false);
+            } else if (fetchedInternship.status === 'NOT_SUBMITTED' || fetchedInternship.status === 'REJECTED') {
+                 setIsEditingProfile(false);
+                 setIsEditingInternship(true);
+            } else if (fetchedInternship.status === 'APPROVED') {
+                localStorage.setItem('onboardingComplete', 'true');
+                setIsEditingProfile(false);
+                setIsEditingInternship(false);
+            }
+        } else if (storedRoleFromAuth === 'SUPERVISOR' && !supervisorProfileComplete) {
+            if (fetchedUserName === 'New Supervisor' || !fetchedContactNumber || !fetchedSupervisorCompanyName) {
+                setIsEditingProfile(true);
+            } else {
+                localStorage.setItem('supervisorProfileComplete', 'true');
+            }
+        }
+      } catch (err) {
+        console.error("Error loading profile data from localStorage:", err);
+        setProfileError("Failed to load profile information. Please try again later.");
+      } finally {
+        setIsLoadingData(false);
+      }
     };
-    // Load student-specific internship details
-    if (storedRole === 'STUDENT' && storedEmail) {
-        const studentInternshipKey = `userInternshipDetails_${storedEmail}`;
-        const studentInternshipString = typeof window !== "undefined" ? localStorage.getItem(studentInternshipKey) : null;
-        if (studentInternshipString) {
-            try {
-                const parsed = JSON.parse(studentInternshipString);
-                storedInternship = { ...storedInternship, ...parsed }; 
-            } catch (e) { console.error("Error parsing internship details from localStorage", e); }
-        }
-    }
-    
-    const faculty = FACULTIES.find(f => f.id === storedFacultyId);
-    const department = DEPARTMENTS.find(d => d.id === storedDepartmentId && d.facultyId === storedFacultyId);
 
-    setUserData(prev => ({
-        ...prev,
-        name: storedName,
-        email: storedEmail,
-        avatarUrl: `https://placehold.co/150x150.png?text=${getInitials(storedName)}`,
-        facultyId: storedRole === 'STUDENT' ? (faculty?.id || '') : '',
-        facultyName: storedRole === 'STUDENT' ? (faculty?.name || 'Not Set') : '',
-        departmentId: storedRole === 'STUDENT' ? (department?.id || '') : '',
-        departmentName: storedRole === 'STUDENT' ? (department?.name || 'Not Set') : '',
-        contactNumber: storedContactNumber,
-        supervisorCompanyName: storedRole === 'SUPERVISOR' ? storedSupervisorCompanyName : '',
-        supervisorCompanyAddress: storedRole === 'SUPERVISOR' ? storedSupervisorCompanyAddress : '',
-        internship: storedRole === 'STUDENT' ? storedInternship : prev.internship,
-    }));
-    
-    const onboardingComplete = typeof window !== "undefined" ? localStorage.getItem('onboardingComplete') === 'true' : false;
-    const supervisorProfileComplete = typeof window !== "undefined" ? localStorage.getItem('supervisorProfileComplete') === 'true' : false;
+    fetchData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router]);
 
-    if (storedRole === 'STUDENT' && !onboardingComplete) {
-        if (!storedFacultyId || !storedDepartmentId || storedFacultyId === 'Not Set' || storedDepartmentId === 'Not Set' || !storedName || storedName === 'New User' || !storedEmail || !storedContactNumber) {
-            setIsEditingProfile(true);
-            setIsEditingInternship(false);
-        } else if (storedInternship.status === 'NOT_SUBMITTED' || storedInternship.status === 'REJECTED') {
-             setIsEditingProfile(false); 
-             setIsEditingInternship(true);
-        } else if (storedInternship.status === 'APPROVED') {
-            localStorage.setItem('onboardingComplete', 'true');
-            setIsEditingProfile(false);
-            setIsEditingInternship(false);
-        }
-    } else if (storedRole === 'SUPERVISOR' && !supervisorProfileComplete) {
-        if (storedName === 'New Supervisor' || !storedContactNumber || !storedSupervisorCompanyName) {
-            setIsEditingProfile(true);
-        } else {
-            localStorage.setItem('supervisorProfileComplete', 'true');
-        }
-    }
-
-  }, []);
-  
   const handleProfileSaveSuccess = (updatedProfileData: ProfileFormValues) => {
+    localStorage.setItem('userName', updatedProfileData.name);
+    localStorage.setItem('userEmail', updatedProfileData.email);
+    if(updatedProfileData.facultyId) localStorage.setItem('userFacultyId', updatedProfileData.facultyId);
+    if(updatedProfileData.departmentId) localStorage.setItem('userDepartmentId', updatedProfileData.departmentId);
+    if(updatedProfileData.contactNumber) localStorage.setItem('userContactNumber', updatedProfileData.contactNumber);
+    if(userRole === 'SUPERVISOR' && updatedProfileData.supervisorCompanyName) localStorage.setItem('supervisorCompanyName', updatedProfileData.supervisorCompanyName);
+    if(userRole === 'SUPERVISOR' && updatedProfileData.supervisorCompanyAddress) localStorage.setItem('supervisorCompanyAddress', updatedProfileData.supervisorCompanyAddress);
+
     const faculty = FACULTIES.find(f => f.id === updatedProfileData.facultyId);
     const department = DEPARTMENTS.find(d => d.id === updatedProfileData.departmentId && d.facultyId === updatedProfileData.facultyId);
 
-    const newUserData = {
-      ...userData,
+    setUserData(prev => ({
+      ...prev,
       name: updatedProfileData.name,
       email: updatedProfileData.email,
-      facultyId: userRole === 'STUDENT' ? (faculty?.id || '') : '',
+      facultyId: userRole === 'STUDENT' ? (updatedProfileData.facultyId || '') : '',
       facultyName: userRole === 'STUDENT' ? (faculty?.name || 'Not Set') : '',
-      departmentId: userRole === 'STUDENT' ? (department?.id || '') : '',
+      departmentId: userRole === 'STUDENT' ? (updatedProfileData.departmentId || '') : '',
       departmentName: userRole === 'STUDENT' ? (department?.name || 'Not Set') : '',
       contactNumber: updatedProfileData.contactNumber || '',
       supervisorCompanyName: userRole === 'SUPERVISOR' ? updatedProfileData.supervisorCompanyName || '' : '',
       supervisorCompanyAddress: userRole === 'SUPERVISOR' ? updatedProfileData.supervisorCompanyAddress || '' : '',
       avatarUrl: `https://placehold.co/150x150.png?text=${getInitials(updatedProfileData.name)}`,
-    };
-    setUserData(newUserData);
-    
-    if (typeof window !== "undefined") {
-        localStorage.setItem('userName', newUserData.name);
-        localStorage.setItem('userEmail', newUserData.email);
-        localStorage.setItem('userContactNumber', newUserData.contactNumber);
-        if (userRole === 'STUDENT') {
-            localStorage.setItem('userFacultyId', newUserData.facultyId);
-            localStorage.setItem('userDepartmentId', newUserData.departmentId);
-        }
-        if (userRole === 'SUPERVISOR') {
-            localStorage.setItem('supervisorCompanyName', newUserData.supervisorCompanyName || '');
-            localStorage.setItem('supervisorCompanyAddress', newUserData.supervisorCompanyAddress || '');
-        }
-    }
+    }));
+
     setIsEditingProfile(false);
-    
+
     if (userRole === 'STUDENT' && (userData.internship.status === 'NOT_SUBMITTED' || userData.internship.status === 'REJECTED')) {
         setIsEditingInternship(true);
     } else if (userRole === 'STUDENT' && userData.internship.status === 'APPROVED') {
         localStorage.setItem('onboardingComplete', 'true');
-    } else if (userRole === 'SUPERVISOR' && newUserData.supervisorCompanyName && newUserData.name !== 'New Supervisor') {
-        localStorage.setItem('supervisorProfileComplete', 'true');
     }
   };
 
@@ -183,76 +184,98 @@ export default function ProfilePage() {
         ...prev,
         internship: updatedInternshipData
     }));
-
-    if (typeof window !== "undefined" && userData.email) {
-        const studentInternshipKey = `userInternshipDetails_${userData.email}`;
-        localStorage.setItem(studentInternshipKey, JSON.stringify(updatedInternshipData));
-        if (updatedInternshipData.status === 'APPROVED') {
-            localStorage.setItem('onboardingComplete', 'true');
-            router.push('/dashboard'); 
-        } else if (updatedInternshipData.status === 'PENDING_APPROVAL') {
-             localStorage.removeItem('onboardingComplete'); 
-        }
-    }
     setIsEditingInternship(false);
+    if (updatedInternshipData.status === 'APPROVED') {
+        localStorage.setItem('onboardingComplete', 'true');
+    } else {
+        localStorage.removeItem('onboardingComplete');
+    }
   };
+
+  if (isLoadingData) {
+    return (
+      <div className="flex items-center justify-center h-full p-6">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="ml-2 text-lg">Loading profile...</p>
+      </div>
+    );
+  }
+
+  if (profileError && !isEditingProfile && !isEditingInternship) {
+    return <div className="p-6 text-center text-destructive">{profileError}</div>;
+  }
 
   const currentInternshipStatus = userData.internship.status;
   const StatusIcon = statusAlertColors[currentInternshipStatus]?.icon || Edit3;
+
+  let internshipEditButtonText = 'Edit Internship';
+  if (currentInternshipStatus === 'NOT_SUBMITTED' || currentInternshipStatus === 'REJECTED') {
+    internshipEditButtonText = 'Enter/Update Details';
+  } else if (currentInternshipStatus === 'PENDING_APPROVAL') {
+    internshipEditButtonText = 'Edit Pending Submission';
+  }
+  const canEditInternship = currentInternshipStatus !== 'APPROVED';
+
 
   return (
     <div className="space-y-8 p-4 md:p-6">
       <PageHeader
         title="My Profile"
-        description="View and manage your personal and internship information."
+        description="View and manage your personal and internship information on InternHub."
         icon={UserIcon}
         breadcrumbs={[{ href: "/dashboard", label: "Dashboard" }, { label: "Profile" }]}
       />
+      {profileError && (isEditingProfile || isEditingInternship) && (
+        <Alert variant="destructive" className="mb-4">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Loading Error</AlertTitle>
+            <AlertDescription>{profileError} Some information might be outdated. Proceed with caution or refresh.</AlertDescription>
+        </Alert>
+      )}
 
       <Card className="shadow-xl rounded-xl">
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 border-b">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-grow">
             <Avatar className="h-20 w-20 border-2 border-primary">
               <AvatarImage src={userData.avatarUrl} alt={userData.name} data-ai-hint="person portrait"/>
               <AvatarFallback className="text-2xl bg-primary/20 text-primary">{getInitials(userData.name)}</AvatarFallback>
             </Avatar>
-            <div>
-              <CardTitle className="text-2xl font-headline">{userData.name}</CardTitle>
+            <div className="flex-grow">
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-2xl font-headline">{userData.name}</CardTitle>
+                {!isEditingInternship && !isEditingProfile && (
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" onClick={() => setIsEditingProfile(true)} className="text-muted-foreground hover:text-primary h-7 w-7">
+                                    <Edit3 className="h-4 w-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent className="bg-card text-card-foreground border-border">
+                                <p>Edit Profile</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                )}
+              </div>
               <CardDescription className="text-base">{userData.email}</CardDescription>
               {userRole && <p className="text-sm text-primary font-medium">{USER_ROLES[userRole]}</p>}
             </div>
           </div>
-          {!isEditingInternship && !isEditingProfile && 
-           (userRole === 'STUDENT' ? currentInternshipStatus !== 'PENDING_APPROVAL' : true) && (
-            <Button variant="outline" onClick={() => setIsEditingProfile(true)} className="bg-card hover:bg-accent hover:text-accent-foreground rounded-lg">
-              <Edit3 className="mr-2 h-4 w-4" /> Edit Profile
-            </Button>
-          )}
           {isEditingProfile && (
-             <Button variant="outline" onClick={() => { 
-                 setIsEditingProfile(false); 
-                 if (userRole === 'STUDENT' && (userData.internship.status === 'NOT_SUBMITTED' || userData.internship.status === 'REJECTED')) {
-                    setIsEditingInternship(true);
-                 }
-                }} className="bg-card hover:bg-accent hover:text-accent-foreground rounded-lg">
+             <Button variant="outline" onClick={() => {
+                 setIsEditingProfile(false);
+                }} className="bg-card hover:bg-accent hover:text-accent-foreground rounded-lg mt-2 sm:mt-0">
               Cancel Profile Edit
             </Button>
           )}
         </CardHeader>
         <CardContent className="p-6">
           {isEditingProfile ? (
-            <ProfileSetupForm 
+            <ProfileSetupForm
               userRole={userRole}
-              defaultValues={{ 
-                name: userData.name, 
-                email: userData.email, 
-                facultyId: userData.facultyId,
-                departmentId: userData.departmentId,
-                contactNumber: userData.contactNumber,
-                supervisorCompanyName: userData.supervisorCompanyName,
-                supervisorCompanyAddress: userData.supervisorCompanyAddress,
-              }} 
-              onSuccess={handleProfileSaveSuccess} 
+              defaultValues={userData}
+              onSuccess={handleProfileSaveSuccess}
             />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 text-sm">
@@ -262,14 +285,14 @@ export default function ProfilePage() {
                     <GraduationCap className="h-5 w-5 text-primary"/>
                     <div>
                         <p className="font-medium text-foreground">Faculty:</p>
-                        <p className="text-muted-foreground">{userData.facultyName}</p>
+                        <p className="text-muted-foreground">{userData.facultyName || 'Not Set'}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <Building className="h-5 w-5 text-primary"/>
                     <div>
                         <p className="font-medium text-foreground">Department:</p>
-                        <p className="text-muted-foreground">{userData.departmentName}</p>
+                        <p className="text-muted-foreground">{userData.departmentName || 'Not Set'}</p>
                     </div>
                   </div>
                 </>
@@ -309,16 +332,23 @@ export default function ProfilePage() {
           <Separator className="my-8" />
           <Card className="shadow-xl rounded-xl" id="internship">
             <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 border-b">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-grow">
                 <Briefcase className="h-6 w-6 text-primary" />
                 <CardTitle className="text-xl font-headline">Internship Details</CardTitle>
               </div>
-               {!isEditingProfile && !isEditingInternship && 
-                (currentInternshipStatus === 'NOT_SUBMITTED' || currentInternshipStatus === 'REJECTED' || currentInternshipStatus === 'APPROVED') && (
-                <Button variant="outline" onClick={() => setIsEditingInternship(true)} className="bg-card hover:bg-accent hover:text-accent-foreground rounded-lg">
-                    <Edit3 className="mr-2 h-4 w-4" /> 
-                    {currentInternshipStatus === 'NOT_SUBMITTED' || currentInternshipStatus === 'REJECTED' ? 'Enter/Update Details' : 'Edit Internship'}
-                </Button>
+               {!isEditingProfile && !isEditingInternship && canEditInternship && (
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" onClick={() => setIsEditingInternship(true)} className="text-muted-foreground hover:text-primary h-7 w-7">
+                                    <Edit3 className="h-4 w-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent className="bg-card text-card-foreground border-border">
+                                <p>{internshipEditButtonText}</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
                )}
                {isEditingInternship && (
                 <Button variant="outline" onClick={() => setIsEditingInternship(false)} className="bg-card hover:bg-accent hover:text-accent-foreground rounded-lg">
@@ -342,10 +372,10 @@ export default function ProfilePage() {
               )}
 
               {isEditingInternship ? (
-                <InternshipDetailsForm 
+                <InternshipDetailsForm
                   defaultValues={userData.internship}
                   onSuccess={handleInternshipSaveSuccess}
-                  isResubmitting={currentInternshipStatus === 'REJECTED'}
+                  isResubmitting={currentInternshipStatus === 'REJECTED' || currentInternshipStatus === 'PENDING_APPROVAL'}
                 />
               ) : currentInternshipStatus !== 'NOT_SUBMITTED' ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 text-sm">
@@ -437,8 +467,8 @@ export default function ProfilePage() {
           </CardHeader>
           <CardContent className="p-6">
             <p className="text-muted-foreground">
-              As a {USER_ROLES[userRole]}, your primary role involves { userRole === 'LECTURER' ? 'managing student assignments, tracking progress, and facilitating communication.' : userRole === 'HOD' ? 'overseeing departmental internship activities, managing assignments, and analyzing overall program performance.' : '' }
-              You can manage relevant aspects via the appropriate sections like '{userRole === 'LECTURER' ? 'Assignments' : 'Department Ops'}' and use the 'Feedback Hub' for communication.
+              As a {USER_ROLES[userRole]}, your primary role involves { userRole === 'LECTURER' ? 'managing student assignments, tracking progress, and facilitating communication.' : userRole === 'HOD' ? 'overseeing departmental internship activities, managing assignments, and analyzing overall program performance.' : userRole === 'ADMIN' ? 'managing the entire InternHub platform, including university structure, user accounts, and system settings.' : '' }
+              You can manage relevant aspects via the appropriate sections like '{userRole === 'LECTURER' ? 'Assignments' : userRole === 'HOD' ? 'Department Ops' : 'Admin Dashboard'}' and use the 'Feedback Hub' for communication.
             </p>
              {isEditingProfile && <p className="mt-4 text-sm text-destructive">Please save your profile information first to proceed.</p>}
           </CardContent>
