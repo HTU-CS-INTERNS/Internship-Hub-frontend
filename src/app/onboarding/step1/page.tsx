@@ -1,7 +1,9 @@
+
 'use client';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, ArrowLeft, GraduationCap } from 'lucide-react';
+import { ArrowRight, GraduationCap } from 'lucide-react';
+import Image from 'next/image';
 
 const OnboardingStepDot = ({ isActive }: { isActive: boolean }) => (
   <div className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${isActive ? 'bg-white scale-110' : 'bg-white/50'}`} />
@@ -13,16 +15,23 @@ export default function OnboardingStep1Page() {
       {/* Top Section for Illustration */}
       <div className="flex-grow flex flex-col items-center justify-center text-center pt-8 sm:pt-12 px-4 sm:px-6 md:px-8">
         <div 
-          className="relative w-40 h-40 sm:w-48 sm:h-48 md:w-56 md:h-56 bg-white rounded-full flex items-center justify-center"
-          style={{ filter: 'drop-shadow(0px 0px 35px rgba(249,115,22,0.35))' }} // Orange glow for the circle
+          className="relative w-full max-w-sm sm:max-w-md p-2 bg-white rounded-2xl shadow-lg"
+          style={{ filter: 'drop-shadow(0px 10px 30px rgba(249,115,22,0.25))' }} // Orange glow
         >
-          <GraduationCap className="h-32 w-32 sm:h-40 sm:w-40 text-orange-500" strokeWidth={1.5} />
+          <Image 
+            src="https://placehold.co/600x400.png"
+            alt="App dashboard preview"
+            width={600}
+            height={400}
+            className="rounded-lg object-cover"
+            data-ai-hint="dashboard overview"
+          />
         </div>
       </div>
 
       {/* Bottom Colored Rectangle Section */}
       <div 
-        className="relative w-full bg-orange-500 rounded-t-[3rem] shadow-[-10px_-10px_30px_rgba(0,0,0,0.07)] text-white flex flex-col"
+        className="relative w-full bg-orange-500 rounded-t-[3rem] shadow-[-10px_-10px_30px_rgba(0,0,0,0.07)] text-white flex flex-col mt-8" // Added margin top
         style={{ minHeight: '50vh' }} 
       >
         <div className="relative z-10 w-full max-w-md mx-auto flex flex-col justify-between flex-grow p-6 sm:p-8 text-center">
