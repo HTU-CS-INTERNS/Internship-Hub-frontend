@@ -78,7 +78,7 @@ This document outlines a conceptual NoSQL database schema for the InternHub appl
 *   `submittedAt` (TIMESTAMP, optional)
 *   `approvedAt` (TIMESTAMP, optional)
 *   `lecturerId` (STRING, optional) - Assigned lecturer ID
-*   `supervisorId` (STRING, optional) - Company supervisor user ID (if they have an account)
+*   `supervisorId` (STRING, optional) - Industrial supervisor user ID (if they have an account)
 *   `createdAt` (TIMESTAMP)
 *   `updatedAt` (TIMESTAMP)
 

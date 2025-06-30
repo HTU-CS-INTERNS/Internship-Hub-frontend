@@ -178,7 +178,7 @@ const StudentDashboard: React.FC<{ userName: string }> = ({ userName }) => {
         setReportSummary('');
     };
     
-    const companySupervisor = { name: 'Mr. John Smith', avatarUrl: 'https://placehold.co/100x100.png', role: 'Company Supervisor' };
+    const industrialSupervisor = { name: 'Mr. John Smith', avatarUrl: 'https://placehold.co/100x100.png', role: 'Industrial Supervisor' };
     const facultyLecturer = { name: 'Dr. Elara Vance', avatarUrl: 'https://placehold.co/100x100.png', role: 'Faculty Lecturer' };
 
     return (
@@ -330,17 +330,17 @@ const StudentDashboard: React.FC<{ userName: string }> = ({ userName }) => {
                     
                     <Card className="shadow-lg rounded-xl bg-card text-card-foreground">
                         <CardHeader className="border-b border-border">
-                            <CardTitle className="font-headline text-lg flex items-center"><Briefcase className="mr-2 h-5 w-5 text-primary"/>Company Supervisor</CardTitle>
+                            <CardTitle className="font-headline text-lg flex items-center"><Briefcase className="mr-2 h-5 w-5 text-primary"/>Industrial Supervisor</CardTitle>
                         </CardHeader>
                         <CardContent className="p-4">
                             <div className="flex items-center space-x-3">
                                 <Avatar className="h-12 w-12 border">
-                                    <AvatarImage src={companySupervisor.avatarUrl} alt={companySupervisor.name} data-ai-hint="person office" />
-                                    <AvatarFallback className="bg-primary/20 text-primary">{getInitials(companySupervisor.name)}</AvatarFallback>
+                                    <AvatarImage src={industrialSupervisor.avatarUrl} alt={industrialSupervisor.name} data-ai-hint="person office" />
+                                    <AvatarFallback className="bg-primary/20 text-primary">{getInitials(industrialSupervisor.name)}</AvatarFallback>
                                 </Avatar>
                                 <div>
-                                    <p className="font-medium text-foreground">{companySupervisor.name}</p>
-                                    <p className="text-xs text-muted-foreground">{companySupervisor.role}</p>
+                                    <p className="font-medium text-foreground">{industrialSupervisor.name}</p>
+                                    <p className="text-xs text-muted-foreground">{industrialSupervisor.role}</p>
                                 </div>
                             </div>
                         </CardContent>

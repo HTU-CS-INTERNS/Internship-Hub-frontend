@@ -44,7 +44,7 @@ export interface NavItem {
 export const USER_ROLES: Record<UserRole, string> = {
   STUDENT: 'Student',
   LECTURER: 'Lecturer',
-  SUPERVISOR: 'Company Supervisor',
+  SUPERVISOR: 'Industrial Supervisor',
   HOD: 'Head of Department',
   ADMIN: 'Administrator',
 };

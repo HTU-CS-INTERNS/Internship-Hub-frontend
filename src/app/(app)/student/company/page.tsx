@@ -33,6 +33,7 @@ const getInitials = (name: string) => {
 };
 
 export default function CompanyPage() {
+  // In a real app, this data would be fetched based on the student's internship details
   const company = DUMMY_COMPANY_DATA;
   const supervisor = DUMMY_SUPERVISOR_DATA;
 

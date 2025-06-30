@@ -162,7 +162,7 @@ export default function LecturerReportReviewPage() {
                         </ul>
                         </div>
                     )}
-                    {report.supervisorComments && !(report as any).lecturerComments && (<><Separator /><div className="pt-4"><h3 className="text-base font-semibold text-foreground mb-2 flex items-center"><Briefcase className="mr-2 h-5 w-5 text-primary" />Company Supervisor Comments</h3><Card className="bg-muted/30 p-3 border-l-4 border-primary/50 shadow-inner"><p className="text-sm text-foreground italic">"{report.supervisorComments}"</p></Card></div></>)}
+                    {report.supervisorComments && !(report as any).lecturerComments && (<><Separator /><div className="pt-4"><h3 className="text-base font-semibold text-foreground mb-2 flex items-center"><Briefcase className="mr-2 h-5 w-5 text-primary" />Industrial Supervisor Comments</h3><Card className="bg-muted/30 p-3 border-l-4 border-primary/50 shadow-inner"><p className="text-sm text-foreground italic">"{report.supervisorComments}"</p></Card></div></>)}
                 </CardContent>
             </Card>
         </div>
