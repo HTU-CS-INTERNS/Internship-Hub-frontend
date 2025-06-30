@@ -190,9 +190,7 @@ export function RegistrationForm() {
   const facultyName = userDataFromDB ? FACULTIES.find(f => f.id === userDataFromDB.facultyId)?.name : 'N/A';
   const departmentName = userDataFromDB ? DEPARTMENTS.find(d => d.id === userDataFromDB.departmentId)?.name : 'N/A';
   
-  // Input styles consistent for light background on dark panel
   const inputStyles = "bg-white dark:bg-gray-50 text-gray-900 dark:text-gray-900 placeholder:text-gray-500 dark:placeholder:text-gray-500 border-gray-300 dark:border-gray-400 rounded-lg focus:ring-primary focus:border-primary";
-  // Button styles for primary panel (light text on dark panel)
   const primaryButtonStyles = "w-full bg-primary-foreground hover:bg-primary-foreground/90 text-primary text-base py-3 rounded-lg";
   const linkButtonStyles = "w-full text-sm text-primary-foreground/80 hover:text-primary-foreground";
 
@@ -251,7 +249,6 @@ export function RegistrationForm() {
     return (
       <div key="registration-step-2">
         <Form {...step2Form}>
-          {/* Card styling updated for primary panel */}
           <Card className="bg-primary-foreground/10 border-primary-foreground/20 shadow-inner mb-6">
               <CardHeader className="pb-3">
                   <CardTitle className="text-lg flex items-center text-primary-foreground">
@@ -305,7 +302,6 @@ export function RegistrationForm() {
     return (
       <div key="registration-step-3">
         <Form {...step3Form}>
-          {/* Card styling updated for primary panel */}
           <Card className="bg-primary-foreground/10 border-primary-foreground/20 shadow-inner mb-6">
               <CardHeader className="pb-3">
                   <CardTitle className="text-lg flex items-center text-primary-foreground">
