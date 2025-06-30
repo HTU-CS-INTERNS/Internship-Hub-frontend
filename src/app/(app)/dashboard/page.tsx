@@ -198,7 +198,7 @@ const StudentDashboard: React.FC<{ userName: string }> = ({ userName }) => {
                         </Link>
                     ) : (
                         <Link href="/student/check-in" passHref>
-                            <Button className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 font-medium transition rounded-lg px-4 py-2 text-sm animate-pulse">
+                            <Button variant="destructive" className="font-medium transition rounded-lg px-4 py-2 text-sm animate-pulse">
                                 <MapPin className="mr-2 h-4 w-4" /> Check-in Now
                             </Button>
                         </Link>
