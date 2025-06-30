@@ -1,9 +1,7 @@
-
 'use client';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, ArrowLeft, GraduationCap } from 'lucide-react';
-// Removed Image import
 
 const OnboardingStepDot = ({ isActive }: { isActive: boolean }) => (
   <div className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${isActive ? 'bg-white scale-110' : 'bg-white/50'}`} />
@@ -32,7 +30,6 @@ export default function OnboardingStep1Page() {
           <div className="sm:pt-2">
             <div className="flex justify-center items-center mb-2">
               <div className="p-1.5 bg-white/20 rounded-full shadow-md">
-                 {/* Replaced Image with Lucide Icon */}
                  <GraduationCap className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
               </div>
             </div>

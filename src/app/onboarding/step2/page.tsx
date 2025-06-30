@@ -1,9 +1,7 @@
-
 'use client';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, ArrowLeft, ListChecks } from 'lucide-react';
-// Removed Image import
+import { ArrowRight, ArrowLeft, ClipboardList } from 'lucide-react';
 
 const OnboardingStepDot = ({ isActive }: { isActive: boolean }) => (
     <div className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${isActive ? 'bg-yellow-800 scale-110' : 'bg-yellow-800/50'}`} />
@@ -17,7 +15,7 @@ export default function OnboardingStep2Page() {
             className="relative w-40 h-40 sm:w-48 sm:h-48 md:w-56 md:h-56 bg-white rounded-full flex items-center justify-center"
             style={{ filter: 'drop-shadow(0px 0px 35px rgba(250,204,21,0.45))' }} // Yellow glow
         >
-          <ListChecks className="h-32 w-32 sm:h-40 sm:w-40 text-yellow-500" strokeWidth={1.5}/>
+          <ClipboardList className="h-32 w-32 sm:h-40 sm:w-40 text-yellow-500" strokeWidth={1.5}/>
         </div>
       </div>
 
@@ -28,8 +26,7 @@ export default function OnboardingStep2Page() {
           <div className="sm:pt-2">
             <div className="flex justify-center items-center mb-2">
               <div className="p-1.5 bg-yellow-900/20 rounded-full shadow-md">
-                 {/* Replaced Image with Lucide Icon */}
-                 <ListChecks className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-900" />
+                 <ClipboardList className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-900" />
               </div>
             </div>
             <h1 className="text-xl sm:text-2xl md:text-3xl font-headline font-bold tracking-tight">
