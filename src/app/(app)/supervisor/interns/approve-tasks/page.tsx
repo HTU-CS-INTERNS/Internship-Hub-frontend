@@ -2,23 +2,17 @@
 'use client';
 import * as React from 'react';
 import PageHeader from '@/components/shared/page-header';
-import { CheckSquare, AlertTriangle, Loader2 } from 'lucide-react';
+import { CheckSquare, AlertTriangle, Loader2, Eye, Check, X } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import type { DailyTask } from '@/types';
-import { DUMMY_TASKS as ALL_DUMMY_TASKS } from '@/app/(app)/student/tasks/page'; // Updated import
 import { DUMMY_INTERNS } from '@/app/(app)/supervisor/interns/page';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-
-const getPendingTasksForSupervisor = () => {
-  return ALL_DUMMY_TASKS.filter(task => 
-    (task.status === 'SUBMITTED' || task.status === 'PENDING') && task.studentId === 'stu1' 
-  );
-};
+import { getPendingTasksForSupervisor, updateTaskStatus } from '@/lib/services/task.service';
 
 const taskStatusColors: Record<DailyTask['status'], string> = {
   PENDING: 'bg-yellow-100 text-yellow-700 border-yellow-500/30 dark:bg-yellow-900/50 dark:text-yellow-300 dark:border-yellow-700/50',
@@ -32,25 +26,40 @@ export default function ApproveTasksPage() {
   const { toast } = useToast();
   const [pendingTasks, setPendingTasks] = React.useState<DailyTask[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [processingId, setProcessingId] = React.useState<string | null>(null);
 
-  React.useEffect(() => {
-    setPendingTasks(getPendingTasksForSupervisor());
+  const fetchPendingTasks = React.useCallback(async () => {
+    setIsLoading(true);
+    // In a real app, supervisor ID would be dynamic
+    const tasks = await getPendingTasksForSupervisor('supervisor1'); 
+    setPendingTasks(tasks);
     setIsLoading(false);
   }, []);
 
-  const handleApproveTask = (taskId: string) => {
-    setPendingTasks(prevTasks => prevTasks.map(task => 
-      task.id === taskId ? { ...task, status: 'APPROVED' } : task
-    ));
-    toast({ title: 'Task Approved', description: `Task ID ${taskId} has been marked as approved.` });
-  };
+  React.useEffect(() => {
+    fetchPendingTasks();
+  }, [fetchPendingTasks]);
 
-  const handleRejectTask = (taskId: string) => {
-     setPendingTasks(prevTasks => prevTasks.map(task => 
-      task.id === taskId ? { ...task, status: 'REJECTED' } : task
-    ));
-    toast({ title: 'Task Rejected', description: `Task ID ${taskId} has been marked as rejected.`, variant: 'destructive' });
-  }
+  const handleTaskAction = async (taskId: string, newStatus: 'APPROVED' | 'REJECTED') => {
+    setProcessingId(taskId);
+    const updatedTask = await updateTaskStatus(taskId, newStatus, undefined, 'supervisor');
+    if (updatedTask) {
+        toast({
+            title: `Task ${newStatus.toLowerCase()}`,
+            description: `The task has been successfully ${newStatus.toLowerCase()}.`,
+            variant: newStatus === 'REJECTED' ? 'destructive' : 'default',
+        });
+        // Refresh the list after action
+        fetchPendingTasks();
+    } else {
+        toast({
+            title: "Error",
+            description: "Failed to update the task status.",
+            variant: "destructive"
+        });
+    }
+    setProcessingId(null);
+  };
 
   if (isLoading) {
     return (
@@ -87,6 +96,7 @@ export default function ApproveTasksPage() {
           {pendingTasks.length > 0 ? (
             <div className="space-y-4">
               {pendingTasks.map(task => {
+                // Mock: find intern name. In a real app, this would be a join or part of the fetched data.
                 const intern = DUMMY_INTERNS.find(i => i.id === 'intern1'); 
                 return (
                   <Card key={task.id} className="bg-muted/30 shadow-sm rounded-lg">
@@ -103,10 +113,14 @@ export default function ApproveTasksPage() {
                         <p><strong className="text-foreground">Outcomes:</strong> {task.outcomes}</p>
                      </CardContent>
                     <CardFooter className="justify-end gap-2 pt-2">
-                      <Button variant="outline" size="sm" onClick={() => handleRejectTask(task.id)} className="border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive">Reject</Button>
-                      <Button variant="default" size="sm" onClick={() => handleApproveTask(task.id)} className="bg-green-600 hover:bg-green-700 text-white">Approve</Button>
+                      <Button variant="destructive" size="sm" onClick={() => handleTaskAction(task.id, 'REJECTED')} disabled={!!processingId}>
+                        {processingId === task.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <X className="mr-1 h-4 w-4" />} Reject
+                      </Button>
+                      <Button variant="default" size="sm" onClick={() => handleTaskAction(task.id, 'APPROVED')} className="bg-green-600 hover:bg-green-700 text-white" disabled={!!processingId}>
+                        {processingId === task.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <Check className="mr-1 h-4 w-4" />} Approve
+                      </Button>
                        <Link href={`/student/tasks/${task.id}?internView=true`} passHref> 
-                           <Button variant="ghost" size="sm">View Details</Button>
+                           <Button variant="ghost" size="sm" disabled={!!processingId}><Eye className="mr-1 h-4 w-4"/>View Details</Button>
                        </Link>
                     </CardFooter>
                   </Card>
@@ -124,3 +138,4 @@ export default function ApproveTasksPage() {
     </div>
   );
 }
+

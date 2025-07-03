@@ -49,7 +49,7 @@ export async function createTask(
   const newTask: DailyTask = {
     id: `task_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
     studentId,
-    status: 'PENDING',
+    status: 'SUBMITTED', // Tasks are submitted for review, not just pending.
     date: taskData.date, // Already formatted string from form
     description: taskData.description,
     outcomes: taskData.outcomes,
@@ -91,12 +91,12 @@ export async function updateTask(
   if (updates.learningObjectives !== undefined) updatedTaskData.learningObjectives = updates.learningObjectives;
   if (updates.departmentOutcomeLink !== undefined) updatedTaskData.departmentOutcomeLink = updates.departmentOutcomeLink;
   
-  // If new attachments are provided (as AttachmentData[]), replace old ones.
-  // If updates.attachments is undefined, existing attachments are preserved.
-  // If updates.attachments is an empty array, all attachments are cleared.
   if (updates.attachments !== undefined) {
     updatedTaskData.attachments = updates.attachments;
   }
+  
+  // When a task is updated, it should go back to SUBMITTED status for re-review
+  updatedTaskData.status = 'SUBMITTED';
 
   allTasks[taskIndex] = updatedTaskData;
   await saveAllTasksToStorage(allTasks);
@@ -130,12 +130,23 @@ export async function updateTaskStatus(
   return allTasks[taskIndex];
 }
 
+export async function getPendingTasksForSupervisor(supervisorId: string): Promise<DailyTask[]> {
+  const allTasks = await getAllTasksFromStorage();
+  // In a real app, you would fetch a list of studentIds assigned to this supervisor.
+  // For our mock, we assume the supervisor is assigned to student 'stu1'.
+  const assignedStudentIds = ['stu1']; 
+  return allTasks.filter(task => 
+    assignedStudentIds.includes(task.studentId) && 
+    (task.status === 'SUBMITTED' || task.status === 'PENDING')
+  ).sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()); // oldest first
+}
+
+
 export async function initializeDefaultTasksIfNeeded() {
   if (typeof window !== "undefined") {
     const tasksRaw = localStorage.getItem(TASKS_STORAGE_KEY);
     if (!tasksRaw || JSON.parse(tasksRaw).length === 0) {
-      const studentId = getCurrentStudentId();
-      // Sample Data URI for a tiny transparent PNG
+      const studentId = 'stu1'; // Use a consistent ID for the default tasks
       const sampleDataUri = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
       const defaultTasks: DailyTask[] = [
         { 
@@ -147,7 +158,8 @@ export async function initializeDefaultTasksIfNeeded() {
           studentId: studentId, 
           status: 'APPROVED', 
           departmentOutcomeLink: "DO1.2 - Applied Security Principles", 
-          attachments: [{ name: "auth_diagram.png", type: "image/png", size: 123, dataUri: sampleDataUri }] 
+          attachments: [{ name: "auth_diagram.png", type: "image/png", size: 123, dataUri: sampleDataUri }],
+          supervisorComments: "Excellent work on this, looks production-ready."
         },
         { 
           id: 'task2_default', 
@@ -155,6 +167,16 @@ export async function initializeDefaultTasksIfNeeded() {
           description: 'Design database schema for posts and comments feature. Iterated with team.', 
           outcomes: 'Schema designed and reviewed by senior dev. Ready for implementation.', 
           learningObjectives: 'Understanding of relational database design for social features. Experience with normalization.', 
+          studentId: studentId, 
+          status: 'SUBMITTED', 
+          attachments: [] 
+        },
+         { 
+          id: 'task3_default', 
+          date: format(new Date(), 'yyyy-MM-dd'), 
+          description: 'Write API documentation for the authentication module.', 
+          outcomes: 'Initial draft of OpenAPI spec written.', 
+          learningObjectives: 'Practiced writing technical documentation using OpenAPI standards.', 
           studentId: studentId, 
           status: 'SUBMITTED', 
           attachments: [] 
