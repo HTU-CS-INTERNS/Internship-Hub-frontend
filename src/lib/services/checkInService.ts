@@ -27,7 +27,7 @@ async function saveAllCheckInsToStorage(checkIns: CheckIn[]): Promise<void> {
 }
 
 
-type CheckInCreatePayload = Omit<CheckIn, 'id' | 'student_id' | 'check_in_timestamp' | 'created_at' | 'supervisor_verification_status' | 'supervisor_comments'> & {
+export type CheckInCreatePayload = Omit<CheckIn, 'id' | 'student_id' | 'check_in_timestamp' | 'created_at' | 'supervisor_verification_status' | 'supervisor_comments'> & {
   photo_url?: string; // This will be the data URI or placeholder name from the form for mock
 };
 
