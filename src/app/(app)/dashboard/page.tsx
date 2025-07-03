@@ -183,7 +183,7 @@ const StudentDashboard: React.FC<{ userName: string }> = ({ userName }) => {
 
     return (
         <>
-            <Card className="bg-gradient-to-r from-primary to-accent rounded-xl p-6 text-primary-foreground shadow-lg">
+            <Card className="bg-gradient-to-r from-yellow-400 to-orange-500 rounded-xl p-6 text-yellow-900 shadow-lg">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
                 <div>
                     <h2 className="text-2xl font-bold mb-1">Welcome back, {userName.split(' ')[0]}!</h2>
@@ -192,7 +192,7 @@ const StudentDashboard: React.FC<{ userName: string }> = ({ userName }) => {
                 <div className="flex-shrink-0 mt-3 md:mt-0">
                     {isCheckedInToday ? (
                         <Link href="/student/tasks" passHref>
-                            <Button className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 font-medium transition rounded-lg px-4 py-2 text-sm">
+                            <Button className="bg-white text-yellow-900 hover:bg-white/90 font-medium transition rounded-lg px-4 py-2 text-sm">
                                 <ListChecks className="mr-2 h-4 w-4" /> View Tasks
                             </Button>
                         </Link>
