@@ -34,6 +34,8 @@ const MobileHeaderComponent: React.FC<MobileHeaderProps> = ({ userRole }) => {
   if (!user || !userRole) {
     return null;
   }
+  
+  const userName = `${user.first_name} ${user.last_name}`;
 
   return (
     <header className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between h-[var(--mobile-header-height)] px-4 bg-primary text-primary-foreground shadow-md">
@@ -62,8 +64,8 @@ const MobileHeaderComponent: React.FC<MobileHeaderProps> = ({ userRole }) => {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 p-0 hover:bg-primary/80">
                <Avatar className="h-8 w-8">
-                  <AvatarImage src={user.avatar_url || `https://placehold.co/100x100.png?text=${getInitials(user.name)}`} alt={user.name} data-ai-hint="person portrait"/>
-                  <AvatarFallback className="bg-primary-foreground text-primary">{getInitials(user.name)}</AvatarFallback>
+                  <AvatarImage src={user.avatar_url || `https://placehold.co/100x100.png?text=${getInitials(userName)}`} alt={userName} data-ai-hint="person portrait"/>
+                  <AvatarFallback className="bg-primary-foreground text-primary">{getInitials(userName)}</AvatarFallback>
                 </Avatar>
             </Button>
           </DropdownMenuTrigger>

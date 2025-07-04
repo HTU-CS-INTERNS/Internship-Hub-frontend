@@ -19,23 +19,24 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { FACULTIES, DEPARTMENTS } from '@/lib/constants';
-import type { Department, Faculty, UserRole, ProfileFormValues } from '@/types';
+import type { Department, Faculty, UserRole, UserProfileData } from '@/types';
 import { Loader2 } from 'lucide-react';
-// Removed Firebase imports: auth, db, doc, setDoc, serverTimestamp
 
 const profileSchema = z.object({
-  name: z.string().min(2, { message: 'Name must be at least 2 characters.' }).max(100, { message: 'Name too long (max 100).' }),
+  first_name: z.string().min(2, { message: 'First name must be at least 2 characters.' }).max(50),
+  last_name: z.string().min(2, { message: 'Last name must be at least 2 characters.' }).max(50),
   email: z.string().email({ message: 'Please enter a valid email address.' }),
-  facultyId: z.string().optional().or(z.literal('')),
-  departmentId: z.string().optional().or(z.literal('')),
-  contactNumber: z.string().regex(/^(\+\d{1,3}[- ]?)?\d{10,15}$/, { message: "Invalid contact number format."}).optional().or(z.literal('')),
-  supervisorCompanyName: z.string().min(2, { message: 'Company name must be at least 2 characters.'}).max(100).optional().or(z.literal('')),
-  supervisorCompanyAddress: z.string().min(5, {message: 'Company address must be at least 5 characters.'}).max(200).optional().or(z.literal('')),
+  faculty_id: z.coerce.number().optional(),
+  department_id: z.coerce.number().optional(),
+  phone_number: z.string().regex(/^(\+\d{1,3}[- ]?)?\d{10,15}$/, { message: "Invalid contact number format."}).optional().or(z.literal('')),
+  company_name: z.string().min(2, { message: 'Company name must be at least 2 characters.'}).max(100).optional().or(z.literal('')),
 });
 
+type ProfileFormValues = z.infer<typeof profileSchema>;
+
 interface ProfileSetupFormProps {
-  defaultValues?: Partial<ProfileFormValues>;
-  onSuccess?: (data: ProfileFormValues) => void; 
+  defaultValues?: Partial<UserProfileData>;
+  onSuccess?: (data: Partial<UserProfileData>) => void; 
   userRole: UserRole | null; 
 }
 
@@ -47,79 +48,46 @@ export default function ProfileSetupForm({ defaultValues, onSuccess, userRole }:
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      name: defaultValues?.name || '',
+      first_name: defaultValues?.first_name || '',
+      last_name: defaultValues?.last_name || '',
       email: defaultValues?.email || '',
-      facultyId: defaultValues?.facultyId || '',
-      departmentId: defaultValues?.departmentId || '',
-      contactNumber: defaultValues?.contactNumber || '',
-      supervisorCompanyName: defaultValues?.supervisorCompanyName || '',
-      supervisorCompanyAddress: defaultValues?.supervisorCompanyAddress || '',
+      faculty_id: defaultValues?.faculty_id,
+      department_id: defaultValues?.department_id,
+      phone_number: defaultValues?.phone_number || '',
+      company_name: defaultValues?.company_name || '',
     },
   });
   
-  const selectedFacultyId = form.watch('facultyId');
+  const selectedFacultyId = form.watch('faculty_id');
 
   React.useEffect(() => {
     if (userRole === 'STUDENT' && selectedFacultyId) {
-      const depts = DEPARTMENTS.filter(d => d.facultyId === selectedFacultyId);
+      const depts = DEPARTMENTS.filter(d => d.faculty_id === selectedFacultyId);
       setAvailableDepartments(depts);
-      if (!depts.find(d => d.id === form.getValues('departmentId'))) {
-        form.setValue('departmentId', ''); 
+      if (!depts.find(d => d.id === form.getValues('department_id'))) {
+        form.setValue('department_id', undefined); 
       }
-    } else if (userRole !== 'STUDENT') {
-      setAvailableDepartments([]); 
-      form.setValue('facultyId', '');
-      form.setValue('departmentId', '');
     } else {
         setAvailableDepartments(DEPARTMENTS);
     }
   }, [selectedFacultyId, form, userRole]);
 
   React.useEffect(() => {
-    let currentFacultyId = defaultValues?.facultyId || '';
-    let currentDepartmentId = defaultValues?.departmentId || '';
-
-    if (userRole === 'STUDENT') {
-      if (currentFacultyId) {
-        const depts = DEPARTMENTS.filter(d => d.facultyId === currentFacultyId);
-        setAvailableDepartments(depts);
-        if (currentDepartmentId && !depts.find(d => d.id === currentDepartmentId)) {
-          currentDepartmentId = ''; 
-        }
-      } else {
-        setAvailableDepartments(DEPARTMENTS);
-      }
-    } else {
-      currentFacultyId = '';
-      currentDepartmentId = '';
-      setAvailableDepartments([]);
-    }
-    
     form.reset({
-      name: defaultValues?.name || '',
+      first_name: defaultValues?.first_name || '',
+      last_name: defaultValues?.last_name || '',
       email: defaultValues?.email || '',
-      facultyId: currentFacultyId,
-      departmentId: currentDepartmentId,
-      contactNumber: defaultValues?.contactNumber || '',
-      supervisorCompanyName: defaultValues?.supervisorCompanyName || '',
-      supervisorCompanyAddress: defaultValues?.supervisorCompanyAddress || '',
+      faculty_id: defaultValues?.faculty_id,
+      department_id: defaultValues?.department_id,
+      phone_number: defaultValues?.phone_number || '',
+      company_name: defaultValues?.company_name || '',
     });
-  }, [defaultValues, form, userRole]);
+  }, [defaultValues, form]);
 
   async function onSubmit(values: ProfileFormValues) {
     setIsLoading(true);
-    const submissionValues: ProfileFormValues = { ...values };
-    if (userRole !== 'STUDENT') {
-      submissionValues.facultyId = undefined;
-      submissionValues.departmentId = undefined;
-    }
-    if (userRole !== 'SUPERVISOR') {
-        submissionValues.supervisorCompanyName = undefined;
-        submissionValues.supervisorCompanyAddress = undefined;
-    }
-    
-    // Simulate API call to a custom backend
-    console.log("Simulating profile update to backend:", submissionValues);
+    // Simulate API call
+    console.log("Simulating profile update with:", values);
     await new Promise(resolve => setTimeout(resolve, 1000)); 
     setIsLoading(false);
 
@@ -128,25 +96,45 @@ export default function ProfileSetupForm({ defaultValues, onSuccess, userRole }:
       description: 'Your profile information has been successfully saved.',
       variant: "default",
     });
-    onSuccess?.(submissionValues); 
+    
+    if (onSuccess) {
+      // In a real app, you'd probably refetch the user data from context.
+      // Here we just pass back the updated form values.
+      onSuccess(values); 
+    }
   }
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Full Name</FormLabel>
-              <FormControl>
-                <Input placeholder="John Doe" {...field} className="rounded-lg" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+            control={form.control}
+            name="first_name"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>First Name</FormLabel>
+                <FormControl>
+                    <Input placeholder="John" {...field} className="rounded-lg" />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={form.control}
+            name="last_name"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Last Name</FormLabel>
+                <FormControl>
+                    <Input placeholder="Doe" {...field} className="rounded-lg" />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+        </div>
         <FormField
           control={form.control}
           name="email"
@@ -154,15 +142,16 @@ export default function ProfileSetupForm({ defaultValues, onSuccess, userRole }:
             <FormItem>
               <FormLabel>Email Address</FormLabel>
               <FormControl>
-                <Input type="email" placeholder="your.email@example.com" {...field} className="rounded-lg" />
+                <Input type="email" placeholder="your.email@example.com" {...field} className="rounded-lg" disabled />
               </FormControl>
+              <FormDescription>Email address cannot be changed.</FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
         <FormField
           control={form.control}
-          name="contactNumber"
+          name="phone_number"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Contact Number</FormLabel>
@@ -178,19 +167,19 @@ export default function ProfileSetupForm({ defaultValues, onSuccess, userRole }:
           <>
             <FormField
               control={form.control}
-              name="facultyId"
+              name="faculty_id"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Faculty</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || ''} defaultValue={field.value || ''}>
+                  <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString() || ''}>
                     <FormControl>
                       <SelectTrigger className="rounded-lg">
                         <SelectValue placeholder="Select your faculty" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {FACULTIES.map((faculty: Faculty) => (
-                        <SelectItem key={faculty.id} value={faculty.id}>
+                      {FACULTIES.map((faculty) => (
+                        <SelectItem key={faculty.id} value={faculty.id.toString()}>
                           {faculty.name}
                         </SelectItem>
                       ))}
@@ -202,26 +191,26 @@ export default function ProfileSetupForm({ defaultValues, onSuccess, userRole }:
             />
             <FormField
               control={form.control}
-              name="departmentId"
+              name="department_id"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Department</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || ''} defaultValue={field.value || ''} disabled={!selectedFacultyId && availableDepartments.length === DEPARTMENTS.length && userRole === 'STUDENT'}>
+                  <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString() || ''} disabled={!selectedFacultyId}>
                     <FormControl>
                       <SelectTrigger className="rounded-lg">
                         <SelectValue placeholder="Select your department" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {availableDepartments.map((dept: Department) => (
-                        <SelectItem key={dept.id} value={dept.id}>
+                      {availableDepartments.map((dept) => (
+                        <SelectItem key={dept.id} value={dept.id.toString()}>
                           {dept.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  {userRole === 'STUDENT' && !selectedFacultyId && <FormDescription className="text-xs">Please select a faculty first.</FormDescription>}
-                  {userRole === 'STUDENT' && selectedFacultyId && availableDepartments.length === 0 && <FormDescription className="text-xs text-destructive">No departments found for selected faculty.</FormDescription>}
+                  {!selectedFacultyId && <FormDescription className="text-xs">Please select a faculty first.</FormDescription>}
+                  {selectedFacultyId && availableDepartments.length === 0 && <FormDescription className="text-xs text-destructive">No departments found for selected faculty.</FormDescription>}
                   <FormMessage />
                 </FormItem>
               )}
@@ -230,10 +219,9 @@ export default function ProfileSetupForm({ defaultValues, onSuccess, userRole }:
         )}
 
         {userRole === 'SUPERVISOR' && (
-          <>
             <FormField
               control={form.control}
-              name="supervisorCompanyName"
+              name="company_name"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Your Company Name</FormLabel>
@@ -244,20 +232,6 @@ export default function ProfileSetupForm({ defaultValues, onSuccess, userRole }:
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="supervisorCompanyAddress"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Your Company Address</FormLabel>
-                  <FormControl>
-                    <Input placeholder="123 Tech Park, Silicon Valley" {...field} className="rounded-lg" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </>
         )}
 
         <div className="flex flex-col sm:flex-row gap-3 pt-2">

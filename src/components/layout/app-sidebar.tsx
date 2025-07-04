@@ -75,6 +75,8 @@ export default function AppSidebar({ userRole }: AppSidebarProps) {
     // Or a loading skeleton
     return null;
   }
+  
+  const userName = `${user.first_name} ${user.last_name}`;
 
   const allLinks = [...NAV_LINKS, ...BOTTOM_NAV_LINKS];
 
@@ -100,11 +102,11 @@ export default function AppSidebar({ userRole }: AppSidebarProps) {
             <div className="flex items-center justify-between">
                 <div className="flex items-center group-data-[collapsible=icon]:hidden">
                     <Avatar className="h-12 w-12">
-                        <AvatarImage src={user.avatar_url || `https://placehold.co/100x100.png?text=${getInitials(user.name)}`} alt={user.name} data-ai-hint="person portrait"/>
-                        <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground text-lg">{getInitials(user.name)}</AvatarFallback>
+                        <AvatarImage src={user.avatar_url || `https://placehold.co/100x100.png?text=${getInitials(userName)}`} alt={userName} data-ai-hint="person portrait"/>
+                        <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground text-lg">{getInitials(userName)}</AvatarFallback>
                     </Avatar>
                     <div className="ml-3">
-                        <div className="text-sm font-medium text-sidebar-foreground">{user.name}</div>
+                        <div className="text-sm font-medium text-sidebar-foreground">{userName}</div>
                         <div className="text-xs text-sidebar-foreground/70">{USER_ROLES[userRole]}</div>
                     </div>
                 </div>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -20,17 +21,16 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, CheckCircle, AlertTriangle, KeyRound } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
-import { FACULTIES, DEPARTMENTS, USER_ROLES } from '@/lib/constants';
-import type { UserRole, UserProfileData } from '@/types';
+import { FACULTIES, DEPARTMENTS } from '@/lib/constants';
+import type { UserProfileData } from '@/types';
 import { sendOtp } from '@/ai/flows/send-otp-flow';
 import { Checkbox } from '@/components/ui/checkbox'; 
 import { Label } from '@/components/ui/label'; 
 import api from '@/lib/api';
 
-
 const registrationStep1Schema = z.object({
-  schoolId: z.string().min(3, { message: 'School ID must be at least 3 characters.' }).max(20, { message: 'School ID too long.'}),
-  schoolEmail: z.string().email({ message: 'Please enter a valid school email address.' })
+  student_id_number: z.string().min(3, { message: 'School ID must be at least 3 characters.' }).max(20, { message: 'School ID too long.'}),
+  email: z.string().email({ message: 'Please enter a valid school email address.' })
     .refine(email => email.endsWith('@htu.edu.gh'), {
       message: 'Email must be a valid @htu.edu.gh address.'
     }),
@@ -59,18 +59,19 @@ type RegistrationStep1Values = z.infer<typeof registrationStep1Schema>;
 type RegistrationStep2Values = z.infer<typeof registrationStep2Schema>;
 type RegistrationStep3Values = z.infer<typeof registrationStep3Schema>;
 
-const fetchStudentDataFromSchoolDB = async (schoolId: string): Promise<{name: string, facultyId: string, departmentId: string} | null> => {
+const fetchStudentDataFromSchoolDB = async (schoolId: string): Promise<{first_name: string, last_name: string, faculty_id: number, department_id: number} | null> => {
   await new Promise(resolve => setTimeout(resolve, 1000));
   if (schoolId.toLowerCase() === 'invalid_id_example') {
     return null;
   }
   const faculty = FACULTIES.find(f => f.name.includes("Engineering")) || FACULTIES[0];
-  const department = DEPARTMENTS.find(d => d.facultyId === faculty.id) || DEPARTMENTS.find(d => d.id === "D005");
+  const department = DEPARTMENTS.find(d => d.facultyId === faculty.id) || DEPARTMENTS.find(d => d.id === 5);
 
   return {
-    name: `Student ${schoolId.substring(0,5)}`,
-    facultyId: faculty.id,
-    departmentId: department?.id || DEPARTMENTS[0].id
+    first_name: `Student`,
+    last_name: `${schoolId.substring(0,5)}`,
+    faculty_id: faculty.id,
+    department_id: department?.id || DEPARTMENTS[0].id
   };
 };
 
@@ -80,12 +81,12 @@ export function RegistrationForm() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [step, setStep] = React.useState(1);
   const [verifiedSchoolEmail, setVerifiedSchoolEmail] = React.useState('');
-  const [userDataFromDB, setUserDataFromDB] = React.useState<{name: string, facultyId: string, departmentId: string} | null>(null);
+  const [userDataFromDB, setUserDataFromDB] = React.useState<{first_name: string, last_name: string, faculty_id: number, department_id: number} | null>(null);
   const [generatedOtpForVerification, setGeneratedOtpForVerification] = React.useState<string | null>(null);
 
   const step1Form = useForm<RegistrationStep1Values>({
     resolver: zodResolver(registrationStep1Schema),
-    defaultValues: { schoolId: '', schoolEmail: '' },
+    defaultValues: { student_id_number: '', email: '' },
   });
 
   const step2Form = useForm<RegistrationStep2Values>({
@@ -100,7 +101,7 @@ export function RegistrationForm() {
 
   async function handleStep1Submit(values: RegistrationStep1Values) {
     setIsLoading(true);
-    const studentData = await fetchStudentDataFromSchoolDB(values.schoolId);
+    const studentData = await fetchStudentDataFromSchoolDB(values.student_id_number);
 
     if (!studentData) {
       toast({
@@ -108,20 +109,20 @@ export function RegistrationForm() {
         description: 'The School ID provided was not found or is invalid. Please check and try again.',
         variant: 'destructive'
       });
-      step1Form.setError("schoolId", { type: "manual", message: "Invalid School ID."});
+      step1Form.setError("student_id_number", { type: "manual", message: "Invalid School ID."});
       setIsLoading(false);
       return;
     }
 
     setUserDataFromDB(studentData);
-    setVerifiedSchoolEmail(values.schoolEmail);
+    setVerifiedSchoolEmail(values.email);
 
     try {
-      const otpResponse = await sendOtp({ email: values.schoolEmail });
+      const otpResponse = await sendOtp({ email: values.email });
       setGeneratedOtpForVerification(otpResponse.otp);
       toast({
         title: 'OTP Sent! (Simulated)',
-        description: `An OTP (simulated as ${otpResponse.otp}) has been 'sent' to ${values.schoolEmail}. Please enter it below.`,
+        description: `An OTP (simulated as ${otpResponse.otp}) has been 'sent' to ${values.email}. Please enter it below.`,
         variant: "default",
         duration: 7000,
       });
@@ -150,7 +151,7 @@ export function RegistrationForm() {
 
     toast({
       title: 'OTP Verified!',
-      description: `Welcome, ${userDataFromDB?.name}! Please set a secure password for your InternHub account.`,
+      description: `Welcome, ${userDataFromDB?.first_name}! Please set a secure password for your InternHub account.`,
       variant: 'default'
     });
     setStep(3);
@@ -167,13 +168,10 @@ export function RegistrationForm() {
     }
     
     const registrationData = {
-        name: userDataFromDB.name,
+        ...userDataFromDB,
         email: verifiedSchoolEmail,
         password: values.password,
-        role: 'STUDENT',
-        facultyId: userDataFromDB.facultyId,
-        departmentId: userDataFromDB.departmentId,
-        schoolId: step1Form.getValues('schoolId'),
+        student_id_number: step1Form.getValues('student_id_number'),
     };
 
     try {
@@ -186,16 +184,16 @@ export function RegistrationForm() {
         
         if (typeof window !== "undefined") {
             localStorage.setItem('authToken', session.access_token);
-            localStorage.setItem('userRole', user.role);
-            localStorage.setItem('userName', user.name);
-            localStorage.setItem('userEmail', user.email);
             localStorage.setItem('user', JSON.stringify(user));
+            localStorage.setItem('userRole', user.role);
+            localStorage.setItem('userName', `${user.first_name} ${user.last_name}`);
+            localStorage.setItem('userEmail', user.email);
             localStorage.setItem('isLoggedIn', 'true');
         }
         
         toast({
           title: "Registration Successful!",
-          description: `Welcome, ${user.name}! Your InternHub account is created. Please complete your profile.`,
+          description: `Welcome, ${user.first_name}! Your InternHub account is created. Please complete your profile.`,
           variant: "default",
         });
 
@@ -211,8 +209,8 @@ export function RegistrationForm() {
     }
   }
 
-  const facultyName = userDataFromDB ? FACULTIES.find(f => f.id === userDataFromDB.facultyId)?.name : 'N/A';
-  const departmentName = userDataFromDB ? DEPARTMENTS.find(d => d.id === userDataFromDB.departmentId)?.name : 'N/A';
+  const facultyName = userDataFromDB ? FACULTIES.find(f => f.id === userDataFromDB.faculty_id)?.name : 'N/A';
+  const departmentName = userDataFromDB ? DEPARTMENTS.find(d => d.id === userDataFromDB.department_id)?.name : 'N/A';
   
   const inputStyles = "bg-white dark:bg-gray-50 text-gray-900 dark:text-gray-900 placeholder:text-gray-500 dark:placeholder:text-gray-500 border-gray-300 dark:border-gray-400 rounded-lg focus:ring-primary focus:border-primary";
   const primaryButtonStyles = "w-full bg-primary-foreground hover:bg-primary-foreground/90 text-primary text-base py-3 rounded-lg";
@@ -225,7 +223,7 @@ export function RegistrationForm() {
           <form onSubmit={step1Form.handleSubmit(handleStep1Submit)} className="space-y-6">
             <FormField
               control={step1Form.control}
-              name="schoolId"
+              name="student_id_number"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>School ID / Matriculation Number</FormLabel>
@@ -243,7 +241,7 @@ export function RegistrationForm() {
             />
             <FormField
               control={step1Form.control}
-              name="schoolEmail"
+              name="email"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Ho Technical University Email Address</FormLabel>
@@ -284,7 +282,7 @@ export function RegistrationForm() {
                   <p className="text-xs text-primary-foreground/70">Please enter the 6-digit code below to confirm your identity. (Simulated OTP: {generatedOtpForVerification})</p>
                   <p className="text-xs text-primary-foreground/70 mt-2">If this is you, please proceed:</p>
                   <ul className="text-xs list-disc list-inside pl-2">
-                      <li><strong>Name:</strong> {userDataFromDB.name}</li>
+                      <li><strong>Name:</strong> {userDataFromDB.first_name} {userDataFromDB.last_name}</li>
                       <li><strong>Faculty:</strong> {facultyName}</li>
                       <li><strong>Department:</strong> {departmentName}</li>
                   </ul>
@@ -333,7 +331,7 @@ export function RegistrationForm() {
                   </CardTitle>
               </CardHeader>
               <CardContent className="text-sm text-primary-foreground/90 space-y-1">
-                  <p>Welcome, <strong>{userDataFromDB.name}</strong>! Your email <strong>{verifiedSchoolEmail}</strong> and Ho Technical University identity have been verified.</p>
+                  <p>Welcome, <strong>{userDataFromDB.first_name}</strong>! Your email <strong>{verifiedSchoolEmail}</strong> and Ho Technical University identity have been verified.</p>
                   <p>Please create a secure password for your InternHub account.</p>
               </CardContent>
           </Card>

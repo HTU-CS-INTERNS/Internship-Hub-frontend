@@ -1,49 +1,49 @@
 
-
 export type UserRole = 'STUDENT' | 'LECTURER' | 'SUPERVISOR' | 'HOD' | 'ADMIN';
 
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: UserRole;
-  avatarUrl?: string;
-  faculty?: Faculty;
-  department?: Department;
-  companyName?: string;
-  companyAddress?: string;
-}
-
+// This represents the core user data, aligned with your `users` table.
 export interface UserProfileData {
-  id: string; 
-  name: string;
+  id: number;
   email: string;
   role: UserRole;
-  faculty_id?: string;
-  department_id?: string;
-  school_id?: string; 
-  company_name?: string; 
-  company_address?: string; 
-  contact_number?: string;
+  first_name: string;
+  last_name: string;
+  phone_number?: string;
+  is_active: boolean;
+
+  // Role-specific identifiers, mirroring `students`, `lecturers` tables
+  student_id_number?: string;
+  staff_id_number?: string; // For lecturers/HODs
+  
+  // Denormalized/joined data for convenience in the frontend
+  faculty_id?: number;
+  department_id?: number;
+  company_id?: number;
+  job_title?: string; // For supervisors
+
+  // For display purposes, not in the `users` table directly
   avatar_url?: string;
-  status?: 'ACTIVE' | 'INACTIVE' | 'PENDING_VERIFICATION';
-  created_at?: string;
-  updated_at?: string;
+  faculty_name?: string;
+  department_name?: string;
+  company_name?: string;
 }
 
 export interface Faculty {
-  id: string;
+  id: number;
   name: string;
+  hod_id: number;
 }
 
 export interface Department {
-  id: string;
+  id: number;
+  faculty_id: number;
   name: string;
-  facultyId: string;
+  hod_id: number; // A department can also have its own HOD
 }
 
 export type InternshipStatus = 'NOT_SUBMITTED' | 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED';
 
+// This is simplified. A real implementation would link IDs.
 export interface InternshipDetails {
   companyName: string;
   companyAddress?: string;
@@ -55,10 +55,8 @@ export interface InternshipDetails {
   status: InternshipStatus;
   rejectionReason?: string;
   hodComments?: string; 
-  companyLatitude?: number;
-  companyLongitude?: number;
-  geofenceRadiusMeters?: number;
 }
+
 
 export interface HODApprovalQueueItem {
   studentId: string; 
@@ -86,7 +84,7 @@ export interface DailyTask {
   studentId: string;
   departmentOutcomeLink?: string;
   status: 'PENDING' | 'SUBMITTED' | 'APPROVED' | 'REJECTED';
-  attachments?: AttachmentData[]; // Array of attachment data objects
+  attachments?: AttachmentData[];
   supervisorComments?: string;
   lecturerComments?: string;
 }
@@ -94,7 +92,7 @@ export interface DailyTask {
 export interface DailyReport extends DailyTask { 
   title?: string;
   challengesFaced?: string;
-  securePhotoUrl?: string; // Data URI for mock, URL for real app
+  securePhotoUrl?: string;
 }
 
 
@@ -145,7 +143,7 @@ export interface CheckIn {
   manual_reason?: string;
   is_gps_verified: boolean;
   is_outside_geofence: boolean;
-  photo_url?: string; // Data URI for mock, URL for real app
+  photo_url?: string;
   supervisor_verification_status?: 'PENDING' | 'VERIFIED' | 'FLAGGED';
   supervisor_comments?: string;
   created_at: string; // ISO string

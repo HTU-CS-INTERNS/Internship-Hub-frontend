@@ -15,7 +15,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Bell, Mail, Settings, User, LogOut, Sun, Moon, PanelLeft, ChevronDown } from 'lucide-react';
 import { USER_ROLES } from '@/lib/constants';
-import type { UserRole } from '@/types';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/auth-context';
@@ -64,6 +63,8 @@ export default function AppHeader() {
   if (!user || !role) {
     return null;
   }
+  
+  const userName = `${user.first_name} ${user.last_name}`;
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-card px-4 md:px-6 shadow-sm">
@@ -98,16 +99,16 @@ export default function AppHeader() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-10 rounded-lg p-0 md:px-2 md:w-auto hover:bg-accent/20">
               <Avatar className="h-8 w-8">
-                <AvatarImage src={user.avatar_url || `https://placehold.co/100x100.png?text=${getInitials(user.name)}`} alt={user.name} data-ai-hint="person portrait"/>
-                <AvatarFallback className="bg-primary text-primary-foreground">{getInitials(user.name)}</AvatarFallback>
+                <AvatarImage src={user.avatar_url || `https://placehold.co/100x100.png?text=${getInitials(userName)}`} alt={userName} data-ai-hint="person portrait"/>
+                <AvatarFallback className="bg-primary text-primary-foreground">{getInitials(userName)}</AvatarFallback>
               </Avatar>
-              <span className="ml-2 text-foreground hidden md:inline">{user.name}</span>
+              <span className="ml-2 text-foreground hidden md:inline">{userName}</span>
               <ChevronDown className="ml-1 text-muted-foreground hidden md:inline h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-60 font-body">
             <DropdownMenuLabel className="font-medium">
-              <p>{user.name}</p>
+              <p>{userName}</p>
               <p className="text-xs text-muted-foreground font-normal">{user.email}</p>
               <p className="text-xs text-primary font-normal">{USER_ROLES[role]}</p>
             </DropdownMenuLabel>

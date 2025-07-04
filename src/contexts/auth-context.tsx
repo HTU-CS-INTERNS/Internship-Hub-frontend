@@ -39,19 +39,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const token = typeof window !== "undefined" ? localStorage.getItem('authToken') : null;
       if (!token) {
         setIsLoading(false);
-        if (!pathname.startsWith('/login') && !pathname.startsWith('/register') && !pathname.startsWith('/onboarding') && pathname !== '/') {
+        const isPublicPage = ['/', '/login', '/register'].includes(pathname) || pathname.startsWith('/onboarding') || pathname.startsWith('/welcome');
+        if (!isPublicPage) {
             router.push('/login');
         }
         return;
       }
+
       try {
-        const userData = await api<UserProfileData>('/auth/me');
-        setUser(userData);
-         if (typeof window !== "undefined") {
-            localStorage.setItem('user', JSON.stringify(userData));
-            localStorage.setItem('userRole', userData.role);
-            localStorage.setItem('userName', userData.name);
-            localStorage.setItem('userEmail', userData.email);
+        // This simulates fetching the user profile with the token.
+        // The mock api will retrieve user from localStorage based on token.
+        const userData = await api<UserProfileData>('/auth/me'); 
+        if (userData) {
+          setUser(userData);
+          // Store user details for convenience, will be overwritten on next auth check
+          localStorage.setItem('user', JSON.stringify(userData));
+          localStorage.setItem('userRole', userData.role);
+          localStorage.setItem('userName', `${userData.first_name} ${userData.last_name}`);
+          localStorage.setItem('userEmail', userData.email);
+        } else {
+            throw new Error("User not found for token");
         }
       } catch (error) {
         console.error("Auth verification failed:", error);
@@ -67,10 +74,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return <AppLoadingScreen />;
   }
   
-  if (!user && !isLoading && !pathname.startsWith('/login') && !pathname.startsWith('/register') && !pathname.startsWith('/onboarding') && pathname !== '/') {
-      return (
-        <AppLoadingScreen />
-      );
+  const isPublicPage = ['/', '/login', '/register'].includes(pathname) || pathname.startsWith('/onboarding') || pathname.startsWith('/welcome');
+  if (!user && !isLoading && !isPublicPage) {
+      return <AppLoadingScreen />;
   }
 
   return (

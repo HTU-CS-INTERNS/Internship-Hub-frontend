@@ -61,14 +61,16 @@ export function LoginForm() {
       if (typeof window !== "undefined") {
         localStorage.setItem('authToken', session.access_token);
         localStorage.setItem('userRole', user.role);
-        localStorage.setItem('userName', user.name);
+        localStorage.setItem('userName', `${user.first_name} ${user.last_name}`);
         localStorage.setItem('userEmail', user.email);
         localStorage.setItem('user', JSON.stringify(user));
+        // This is a temporary measure to make other parts of the app work
+        localStorage.setItem('isLoggedIn', 'true');
       }
 
       toast({
         title: "Login Successful!",
-        description: `Welcome back, ${user.name}! You are logged in as a ${USER_ROLES[user.role]}.`,
+        description: `Welcome back, ${user.first_name}! You are logged in as a ${USER_ROLES[user.role]}.`,
         variant: "default",
       });
 
