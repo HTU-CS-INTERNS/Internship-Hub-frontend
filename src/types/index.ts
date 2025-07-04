@@ -1,4 +1,5 @@
 
+
 export type UserRole = 'STUDENT' | 'LECTURER' | 'SUPERVISOR' | 'HOD' | 'ADMIN';
 
 export interface User {
@@ -11,6 +12,23 @@ export interface User {
   department?: Department;
   companyName?: string;
   companyAddress?: string;
+}
+
+export interface UserProfileData {
+  id: string; 
+  name: string;
+  email: string;
+  role: UserRole;
+  faculty_id?: string;
+  department_id?: string;
+  school_id?: string; 
+  company_name?: string; 
+  company_address?: string; 
+  contact_number?: string;
+  avatar_url?: string;
+  status?: 'ACTIVE' | 'INACTIVE' | 'PENDING_VERIFICATION';
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Faculty {
@@ -132,4 +150,3 @@ export interface CheckIn {
   supervisor_comments?: string;
   created_at: string; // ISO string
 }
-    

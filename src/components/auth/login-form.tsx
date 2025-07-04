@@ -19,9 +19,10 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from '@/components/ui/label';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import type { UserRole } from '@/types';
+import type { UserRole, UserProfileData } from '@/types';
 import { USER_ROLES } from '@/lib/constants';
 import { Loader2 } from 'lucide-react';
+import api from '@/lib/api';
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
@@ -49,32 +50,42 @@ export function LoginForm() {
 
   async function onSubmit(values: LoginFormValues) {
     setIsLoading(true);
-    // Simulate API call to a custom backend
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setIsLoading(false);
+    try {
+      const response = await api<{ user: UserProfileData; session: { access_token: string; } }>('/auth/login', {
+        method: 'POST',
+        body: values,
+      });
 
-    const selectedRole = values.role as UserRole;
-    const nameFromEmail = values.email.split('@')[0];
-    const capitalizedName = nameFromEmail.charAt(0).toUpperCase() + nameFromEmail.slice(1);
-    const userNameToStore = capitalizedName || USER_ROLES[selectedRole];
+      const { user, session } = response;
+      
+      if (typeof window !== "undefined") {
+        localStorage.setItem('authToken', session.access_token);
+        localStorage.setItem('userRole', user.role);
+        localStorage.setItem('userName', user.name);
+        localStorage.setItem('userEmail', user.email);
+        localStorage.setItem('user', JSON.stringify(user));
+      }
 
-    if (typeof window !== "undefined") {
-      localStorage.setItem('userRole', selectedRole);
-      localStorage.setItem('userEmail', values.email);
-      localStorage.setItem('userName', userNameToStore);
-      localStorage.setItem('isLoggedIn', 'true'); 
-    }
+      toast({
+        title: "Login Successful!",
+        description: `Welcome back, ${user.name}! You are logged in as a ${USER_ROLES[user.role]}.`,
+        variant: "default",
+      });
 
-    toast({
-      title: "Login Successful! (Simulated)",
-      description: `Welcome back, ${userNameToStore}! You are logged in as a ${USER_ROLES[selectedRole]}.`,
-      variant: "default",
-    });
+      if (user.role === 'ADMIN') {
+        router.push('/admin/dashboard');
+      } else {
+        router.push('/dashboard');
+      }
 
-    if (selectedRole === 'ADMIN') {
-      router.push('/admin/dashboard');
-    } else {
-      router.push('/dashboard');
+    } catch (error: any) {
+      toast({
+        title: 'Login Failed',
+        description: error.message || 'An unknown error occurred. Please check your credentials and try again.',
+        variant: 'destructive'
+      });
+    } finally {
+        setIsLoading(false);
     }
   }
 

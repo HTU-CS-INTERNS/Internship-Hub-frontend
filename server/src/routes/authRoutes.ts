@@ -1,13 +1,13 @@
 
 import { Router } from 'express';
-import { registerStudent, loginUser, /* other auth functions */ } from '../controllers/authController';
-// import { protect } from '../middleware/authMiddleware'; // Example for protected routes
+import { registerStudent, loginUser, logoutUser, getCurrentUserController } from '../controllers/authController';
+import { protect } from '../middleware/authMiddleware';
 
 const router = Router();
 
 /**
  * @route POST /api/auth/register/student
- * @description Register a new student (after OTP and school ID verification)
+ * @description Register a new student
  * @access Public
  */
 router.post('/register/student', registerStudent);
@@ -19,8 +19,20 @@ router.post('/register/student', registerStudent);
  */
 router.post('/login', loginUser);
 
-// Example of a protected route (you'll need to implement `protect` middleware)
-// router.get('/me', protect, getCurrentUser);
+/**
+ * @route GET /api/auth/me
+ * @description Get the profile of the currently authenticated user
+ * @access Private
+ */
+router.get('/me', protect, getCurrentUserController);
+
+/**
+ * @route POST /api/auth/logout
+ * @description Logout the current user by invalidating the token.
+ * @access Private
+ */
+router.post('/logout', protect, logoutUser);
+
 
 // Example: OTP generation route (conceptual)
 // This would typically generate an OTP and send it via email/SMS
@@ -35,7 +47,7 @@ router.post('/login', loginUser);
 //     // await sendOtpEmail(email, otp); // Your email sending logic
 //     // For simulation:
 //     const simulatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
-//     console.log(\`Simulated OTP for \${email}: \${simulatedOtp}\`);
+//     console.log(`Simulated OTP for ${email}: ${simulatedOtp}`);
 //     return res.status(200).json({ message: "OTP 'sent' successfully (simulated)", otp: simulatedOtp });
 //   } catch (error) {
 //     console.error("Error in send-otp route:", error);

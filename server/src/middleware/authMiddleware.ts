@@ -1,10 +1,11 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { supabase } from '../config/supabaseClient';
+import type { UserProfileData } from '../services/userService';
 
 // Define a custom request type that includes the user property
 export interface AuthenticatedRequest extends Request {
-  user?: any; // Define a more specific type for your user object from Supabase
+  user?: UserProfileData; 
 }
 
 export const protect = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
@@ -25,19 +26,17 @@ export const protect = async (req: AuthenticatedRequest, res: Response, next: Ne
     }
 
     // Attach user to the request object for use in subsequent controllers
-    // You might want to fetch additional profile details from your 'users' table here
-    // For example:
-    // const { data: userProfile, error: profileError } = await supabase
-    //   .from('users')
-    //   .select('*')
-    //   .eq('id', user.id)
-    //   .single();
-    // if (profileError || !userProfile) {
-    //   return res.status(401).json({ message: 'User profile not found for token.'});
-    // }
-    // req.user = userProfile;
-
-    req.user = user; // For now, just attaching the Supabase auth user
+    // Fetch additional profile details from the 'users' table
+    const { data: userProfile, error: profileError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+      
+    if (profileError || !userProfile) {
+      return res.status(401).json({ message: 'User profile not found for token.'});
+    }
+    req.user = userProfile;
 
     next();
   } catch (error) {
@@ -50,10 +49,7 @@ export const protect = async (req: AuthenticatedRequest, res: Response, next: Ne
 export const authorize = (...roles: string[]) => {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     if (!req.user || !req.user.role || !roles.includes(req.user.role)) {
-      // Note: req.user.role depends on you fetching profile and attaching it in `protect` middleware
-      // Supabase auth.getUser() user object might not have 'role' directly unless it's in app_metadata.
-      // You'd typically fetch the role from your own 'users' table.
-      return res.status(403).json({ message: 'Forbidden: User does not have the required role' });
+      return res.status(403).json({ message: `Forbidden: User role '${req.user?.role}' is not authorized for this resource. Required roles: ${roles.join(', ')}` });
     }
     next();
   };

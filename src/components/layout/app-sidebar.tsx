@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import {
   Sidebar,
   SidebarContent,
@@ -18,9 +18,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { NAV_LINKS, BOTTOM_NAV_LINKS, USER_ROLES } from '@/lib/constants';
 import type { NavItem, UserRole } from '@/types';
-import { LogOut, ChevronLeft, ChevronRight, GraduationCap } from 'lucide-react'; // Changed from Image
+import { LogOut, ChevronLeft, ChevronRight, GraduationCap } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-// Removed Image import
+import { useAuth } from '@/contexts/auth-context';
 
 const getInitials = (name: string) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase() : 'U';
 
@@ -30,33 +30,8 @@ interface AppSidebarProps {
 
 export default function AppSidebar({ userRole }: AppSidebarProps) {
   const pathname = usePathname();
-  const router = useRouter();
   const { toggleSidebar, state: sidebarState, open: sidebarOpen } = useSidebar();
-
-  const [userName, setUserName] = React.useState('User');
-
-  React.useEffect(() => {
-    if (typeof window !== "undefined") {
-      setUserName(localStorage.getItem('userName') || 'User');
-    }
-  }, []);
-
-  const DUMMY_USER = {
-    name: userName,
-    avatarUrl: `https://placehold.co/100x100.png?text=${getInitials(userName)}`,
-  };
-
-  const handleLogout = () => {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem('userRole');
-      localStorage.removeItem('theme');
-      localStorage.removeItem('userName');
-      localStorage.removeItem('userEmail');
-      localStorage.removeItem('isLoggedIn');
-    }
-    document.documentElement.classList.remove('dark');
-    router.push('/login');
-  };
+  const { user, logout } = useAuth();
 
   const navSections = ["Main", "Tools", "Management", "Administration", "Settings"];
 
@@ -96,6 +71,11 @@ export default function AppSidebar({ userRole }: AppSidebarProps) {
     );
   };
 
+  if (!user) {
+    // Or a loading skeleton
+    return null;
+  }
+
   const allLinks = [...NAV_LINKS, ...BOTTOM_NAV_LINKS];
 
   return (
@@ -107,7 +87,6 @@ export default function AppSidebar({ userRole }: AppSidebarProps) {
       <SidebarHeader className="p-4 border-b border-sidebar-border flex items-center justify-between group-data-[collapsible=icon]:justify-center">
         <Link href="/dashboard" className="flex items-center gap-2 group">
           <div className="w-10 h-10 rounded-full bg-primary-foreground/10 flex items-center justify-center shadow-md p-1.5">
-            {/* Replaced Image with Lucide Icon */}
             <GraduationCap className="h-full w-full text-primary-foreground" />
           </div>
           <span className="font-headline text-xl font-bold text-primary-foreground group-hover:text-primary-foreground/80 transition-colors group-data-[collapsible=icon]:hidden">
@@ -121,11 +100,11 @@ export default function AppSidebar({ userRole }: AppSidebarProps) {
             <div className="flex items-center justify-between">
                 <div className="flex items-center group-data-[collapsible=icon]:hidden">
                     <Avatar className="h-12 w-12">
-                        <AvatarImage src={DUMMY_USER.avatarUrl} alt={DUMMY_USER.name} data-ai-hint="person portrait"/>
-                        <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground text-lg">{getInitials(DUMMY_USER.name)}</AvatarFallback>
+                        <AvatarImage src={user.avatar_url || `https://placehold.co/100x100.png?text=${getInitials(user.name)}`} alt={user.name} data-ai-hint="person portrait"/>
+                        <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground text-lg">{getInitials(user.name)}</AvatarFallback>
                     </Avatar>
                     <div className="ml-3">
-                        <div className="text-sm font-medium text-sidebar-foreground">{DUMMY_USER.name}</div>
+                        <div className="text-sm font-medium text-sidebar-foreground">{user.name}</div>
                         <div className="text-xs text-sidebar-foreground/70">{USER_ROLES[userRole]}</div>
                     </div>
                 </div>
@@ -147,7 +126,7 @@ export default function AppSidebar({ userRole }: AppSidebarProps) {
                 <Button
                     variant="ghost"
                     className="w-full justify-start text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:justify-center rounded-lg"
-                    onClick={handleLogout}
+                    onClick={logout}
                     title="Logout"
                 >
                     <LogOut className="mr-2 h-5 w-5 group-data-[collapsible=icon]:mr-0 text-sidebar-foreground/80 group-hover:text-sidebar-accent-foreground" />
@@ -159,4 +138,3 @@ export default function AppSidebar({ userRole }: AppSidebarProps) {
     </Sidebar>
   );
 }
-    
