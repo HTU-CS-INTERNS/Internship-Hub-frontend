@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -22,10 +21,11 @@ import { Loader2, CheckCircle, AlertTriangle, KeyRound } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { FACULTIES, DEPARTMENTS, USER_ROLES } from '@/lib/constants';
-import type { UserRole } from '@/types';
+import type { UserRole, UserProfileData } from '@/types';
 import { sendOtp } from '@/ai/flows/send-otp-flow';
 import { Checkbox } from '@/components/ui/checkbox'; 
 import { Label } from '@/components/ui/label'; 
+import api from '@/lib/api';
 
 
 const registrationStep1Schema = z.object({
@@ -165,26 +165,50 @@ export function RegistrationForm() {
         setStep(1);
         return;
     }
+    
+    const registrationData = {
+        name: userDataFromDB.name,
+        email: verifiedSchoolEmail,
+        password: values.password,
+        role: 'STUDENT',
+        facultyId: userDataFromDB.facultyId,
+        departmentId: userDataFromDB.departmentId,
+        schoolId: step1Form.getValues('schoolId'),
+    };
 
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    try {
+        const response = await api<{ user: UserProfileData; session: { access_token: string; } }>('/auth/signup', {
+            method: 'POST',
+            body: registrationData,
+        });
 
-    if (typeof window !== "undefined") {
-      localStorage.setItem('userRole', 'STUDENT');
-      localStorage.setItem('userName', userDataFromDB.name);
-      localStorage.setItem('userEmail', verifiedSchoolEmail);
-      localStorage.setItem('userFacultyId', userDataFromDB.facultyId);
-      localStorage.setItem('userDepartmentId', userDataFromDB.departmentId);
-      localStorage.removeItem('onboardingComplete');
-      localStorage.setItem('isLoggedIn', 'true');
+        const { user, session } = response;
+        
+        if (typeof window !== "undefined") {
+            localStorage.setItem('authToken', session.access_token);
+            localStorage.setItem('userRole', user.role);
+            localStorage.setItem('userName', user.name);
+            localStorage.setItem('userEmail', user.email);
+            localStorage.setItem('user', JSON.stringify(user));
+            localStorage.setItem('isLoggedIn', 'true');
+        }
+        
+        toast({
+          title: "Registration Successful!",
+          description: `Welcome, ${user.name}! Your InternHub account is created. Please complete your profile.`,
+          variant: "default",
+        });
+
+        router.push('/profile');
+    } catch (error: any) {
+         toast({
+            title: 'Registration Failed',
+            description: error.message || 'An unknown error occurred. Please try again.',
+            variant: 'destructive'
+        });
+    } finally {
+        setIsLoading(false);
     }
-
-    toast({
-      title: "Registration Successful! (Simulated)",
-      description: `Welcome, ${userDataFromDB.name}! Your InternHub account is created. Please complete your profile.`,
-      variant: "default",
-    });
-    router.push('/profile'); 
-    setIsLoading(false);
   }
 
   const facultyName = userDataFromDB ? FACULTIES.find(f => f.id === userDataFromDB.facultyId)?.name : 'N/A';
