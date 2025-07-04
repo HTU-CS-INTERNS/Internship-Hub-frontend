@@ -30,6 +30,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.removeItem('userRole');
         localStorage.removeItem('userName');
         localStorage.removeItem('userEmail');
+        localStorage.removeItem('isLoggedIn'); // Clear legacy flag
     }
     router.push('/login');
   }, [router]);
@@ -47,12 +48,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       try {
-        // This simulates fetching the user profile with the token.
-        // The mock api will retrieve user from localStorage based on token.
         const userData = await api<UserProfileData>('/auth/me'); 
         if (userData) {
           setUser(userData);
-          // Store user details for convenience, will be overwritten on next auth check
           localStorage.setItem('user', JSON.stringify(userData));
           localStorage.setItem('userRole', userData.role);
           localStorage.setItem('userName', `${userData.first_name} ${userData.last_name}`);

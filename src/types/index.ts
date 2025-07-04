@@ -1,5 +1,6 @@
 
 export type UserRole = 'STUDENT' | 'LECTURER' | 'SUPERVISOR' | 'HOD' | 'ADMIN';
+export type UserStatus = 'PENDING_ACTIVATION' | 'ACTIVE' | 'INACTIVE';
 
 // This represents the core user data, aligned with your `users` table.
 export interface UserProfileData {
@@ -9,7 +10,7 @@ export interface UserProfileData {
   first_name: string;
   last_name: string;
   phone_number?: string;
-  is_active: boolean;
+  status: UserStatus;
 
   // Role-specific identifiers, mirroring `students`, `lecturers` tables
   student_id_number?: string;

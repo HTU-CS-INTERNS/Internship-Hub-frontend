@@ -59,29 +59,13 @@ type RegistrationStep1Values = z.infer<typeof registrationStep1Schema>;
 type RegistrationStep2Values = z.infer<typeof registrationStep2Schema>;
 type RegistrationStep3Values = z.infer<typeof registrationStep3Schema>;
 
-const fetchStudentDataFromSchoolDB = async (schoolId: string): Promise<{first_name: string, last_name: string, faculty_id: number, department_id: number} | null> => {
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  if (schoolId.toLowerCase() === 'invalid_id_example') {
-    return null;
-  }
-  const faculty = FACULTIES.find(f => f.name.includes("Engineering")) || FACULTIES[0];
-  const department = DEPARTMENTS.find(d => d.facultyId === faculty.id) || DEPARTMENTS.find(d => d.id === 5);
-
-  return {
-    first_name: `Student`,
-    last_name: `${schoolId.substring(0,5)}`,
-    faculty_id: faculty.id,
-    department_id: department?.id || DEPARTMENTS[0].id
-  };
-};
-
 export function RegistrationForm() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = React.useState(false);
   const [step, setStep] = React.useState(1);
   const [verifiedSchoolEmail, setVerifiedSchoolEmail] = React.useState('');
-  const [userDataFromDB, setUserDataFromDB] = React.useState<{first_name: string, last_name: string, faculty_id: number, department_id: number} | null>(null);
+  const [userDataFromDB, setUserDataFromDB] = React.useState<{first_name: string, last_name: string, faculty_id?: number, department_id?: number} | null>(null);
   const [generatedOtpForVerification, setGeneratedOtpForVerification] = React.useState<string | null>(null);
 
   const step1Form = useForm<RegistrationStep1Values>({
@@ -101,37 +85,32 @@ export function RegistrationForm() {
 
   async function handleStep1Submit(values: RegistrationStep1Values) {
     setIsLoading(true);
-    const studentData = await fetchStudentDataFromSchoolDB(values.student_id_number);
-
-    if (!studentData) {
-      toast({
-        title: 'School ID Verification Failed',
-        description: 'The School ID provided was not found or is invalid. Please check and try again.',
-        variant: 'destructive'
-      });
-      step1Form.setError("student_id_number", { type: "manual", message: "Invalid School ID."});
-      setIsLoading(false);
-      return;
-    }
-
-    setUserDataFromDB(studentData);
-    setVerifiedSchoolEmail(values.email);
-
     try {
-      const otpResponse = await sendOtp({ email: values.email });
-      setGeneratedOtpForVerification(otpResponse.otp);
-      toast({
-        title: 'OTP Sent! (Simulated)',
-        description: `An OTP (simulated as ${otpResponse.otp}) has been 'sent' to ${values.email}. Please enter it below.`,
-        variant: "default",
-        duration: 7000,
-      });
-      setStep(2);
-    } catch (error) {
-      console.error("Error sending OTP:", error);
-      toast({ title: "OTP Error", description: "Could not send OTP. Please try again.", variant: "destructive"});
+        const studentData = await api<{first_name: string, last_name: string, faculty_id?: number, department_id?: number}>('/auth/verify-student', {
+            method: 'POST',
+            body: values,
+        });
+
+        setUserDataFromDB(studentData);
+        setVerifiedSchoolEmail(values.email);
+
+        const otpResponse = await sendOtp({ email: values.email });
+        setGeneratedOtpForVerification(otpResponse.otp);
+        toast({
+            title: 'Student Record Found!',
+            description: `An OTP is being sent to ${values.email} to verify your identity. (Simulated OTP: ${otpResponse.otp})`,
+            duration: 7000,
+        });
+        setStep(2);
+    } catch (error: any) {
+        toast({
+            title: 'Verification Failed',
+            description: error.message || 'Could not verify student details. Please try again.',
+            variant: 'destructive',
+        });
+    } finally {
+        setIsLoading(false);
     }
-    setIsLoading(false);
   }
 
   async function handleStep2Submit(values: RegistrationStep2Values) {
@@ -160,24 +139,16 @@ export function RegistrationForm() {
 
   async function handleStep3Submit(values: RegistrationStep3Values) {
     setIsLoading(true);
-    if (!userDataFromDB) {
-        toast({ title: "Error", description: "User data not found. Please restart registration.", variant: "destructive"});
-        setIsLoading(false);
-        setStep(1);
-        return;
-    }
     
-    const registrationData = {
-        ...userDataFromDB,
+    const activationData = {
         email: verifiedSchoolEmail,
         password: values.password,
-        student_id_number: step1Form.getValues('student_id_number'),
     };
 
     try {
         const response = await api<{ user: UserProfileData; session: { access_token: string; } }>('/auth/signup', {
             method: 'POST',
-            body: registrationData,
+            body: activationData,
         });
 
         const { user, session } = response;
@@ -188,19 +159,18 @@ export function RegistrationForm() {
             localStorage.setItem('userRole', user.role);
             localStorage.setItem('userName', `${user.first_name} ${user.last_name}`);
             localStorage.setItem('userEmail', user.email);
-            localStorage.setItem('isLoggedIn', 'true');
         }
         
         toast({
-          title: "Registration Successful!",
-          description: `Welcome, ${user.first_name}! Your InternHub account is created. Please complete your profile.`,
+          title: "Account Activated!",
+          description: `Welcome, ${user.first_name}! Your InternHub account is ready. Please complete your profile.`,
           variant: "default",
         });
 
         router.push('/profile');
     } catch (error: any) {
          toast({
-            title: 'Registration Failed',
+            title: 'Activation Failed',
             description: error.message || 'An unknown error occurred. Please try again.',
             variant: 'destructive'
         });
@@ -209,8 +179,8 @@ export function RegistrationForm() {
     }
   }
 
-  const facultyName = userDataFromDB ? FACULTIES.find(f => f.id === userDataFromDB.faculty_id)?.name : 'N/A';
-  const departmentName = userDataFromDB ? DEPARTMENTS.find(d => d.id === userDataFromDB.department_id)?.name : 'N/A';
+  const facultyName = userDataFromDB?.faculty_id ? FACULTIES.find(f => f.id === userDataFromDB.faculty_id)?.name : 'N/A';
+  const departmentName = userDataFromDB?.department_id ? DEPARTMENTS.find(d => d.id === userDataFromDB.department_id)?.name : 'N/A';
   
   const inputStyles = "bg-white dark:bg-gray-50 text-gray-900 dark:text-gray-900 placeholder:text-gray-500 dark:placeholder:text-gray-500 border-gray-300 dark:border-gray-400 rounded-lg focus:ring-primary focus:border-primary";
   const primaryButtonStyles = "w-full bg-primary-foreground hover:bg-primary-foreground/90 text-primary text-base py-3 rounded-lg";
@@ -234,7 +204,7 @@ export function RegistrationForm() {
                       className={inputStyles}
                     />
                   </FormControl>
-                  <FormDescription>This will be used to verify your Ho Technical University student status.</FormDescription>
+                  <FormDescription>This will be used to verify your student record.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -283,8 +253,8 @@ export function RegistrationForm() {
                   <p className="text-xs text-primary-foreground/70 mt-2">If this is you, please proceed:</p>
                   <ul className="text-xs list-disc list-inside pl-2">
                       <li><strong>Name:</strong> {userDataFromDB.first_name} {userDataFromDB.last_name}</li>
-                      <li><strong>Faculty:</strong> {facultyName}</li>
-                      <li><strong>Department:</strong> {departmentName}</li>
+                      {facultyName !== 'N/A' && <li><strong>Faculty:</strong> {facultyName}</li>}
+                      {departmentName !== 'N/A' && <li><strong>Department:</strong> {departmentName}</li>}
                   </ul>
               </CardContent>
           </Card>
@@ -331,7 +301,7 @@ export function RegistrationForm() {
                   </CardTitle>
               </CardHeader>
               <CardContent className="text-sm text-primary-foreground/90 space-y-1">
-                  <p>Welcome, <strong>{userDataFromDB.first_name}</strong>! Your email <strong>{verifiedSchoolEmail}</strong> and Ho Technical University identity have been verified.</p>
+                  <p>Welcome, <strong>{userDataFromDB.first_name}</strong>! Your identity has been verified.</p>
                   <p>Please create a secure password for your InternHub account.</p>
               </CardContent>
           </Card>
@@ -398,7 +368,7 @@ export function RegistrationForm() {
               )}
             />
             <Button type="submit" className={primaryButtonStyles} disabled={isLoading}>
-              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Create Account & Proceed"}
+              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Activate Account & Log In"}
             </Button>
           </form>
         </Form>

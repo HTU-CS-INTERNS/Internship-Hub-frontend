@@ -6,6 +6,7 @@
 // Here, it interacts with localStorage to mimic a persistent data store.
 
 import type { UserProfileData } from "@/types";
+import { FACULTIES, DEPARTMENTS } from './constants';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
@@ -43,40 +44,88 @@ const setLastId = (id: number): void => {
     localStorage.setItem(DB_KEYS.LAST_ID, id.toString());
 };
 
+const initializeUserDatabase = () => {
+    if (typeof window === "undefined") return;
+    const usersRaw = localStorage.getItem(DB_KEYS.USERS);
+    if (!usersRaw) {
+        // This simulates an admin having pre-uploaded student data.
+        const preRegisteredUsers: UserProfileData[] = [
+            {
+                id: 1, email: 'sadick@htu.edu.gh', student_id_number: 'HTU001', role: 'STUDENT',
+                first_name: 'Sadick', last_name: 'Issaka', status: 'PENDING_ACTIVATION',
+                faculty_id: 1, department_id: 5 // Placeholder mapping
+            },
+            {
+                id: 2, email: 'jane.doe@htu.edu.gh', student_id_number: 'HTU002', role: 'STUDENT',
+                first_name: 'Jane', last_name: 'Doe', status: 'PENDING_ACTIVATION',
+                faculty_id: 2, department_id: 3 // Placeholder mapping
+            },
+            {
+                id: 3, email: 'active.student@htu.edu.gh', student_id_number: 'HTU003', role: 'STUDENT',
+                first_name: 'Active', last_name: 'Student', status: 'ACTIVE',
+                faculty_id: 3, department_id: 6 // Placeholder mapping
+            },
+            { id: 4, email: 'lecturer@htu.edu.gh', first_name: 'Lecturer', last_name: 'User', role: 'LECTURER', status: 'ACTIVE' },
+            { id: 5, email: 'supervisor@company.com', first_name: 'Supervisor', last_name: 'User', role: 'SUPERVISOR', status: 'ACTIVE' },
+            { id: 6, email: 'hod@htu.edu.gh', first_name: 'HOD', last_name: 'User', role: 'HOD', status: 'ACTIVE' },
+            { id: 7, email: 'admin@htu.edu.gh', first_name: 'Admin', last_name: 'User', role: 'ADMIN', status: 'ACTIVE' },
+        ];
+        saveDb(DB_KEYS.USERS, preRegisteredUsers);
+        setLastId(preRegisteredUsers.length);
+    }
+};
+
+initializeUserDatabase();
+
 
 // --- Mock API Endpoints ---
 const mockEndpoints: Record<string, (options: ApiOptions) => Promise<any>> = {
-    '/auth/signup': async (options) => {
-        const { body } = options;
+    '/auth/verify-student': async (options) => { // New endpoint
+        const { student_id_number, email } = options.body;
         const users = getDb<UserProfileData>(DB_KEYS.USERS);
+        const student = users.find(u => 
+            u.student_id_number?.toLowerCase() === student_id_number.toLowerCase() && 
+            u.email.toLowerCase() === email.toLowerCase() &&
+            u.role === 'STUDENT'
+        );
 
-        if (users.find(u => u.email === body.email)) {
-            throw new Error('An account with this email already exists.');
+        if (!student) {
+            throw new Error('Student record not found. Please check your School ID and Email or contact administration.');
+        }
+
+        if (student.status === 'ACTIVE') {
+            throw new Error('This account has already been activated. Please log in.');
         }
         
-        const lastId = getLastId();
-        const newUser: UserProfileData = {
-            id: lastId + 1,
-            email: body.email,
-            role: 'STUDENT',
-            first_name: body.first_name,
-            last_name: body.last_name,
-            phone_number: body.phone_number,
-            student_id_number: body.student_id_number,
-            faculty_id: body.faculty_id,
-            department_id: body.department_id,
-            is_active: true,
-            // password is not stored in mock
-        };
-        users.push(newUser);
-        saveDb(DB_KEYS.USERS, users);
-        setLastId(newUser.id);
-
-        // Simulate login after signup
-        const token = `mock_token_for_${newUser.email}`;
-        localStorage.setItem('authToken', token);
+        if (student.status === 'INACTIVE') {
+            throw new Error('This account is currently inactive. Please contact administration.');
+        }
         
-        return { user: newUser, session: { access_token: token } };
+        // Return public-facing data
+        const { id, first_name, last_name, faculty_id, department_id } = student;
+        return { id, first_name, last_name, faculty_id, department_id };
+    },
+
+    '/auth/signup': async (options) => { // Modified to be an "activation" endpoint
+        const { email, password } = options.body;
+        const users = getDb<UserProfileData>(DB_KEYS.USERS);
+        const userIndex = users.findIndex(u => u.email.toLowerCase() === email.toLowerCase());
+
+        if (userIndex === -1) {
+            throw new Error('User not found. Cannot complete registration.');
+        }
+        if (users[userIndex].status !== 'PENDING_ACTIVATION') {
+             throw new Error('This account is not pending activation.');
+        }
+
+        // "Set password" and activate account
+        users[userIndex].status = 'ACTIVE';
+        saveDb(DB_KEYS.USERS, users);
+        
+        const activatedUser = users[userIndex];
+        const token = `mock_token_for_${activatedUser.email}`;
+        
+        return { user: activatedUser, session: { access_token: token } };
     },
 
     '/auth/login': async (options) => {
@@ -87,19 +136,19 @@ const mockEndpoints: Record<string, (options: ApiOptions) => Promise<any>> = {
         if (!user) {
             throw new Error('Invalid credentials or role mismatch.');
         }
-        if (!user.is_active) {
-            throw new Error('This account is inactive.');
+        if (user.status === 'PENDING_ACTIVATION') {
+            throw new Error('This account has not been activated yet. Please complete the registration process.');
         }
-        // Password check is skipped in mock
+        if (user.status === 'INACTIVE') {
+            throw new Error('This account is inactive. Please contact administration.');
+        }
 
         const token = `mock_token_for_${user.email}`;
-        localStorage.setItem('authToken', token);
-
         return { user, session: { access_token: token } };
     },
 
     '/auth/me': async (options) => {
-        const token = localStorage.getItem('authToken');
+        const token = typeof window !== "undefined" ? localStorage.getItem('authToken') : null;
         if (!token || !token.startsWith('mock_token_for_')) {
             throw new Error('Not authenticated.');
         }
@@ -108,6 +157,9 @@ const mockEndpoints: Record<string, (options: ApiOptions) => Promise<any>> = {
         const user = users.find(u => u.email === email);
         if (!user) {
             throw new Error('User for token not found.');
+        }
+        if (user.status !== 'ACTIVE') {
+            throw new Error(`Account status is ${user.status}. Access denied.`);
         }
         return user;
     }
@@ -123,7 +175,6 @@ async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
             return await handler(options);
         } catch (error: any) {
             console.error(`Mock API Error at ${endpoint}:`, error.message);
-            // Re-throw to be caught by the calling component
             throw new Error(error.message);
         }
     }
