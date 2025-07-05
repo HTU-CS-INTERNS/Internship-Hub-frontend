@@ -15,11 +15,9 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from '@/components/ui/label';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import type { UserRole, UserProfileData } from '@/types';
+import type { UserProfileData } from '@/types';
 import { USER_ROLES } from '@/lib/constants';
 import { Loader2 } from 'lucide-react';
 import api from '@/lib/api';
@@ -27,9 +25,6 @@ import api from '@/lib/api';
 const loginSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
-  role: z.enum(['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD', 'ADMIN'], {
-    required_error: "You need to select a role."
-  }),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -44,7 +39,6 @@ export function LoginForm() {
     defaultValues: {
       email: '',
       password: '',
-      role: 'STUDENT',
     },
   });
 
@@ -70,14 +64,29 @@ export function LoginForm() {
 
       toast({
         title: "Login Successful!",
-        description: `Welcome back, ${user.first_name}! You are logged in as a ${USER_ROLES[user.role]}.`,
+        description: `Welcome back, ${user.first_name || user.email}! You are logged in as a ${USER_ROLES[user.role] || user.role}.`,
         variant: "default",
       });
 
-      if (user.role === 'ADMIN') {
-        router.push('/admin/dashboard');
-      } else {
-        router.push('/dashboard');
+      // Redirect based on user role
+      switch (user.role?.toLowerCase()) {
+        case 'admin':
+          router.push('/dashboard');
+          break;
+        case 'lecturer':
+          router.push('/dashboard');
+          break;
+        case 'company_supervisor':
+          router.push('/dashboard');
+          break;
+        case 'hod':
+          router.push('/department-ops');
+          break;
+        case 'student':
+          router.push('/dashboard');
+          break;
+        default:
+          router.push('/dashboard');
       }
 
     } catch (error: any) {
@@ -127,38 +136,6 @@ export function LoginForm() {
                   {...field} 
                   className={inputStyles}
                 />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="role"
-          render={({ field }) => (
-            <FormItem className="space-y-3">
-              <FormLabel>Login as:</FormLabel>
-              <FormControl>
-                <RadioGroup
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                  className="flex flex-col space-y-2 sm:flex-row sm:flex-wrap sm:space-y-0 sm:gap-x-4 sm:gap-y-2"
-                >
-                  {(Object.keys(USER_ROLES) as UserRole[]).map((roleKey) => (
-                    <FormItem key={roleKey} className="flex items-center space-x-2 space-y-0">
-                      <FormControl>
-                        <RadioGroupItem 
-                          value={roleKey} 
-                          id={`role-${roleKey.toLowerCase()}`} 
-                          className="border-primary-foreground/50 text-primary-foreground data-[state=checked]:border-primary-foreground data-[state=checked]:text-primary-foreground"
-                        />
-                      </FormControl>
-                      <Label htmlFor={`role-${roleKey.toLowerCase()}`} className="font-normal cursor-pointer">
-                        {USER_ROLES[roleKey]}
-                      </Label>
-                    </FormItem>
-                  ))}
-                </RadioGroup>
               </FormControl>
               <FormMessage />
             </FormItem>

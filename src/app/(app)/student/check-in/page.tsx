@@ -11,7 +11,7 @@ import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'; 
 import PageHeader from '@/components/shared/page-header';
-import { createCheckInForStudent, getCheckInsByStudentId, initializeDefaultCheckInsIfNeeded } from '@/lib/services/checkInService';
+import { createCheckInForStudent, getCheckInsByStudentId } from '@/lib/services/checkInService';
 import type { CheckInCreatePayload } from '@/lib/services/checkInService'; 
 import { useRouter } from 'next/navigation';
 
@@ -41,7 +41,6 @@ export default function CheckInPage() {
 
   const loadCheckinFromStorage = React.useCallback(async () => {
     setIsLoading(true);
-    await initializeDefaultCheckInsIfNeeded(); 
     const studentId = typeof window !== "undefined" ? localStorage.getItem('userEmail') || 'unknown_student' : 'unknown_student';
     const todayCheckIns = (await getCheckInsByStudentId(studentId)).filter(
         ci => format(parseISO(ci.check_in_timestamp), 'yyyy-MM-dd') === getTodayDateString()

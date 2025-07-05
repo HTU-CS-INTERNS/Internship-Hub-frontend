@@ -3,105 +3,107 @@
 
 import type { InternshipDetails, HODApprovalQueueItem } from '@/types';
 import { format } from 'date-fns';
-
-const HOD_QUEUE_STORAGE_KEY = 'hodCompanyApprovalQueue_v2';
-const STUDENT_INTERNSHIP_DETAILS_PREFIX = 'userInternshipDetails_'; // Assuming studentId is email for prototype
-
-// --- Helper Functions for Mock Service ---
-
-async function getQueue(): Promise<HODApprovalQueueItem[]> {
-  await new Promise(resolve => setTimeout(resolve, 200)); // Simulate network delay
-  const queueRaw = typeof window !== "undefined" ? localStorage.getItem(HOD_QUEUE_STORAGE_KEY) : null;
-  return queueRaw ? JSON.parse(queueRaw) : [];
-}
-
-async function saveQueue(queue: HODApprovalQueueItem[]): Promise<void> {
-  await new Promise(resolve => setTimeout(resolve, 100)); // Simulate network delay
-  if (typeof window !== "undefined") {
-    localStorage.setItem(HOD_QUEUE_STORAGE_KEY, JSON.stringify(queue));
-  }
-}
-
-async function getStudentInternshipDetails(studentId: string): Promise<InternshipDetails | null> {
-  await new Promise(resolve => setTimeout(resolve, 150));
-  const key = `${STUDENT_INTERNSHIP_DETAILS_PREFIX}${studentId}`;
-  const detailsRaw = typeof window !== "undefined" ? localStorage.getItem(key) : null;
-  return detailsRaw ? JSON.parse(detailsRaw) : null;
-}
-
-async function saveStudentInternshipDetails(studentId: string, details: InternshipDetails): Promise<void> {
-  await new Promise(resolve => setTimeout(resolve, 100));
-  const key = `${STUDENT_INTERNSHIP_DETAILS_PREFIX}${studentId}`;
-  if (typeof window !== "undefined") {
-    localStorage.setItem(key, JSON.stringify(details));
-  }
-}
-
-// --- Exported Mock Service Functions ---
+import { apiClient } from '../api-client';
 
 export async function submitPlacementForApproval(
-  details: InternshipDetails, // This is the full details from the form
+  details: InternshipDetails,
   studentId: string,
   studentName: string
 ): Promise<void> {
-  const queue = await getQueue();
-  
-  // Remove any existing pending approval for this student to avoid duplicates
-  const updatedQueue = queue.filter(item => !(item.studentId === studentId && item.status === 'PENDING_APPROVAL'));
+  try {
+    const payload = {
+      company_name: details.companyName,
+      supervisor_name: details.supervisorName,
+      supervisor_email: details.supervisorEmail,
+      start_date: details.startDate,
+      end_date: details.endDate,
+      location: details.location,
+      status: 'PENDING_APPROVAL',
+    };
 
-  const newItem: HODApprovalQueueItem = {
-    studentId: studentId,
-    studentName: studentName,
-    companyName: details.companyName,
-    supervisorName: details.supervisorName,
-    supervisorEmail: details.supervisorEmail,
-    submissionDate: new Date().toISOString(),
-    status: 'PENDING_APPROVAL',
-  };
-  updatedQueue.push(newItem);
-  await saveQueue(updatedQueue);
-
-  // Also save the full internship details for the student (as the form did previously)
-  // The status is 'PENDING_APPROVAL'
-  await saveStudentInternshipDetails(studentId, {
-    ...details,
-    status: 'PENDING_APPROVAL',
-  });
+    await apiClient.createInternship(payload);
+  } catch (error) {
+    console.error('Error submitting placement for approval:', error);
+    throw error;
+  }
 }
 
 export async function getPendingPlacements(): Promise<HODApprovalQueueItem[]> {
-  const queue = await getQueue();
-  return queue.filter(item => item.status === 'PENDING_APPROVAL');
+  try {
+    const response = await apiClient.getInternships();
+    
+    // Filter for pending placements and map to HODApprovalQueueItem format
+    return response
+      .filter((internship: any) => internship.status === 'PENDING_APPROVAL')
+      .map((internship: any) => ({
+        studentId: internship.student_id?.toString() || '',
+        studentName: `${internship.students?.users?.first_name || ''} ${internship.students?.users?.last_name || ''}`.trim(),
+        companyName: internship.companies?.name || '',
+        supervisorName: internship.company_supervisors?.users?.first_name 
+          ? `${internship.company_supervisors.users.first_name} ${internship.company_supervisors.users.last_name}`.trim()
+          : '',
+        supervisorEmail: internship.company_supervisors?.users?.email || '',
+        submissionDate: internship.created_at || new Date().toISOString(),
+        status: 'PENDING_APPROVAL' as const,
+      }));
+  } catch (error) {
+    console.error('Error fetching pending placements:', error);
+    return [];
+  }
 }
 
 export async function approvePlacement(studentId: string): Promise<void> {
-  let queue = await getQueue();
-  queue = queue.filter(item => !(item.studentId === studentId && item.status === 'PENDING_APPROVAL'));
-  await saveQueue(queue);
+  try {
+    // First, find the internship for this student
+    const internships = await apiClient.getInternships();
+    const internship = internships.find((i: any) => 
+      i.student_id?.toString() === studentId && i.status === 'PENDING_APPROVAL'
+    );
 
-  const details = await getStudentInternshipDetails(studentId);
-  if (details) {
-    details.status = 'APPROVED';
-    details.hodComments = `Approved on ${format(new Date(), 'PPP')}`;
-    details.rejectionReason = undefined;
-    await saveStudentInternshipDetails(studentId, details);
+    if (!internship) {
+      throw new Error('Internship not found for approval');
+    }
+
+    await apiClient.request(`api/internships/${internship.id}`, {
+      method: 'PUT',
+      body: {
+        status: 'APPROVED',
+        hod_comments: `Approved on ${format(new Date(), 'PPP')}`,
+        approval_date: new Date().toISOString(),
+      },
+    });
+
+    console.log(`Placement approved for student ${studentId}. Supervisor would be notified.`);
+  } catch (error) {
+    console.error('Error approving placement:', error);
+    throw error;
   }
-  // Simulate notifying supervisor - in real backend, this would send an email.
-  console.log(`Mock Service: Placement approved for ${studentId}. Supervisor would be notified.`);
 }
 
 export async function rejectPlacement(studentId: string, reason: string): Promise<void> {
-  let queue = await getQueue();
-  queue = queue.filter(item => !(item.studentId === studentId && item.status === 'PENDING_APPROVAL'));
-  await saveQueue(queue);
+  try {
+    // First, find the internship for this student
+    const internships = await apiClient.getInternships();
+    const internship = internships.find((i: any) => 
+      i.student_id?.toString() === studentId && i.status === 'PENDING_APPROVAL'
+    );
 
-  const details = await getStudentInternshipDetails(studentId);
-  if (details) {
-    details.status = 'REJECTED';
-    details.rejectionReason = reason;
-    details.hodComments = `Rejected on ${format(new Date(), 'PPP')}. Reason: ${reason}`;
-    await saveStudentInternshipDetails(studentId, details);
+    if (!internship) {
+      throw new Error('Internship not found for rejection');
+    }
+
+    await apiClient.request(`api/internships/${internship.id}`, {
+      method: 'PUT',
+      body: {
+        status: 'REJECTED',
+        rejection_reason: reason,
+        hod_comments: `Rejected on ${format(new Date(), 'PPP')}: ${reason}`,
+      },
+    });
+
+    console.log(`Placement rejected for student ${studentId}. Student would be notified.`);
+  } catch (error) {
+    console.error('Error rejecting placement:', error);
+    throw error;
   }
-   // Simulate notifying student
-  console.log(`Mock Service: Placement rejected for ${studentId}. Reason: ${reason}. Student would be notified.`);
 }

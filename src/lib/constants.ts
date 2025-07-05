@@ -1,4 +1,3 @@
-
 import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard,
@@ -41,12 +40,18 @@ export interface NavItem {
   mobile?: boolean;
 }
 
-export const USER_ROLES: Record<UserRole, string> = {
+export const USER_ROLES: Record<string, string> = {
   STUDENT: 'Student',
   LECTURER: 'Lecturer',
   SUPERVISOR: 'Industrial Supervisor',
   HOD: 'Head of Department',
   ADMIN: 'Administrator',
+  // Backend uses lowercase roles
+  student: 'Student',
+  lecturer: 'Lecturer',
+  company_supervisor: 'Industrial Supervisor',
+  hod: 'Head of Department',
+  admin: 'Administrator',
 };
 
 export const NAV_LINKS: NavItem[] = [
@@ -103,6 +108,7 @@ export const NAV_LINKS: NavItem[] = [
 
   // Admin Section
   { href: '/admin/dashboard', label: 'Admin Dashboard', icon: School, roles: ['ADMIN'], section: "Administration" },
+  { href: '/admin/student-management', label: 'Student Management', icon: GraduationCap, roles: ['ADMIN'], section: "Administration" },
   { href: '/admin/university-structure', label: 'University Structure', icon: Landmark, roles: ['ADMIN'], section: "Administration" },
   { href: '/admin/user-management', label: 'User Management', icon: UserCog, roles: ['ADMIN'], section: "Administration" },
   { href: '/admin/settings', label: 'System Settings', icon: Settings, roles: ['ADMIN'], section: "Administration" },
@@ -113,25 +119,12 @@ export const BOTTOM_NAV_LINKS: NavItem[] = [
     { href: '/settings', label: 'Settings', icon: Settings, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD', 'ADMIN'], section: "Settings" },
 ];
 
-export const FACULTIES: AppFaculty[] = [
-  { id: 'F001', name: 'Faculty of Engineering' },
-  { id: 'F002', name: 'Faculty of Business and Management' },
-  { id: 'F003', name: 'Faculty of Information Technology' },
-  { id: 'F004', name: 'Faculty of Arts and Social Sciences' },
-  { id: 'F_MOCK', name: 'Faculty of Mock Data'},
-];
+// NOTE: FACULTIES and DEPARTMENTS are now fetched from API
+// Use getFaculties() and getDepartments() from api-client instead
 
-export const DEPARTMENTS: AppDepartment[] = [
-  { id: 'D001', name: 'Mechanical Engineering', facultyId: 'F001' },
-  { id: 'D002', name: 'Civil Engineering', facultyId: 'F001' },
-  { id: 'D003', name: 'Marketing', facultyId: 'F002' },
-  { id: 'D004', name: 'Finance', facultyId: 'F002' },
-  { id: 'D005', name: 'Software Engineering', facultyId: 'F003' },
-  { id: 'D006', name: 'Cybersecurity', facultyId: 'F003' },
-  { id: 'D007', name: 'Psychology', facultyId: 'F004' },
-  { id: 'D008', name: 'Sociology', facultyId: 'F004' },
-  { id: 'D_MOCK', name: 'Department of Mock Data', facultyId: 'F_MOCK' },
-];
+// Temporary compatibility exports - components should migrate to hooks
+export const FACULTIES: AppFaculty[] = [];
+export const DEPARTMENTS: AppDepartment[] = [];
 
 export const DUMMY_STUDENTS_DATA = [
   { id: 'std1', name: 'Alice Wonderland', email: 'alice@example.com', department: 'Software Engineering', faculty: 'Faculty of Engineering', avatarUrl: 'https://placehold.co/150x150.png' },

@@ -13,7 +13,7 @@ import type { DailyTask } from '@/types';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { format, parseISO } from 'date-fns';
-import { getTasksByStudent, initializeDefaultTasksIfNeeded } from '@/lib/services/task.service'; // Import service
+import { getTasksForStudent } from '@/lib/services/task.service'; // Import service
 
 const statusColors: Record<DailyTask['status'], string> = {
   PENDING: 'bg-[hsl(var(--accent)/0.1)] text-[hsl(var(--accent))] border-[hsl(var(--accent)/0.2)]',
@@ -46,8 +46,7 @@ export default function TasksPage() {
     async function loadTasks() {
       if (!studentId) return;
       setIsLoading(true);
-      await initializeDefaultTasksIfNeeded(); // Ensure some data exists for demo
-      const tasksFromService = await getTasksByStudent(studentId);
+      const tasksFromService = await getTasksForStudent(studentId);
       setAllTasks(tasksFromService);
       setFilteredTasks(tasksFromService.filter(task => statusFilter[task.status]));
       setIsLoading(false);

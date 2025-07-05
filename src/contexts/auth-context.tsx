@@ -48,7 +48,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       try {
+        console.log('🔍 Verifying user with token:', token ? 'Token exists' : 'No token');
         const userData = await api<UserProfileData>('/auth/me'); 
+        console.log('✅ User verification successful:', userData);
         if (userData) {
           setUser(userData);
           localStorage.setItem('user', JSON.stringify(userData));
@@ -59,7 +61,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             throw new Error("User not found for token");
         }
       } catch (error) {
-        console.error("Auth verification failed:", error);
+        console.error("❌ Auth verification failed:", error);
+        console.log('🔄 Redirecting to login...');
         handleLogout();
       } finally {
         setIsLoading(false);

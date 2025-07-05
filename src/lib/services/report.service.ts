@@ -3,154 +3,125 @@
 
 import type { DailyReport, AttachmentData } from '@/types';
 import { format } from 'date-fns';
-
-const REPORTS_STORAGE_KEY = 'internshipTrack_dailyReports_v2'; // Updated key for new structure
-
-const getCurrentStudentId = (): string => {
-  if (typeof window !== "undefined") {
-    return localStorage.getItem('userEmail') || 'unknown_student';
-  }
-  return 'unknown_student';
-};
-
-async function getAllReportsFromStorage(): Promise<DailyReport[]> {
-  await new Promise(resolve => setTimeout(resolve, 50)); 
-  if (typeof window === "undefined") return [];
-  const reportsRaw = localStorage.getItem(REPORTS_STORAGE_KEY);
-  return reportsRaw ? JSON.parse(reportsRaw) : [];
-}
-
-async function saveAllReportsToStorage(reports: DailyReport[]): Promise<void> {
-  await new Promise(resolve => setTimeout(resolve, 50)); 
-  if (typeof window === "undefined") return;
-  localStorage.setItem(REPORTS_STORAGE_KEY, JSON.stringify(reports));
-}
+import { apiClient } from '../api-client';
 
 export async function createReport(
   reportData: Omit<DailyReport, 'id' | 'studentId' | 'status' | 'date'> & { 
     date: string; // Expecting formatted string 'yyyy-MM-dd'
-    attachments: AttachmentData[]; 
+    attachments?: AttachmentData[]; 
     securePhotoUrl?: string; // Data URI or undefined
   }
 ): Promise<DailyReport> {
-  const allReports = await getAllReportsFromStorage();
-  const studentId = getCurrentStudentId();
-  const newReport: DailyReport = {
-    id: `report_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-    studentId,
-    status: 'PENDING', 
-    date: reportData.date,
-    title: reportData.title,
-    description: reportData.description,
-    challengesFaced: reportData.challengesFaced,
-    learningObjectives: reportData.learningObjectives,
-    outcomes: reportData.outcomes,
-    attachments: reportData.attachments, // Now expects AttachmentData[]
-    securePhotoUrl: reportData.securePhotoUrl,
-  };
-  allReports.push(newReport);
-  await saveAllReportsToStorage(allReports);
-  return newReport;
-}
-
-export async function getReportsByStudent(studentId: string): Promise<DailyReport[]> {
-  const allReports = await getAllReportsFromStorage();
-  return allReports.filter(report => report.studentId === studentId).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-}
-
-export async function getReportById(reportId: string): Promise<DailyReport | null> {
-  const allReports = await getAllReportsFromStorage();
-  const report = allReports.find(r => r.id === reportId) || null;
-  return report;
-}
-
-export async function updateReport(
-    reportId: string, 
-    updates: Partial<Omit<DailyReport, 'id' | 'studentId' | 'status' | 'date'>> & { 
-      date?: string; 
-      attachments?: AttachmentData[];
-      securePhotoUrl?: string | null; // Allow null to clear
+  try {
+    // First, get the user's internship ID
+    const internship = await apiClient.getMyInternship();
+    if (!internship) {
+      throw new Error('No active internship found for current user');
     }
-): Promise<DailyReport | null> {
-  const allReports = await getAllReportsFromStorage();
-  const reportIndex = allReports.findIndex(r => r.id === reportId);
-  if (reportIndex === -1) {
-    return null;
-  }
-  
-  const updatedReportData = { ...allReports[reportIndex] };
 
-  if (updates.date) updatedReportData.date = updates.date; // Expecting formatted string
-  if (updates.title !== undefined) updatedReportData.title = updates.title;
-  if (updates.description !== undefined) updatedReportData.description = updates.description;
-  if (updates.challengesFaced !== undefined) updatedReportData.challengesFaced = updates.challengesFaced;
-  if (updates.learningObjectives !== undefined) updatedReportData.learningObjectives = updates.learningObjectives;
-  if (updates.outcomes !== undefined) updatedReportData.outcomes = updates.outcomes;
-  
-  if (updates.attachments !== undefined) {
-    updatedReportData.attachments = updates.attachments;
-  }
-  
-  if (updates.securePhotoUrl !== undefined) { // Check for undefined to distinguish from null
-    updatedReportData.securePhotoUrl = updates.securePhotoUrl === null ? undefined : updates.securePhotoUrl;
-  }
+    const payload = {
+      report_date: reportData.date,
+      summary_of_work: reportData.description,
+      // Note: The backend schema doesn't have separate fields for title, challengesFaced, etc.
+      // We'll need to format them into the summary_of_work field or extend the backend
+    };
 
-  allReports[reportIndex] = updatedReportData;
-  await saveAllReportsToStorage(allReports);
-  return allReports[reportIndex];
+    const response = await apiClient.createDailyReport(internship.id, payload);
+    
+    // Map backend response to frontend format
+    return {
+      id: response.id.toString(),
+      studentId: internship.student_id?.toString() || '',
+      description: response.summary_of_work,
+      date: response.report_date,
+      status: response.status === 'pending_review' ? 'PENDING' : response.status?.toUpperCase() || 'PENDING',
+      outcomes: '', // Backend doesn't have this field
+      learningObjectives: '', // Backend doesn't have this field
+      title: reportData.title,
+      challengesFaced: reportData.challengesFaced,
+      attachments: reportData.attachments || [],
+      securePhotoUrl: reportData.securePhotoUrl,
+    };
+  } catch (error) {
+    console.error('Error creating report:', error);
+    throw error;
+  }
+}
+
+export async function getReportsForStudent(studentId?: string): Promise<DailyReport[]> {
+  try {
+    // Get the user's internship ID
+    const internship = await apiClient.getMyInternship();
+    if (!internship) {
+      console.warn('No active internship found for current user');
+      return [];
+    }
+
+    const response = await apiClient.getDailyReports(internship.id);
+    
+    // Map backend response to frontend format
+    return response.map((report: any) => ({
+      id: report.id.toString(),
+      studentId: internship.student_id?.toString() || '',
+      description: report.summary_of_work,
+      date: report.report_date,
+      status: report.status === 'pending_review' ? 'PENDING' : report.status?.toUpperCase() || 'PENDING',
+      outcomes: '', // Backend doesn't have this field
+      learningObjectives: '', // Backend doesn't have this field
+      title: undefined, // Backend doesn't have this field
+      challengesFaced: undefined, // Backend doesn't have this field
+      attachments: [], // Backend uses report_attachments table
+      securePhotoUrl: undefined, // Backend doesn't have this field
+    }));
+  } catch (error) {
+    console.error('Error fetching reports:', error);
+    return [];
+  }
 }
 
 export async function updateReportStatus(
   reportId: string,
-  newStatus: DailyReport['status'],
-  comments?: string,
-  commenterRole?: 'supervisor' | 'lecturer'
-): Promise<DailyReport | null> {
-  const allReports = await getAllReportsFromStorage();
-  const reportIndex = allReports.findIndex(r => r.id === reportId);
-
-  if (reportIndex === -1) {
-    console.error(`Report with ID ${reportId} not found for status update.`);
-    return null;
-  }
-
-  allReports[reportIndex].status = newStatus;
-  if (comments) {
-    if (commenterRole === 'supervisor') {
-      allReports[reportIndex].supervisorComments = comments;
-    } else if (commenterRole === 'lecturer') {
-      (allReports[reportIndex] as any).lecturerComments = comments; 
+  status: 'PENDING' | 'APPROVED' | 'REJECTED',
+  comments?: string
+): Promise<void> {
+  try {
+    // Get the user's internship ID
+    const internship = await apiClient.getMyInternship();
+    if (!internship) {
+      throw new Error('No active internship found for current user');
     }
-  }
 
-  await saveAllReportsToStorage(allReports);
-  return allReports[reportIndex];
+    // Map frontend status to backend status
+    const backendStatus = status === 'PENDING' ? 'pending_review' : status.toLowerCase();
+    
+    await apiClient.updateDailyReport(internship.id, parseInt(reportId), { 
+      status: backendStatus,
+      company_supervisor_feedback: comments 
+    });
+  } catch (error) {
+    console.error('Error updating report status:', error);
+    throw error;
+  }
 }
 
-export async function initializeDefaultReportsIfNeeded() {
-  if (typeof window !== "undefined") {
-    const reportsRaw = localStorage.getItem(REPORTS_STORAGE_KEY);
-    if (!reportsRaw || JSON.parse(reportsRaw).length === 0) {
-      const studentId = getCurrentStudentId();
-      const sampleDataUri = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
-      const defaultReports: DailyReport[] = [
-         { 
-            id: 'report1_default', 
-            date: format(new Date(new Date().setDate(new Date().getDate() - 3)), 'yyyy-MM-dd'), 
-            title: 'Weekly Auth Module Summary',
-            description: 'Weekly summary of authentication module progress. Focused on JWT implementation and secure endpoint testing. Reviewed security protocols and updated documentation.', 
-            outcomes: 'Module 70% complete. Security review passed.', 
-            learningObjectives: 'Advanced JWT, security best practices, technical documentation.', 
-            studentId: studentId, 
-            status: 'APPROVED',
-            challengesFaced: "Minor issues with token refresh logic, resolved by adjusting expiration strategy.",
-            attachments: [{ name: "auth_architecture.pdf", type: "application/pdf", size: 10240, dataUri: sampleDataUri }],
-            securePhotoUrl: sampleDataUri,
-            supervisorComments: "Good progress this week. Keep it up!"
-          },
-      ];
-      await saveAllReportsToStorage(defaultReports);
-      console.log("Initialized default reports for student:", studentId);
-    }
+export async function getReportById(reportId: string): Promise<DailyReport | null> {
+  try {
+    const reports = await getReportsForStudent();
+    return reports.find(report => report.id === reportId) || null;
+  } catch (error) {
+    console.error('Error fetching report by ID:', error);
+    return null;
+  }
+}
+
+export async function getReportsForSupervisor(): Promise<DailyReport[]> {
+  try {
+    // For supervisors, we'll need to get reports from all their assigned internships
+    // This might require a different endpoint or getting all internships first
+    console.warn('getReportsForSupervisor not fully implemented - needs backend endpoint for supervisor reports');
+    return [];
+  } catch (error) {
+    console.error('Error fetching reports for supervisor:', error);
+    return [];
   }
 }

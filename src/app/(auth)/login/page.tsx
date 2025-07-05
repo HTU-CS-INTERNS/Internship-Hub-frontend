@@ -28,17 +28,25 @@ export default function LoginPage() {
               Welcome Back!
             </h1>
             <p className="text-sm sm:text-base font-body opacity-90 mt-1.5">
-              Enter your credentials to access your InternHub account.
+              Enter your email and password to access your InternHub account.
             </p>
           </div>
           
           <LoginForm />
           
-          <div className="mt-auto pt-6 text-center text-sm">
-            <span className="text-primary-foreground/80">Don&apos;t have an account? </span>
-            <Button variant="link" asChild className="p-0 h-auto text-primary-foreground hover:text-primary-foreground/90 underline">
-              <Link href="/welcome/get-started">Sign up</Link>
-            </Button>
+          <div className="mt-auto pt-6 text-center text-sm space-y-2">
+            <div>
+              <span className="text-primary-foreground/80">Don&apos;t have an account? </span>
+              <Button variant="link" asChild className="p-0 h-auto text-primary-foreground hover:text-primary-foreground/90 underline">
+                <Link href="/welcome/get-started">Sign up</Link>
+              </Button>
+            </div>
+            <div>
+              <span className="text-primary-foreground/80">Student verification: </span>
+              <Button variant="link" asChild className="p-0 h-auto text-primary-foreground hover:text-primary-foreground/90 underline">
+                <Link href="/student-verification">Verify your account</Link>
+              </Button>
+            </div>
             <p className="text-xs text-primary-foreground/70 mt-6">&copy; {new Date().getFullYear()} InternHub - HTU</p>
           </div>
         </div>

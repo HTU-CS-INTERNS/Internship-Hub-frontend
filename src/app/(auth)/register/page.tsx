@@ -38,6 +38,13 @@ export default function RegisterPage() {
             <p className="text-sm sm:text-base opacity-90 mt-1.5">
               Start your internship journey with InternHub.
             </p>
+            
+            {/* Student notice */}
+            <div className="mt-4 p-3 bg-primary-foreground/10 rounded-lg border border-primary-foreground/20">
+              <p className="text-xs text-primary-foreground/90">
+                <strong>Students:</strong> If you're a student, use our <Link href="/student-verification" className="underline hover:text-primary-foreground">verification process</Link> instead. Contact your admin if you're not yet added to the system.
+              </p>
+            </div>
           </div>
           
           <RegistrationForm />
