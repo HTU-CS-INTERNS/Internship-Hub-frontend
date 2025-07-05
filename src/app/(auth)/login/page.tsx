@@ -36,9 +36,9 @@ export default function LoginPage() {
           
           <div className="mt-auto pt-6 text-center text-sm space-y-2">
             <div>
-              <span className="text-primary-foreground/80">Don&apos;t have an account? </span>
+              <span className="text-primary-foreground/80">New to InternHub? </span>
               <Button variant="link" asChild className="p-0 h-auto text-primary-foreground hover:text-primary-foreground/90 underline">
-                <Link href="/welcome/get-started">Sign up</Link>
+                <Link href="/welcome/get-started">Discover the features</Link>
               </Button>
             </div>
             <div>
