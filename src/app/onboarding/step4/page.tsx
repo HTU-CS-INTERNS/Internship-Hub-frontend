@@ -1,27 +1,58 @@
 'use client';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, ArrowLeft, ShieldCheck } from 'lucide-react';
+import { ArrowRight, ArrowLeft, ShieldCheck, MapPin, Camera, Info } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 
 const OnboardingStepDot = ({ isActive }: { isActive: boolean }) => (
   <div className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${isActive ? 'bg-primary scale-110' : 'bg-primary/30'}`} />
 );
+
+const CheckinCard = ({ icon: Icon, title, description, iconColor }: { icon: React.ElementType, title: string, description: string, iconColor: string}) => (
+    <div className="bg-white/80 dark:bg-gray-700/80 p-3 rounded-lg shadow-sm backdrop-blur-sm flex items-center">
+        <Icon className={`h-6 w-6 mr-3 ${iconColor}`}/>
+        <div>
+            <p className="font-semibold text-sm text-gray-800 dark:text-gray-200">{title}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{description}</p>
+        </div>
+    </div>
+);
+
 
 export default function OnboardingStep4Page() {
   return (
     <main className="relative flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-sky-50 via-white to-white p-4 sm:p-6 md:p-8">
       <Card className="w-full max-w-md shadow-2xl rounded-2xl overflow-hidden animate-in fade-in-0 zoom-in-95 duration-500">
         <CardHeader className="p-0">
-            <div className="w-full h-48 bg-gray-100 dark:bg-gray-800 p-4 rounded-t-xl overflow-hidden relative flex flex-col items-center justify-center">
-              <div className="text-center transform scale-75">
-                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                      <ShieldCheck className="text-green-600 w-8 h-8" />
-                  </div>
-                  <h4 className="font-bold text-lg text-gray-800 dark:text-gray-200">Checked-in Successfully!</h4>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Location: Innovatech HQ</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Time: 8:58 AM</p>
-              </div>
+            <div className="w-full h-56 bg-gray-100 dark:bg-gray-800 p-4 rounded-t-xl overflow-hidden relative flex flex-col items-center justify-center">
+              <Carousel className="w-full max-w-xs" opts={{ loop: true }}>
+                <CarouselContent>
+                    {/* Slide 1: GPS Check-in */}
+                    <CarouselItem>
+                        <div className="p-1 space-y-2">
+                            <h3 className="text-lg font-bold text-gray-700 dark:text-gray-300 text-center mb-3">GPS Verification</h3>
+                            <CheckinCard icon={MapPin} title="Geofence Check-in" description="Verify you're at your workplace instantly." iconColor="text-green-600"/>
+                        </div>
+                    </CarouselItem>
+                    {/* Slide 2: Manual Check-in */}
+                    <CarouselItem>
+                        <div className="p-1 space-y-2">
+                            <h3 className="text-lg font-bold text-gray-700 dark:text-gray-300 text-center mb-3">Manual Options</h3>
+                            <CheckinCard icon={Info} title="Provide Reason" description="Working remotely or GPS issues? Just let us know." iconColor="text-blue-600"/>
+                        </div>
+                    </CarouselItem>
+                     {/* Slide 3: Secure Photo */}
+                    <CarouselItem>
+                        <div className="p-1 space-y-2">
+                             <h3 className="text-lg font-bold text-gray-700 dark:text-gray-300 text-center mb-3">Photo Capture</h3>
+                            <CheckinCard icon={Camera} title="Secure Photo" description="Optionally add a photo of your setup for verification." iconColor="text-purple-600"/>
+                        </div>
+                    </CarouselItem>
+                </CarouselContent>
+                <CarouselPrevious className="left-[-1rem] bg-white/50 hover:bg-white"/>
+                <CarouselNext className="right-[-1rem] bg-white/50 hover:bg-white"/>
+              </Carousel>
           </div>
         </CardHeader>
         <CardContent className="p-6 text-center">

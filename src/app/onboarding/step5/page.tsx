@@ -1,11 +1,22 @@
 'use client';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Star } from 'lucide-react';
+import { ArrowLeft, Star, User, Briefcase, FileText } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+
 
 const OnboardingStepDot = ({ isActive }: { isActive: boolean }) => (
   <div className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${isActive ? 'bg-primary scale-110' : 'bg-primary/30'}`} />
+);
+
+const DetailRow = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: string }) => (
+    <div className="flex items-center text-xs text-gray-700 dark:text-gray-300">
+        <Icon className="h-4 w-4 mr-2 text-purple-600"/>
+        <span className="font-semibold text-gray-600 dark:text-gray-400">{label}:</span>
+        <span className="ml-1">{value}</span>
+    </div>
 );
 
 export default function OnboardingStep5Page() {
@@ -13,20 +24,42 @@ export default function OnboardingStep5Page() {
     <main className="relative flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-purple-50 via-white to-white p-4 sm:p-6 md:p-8">
       <Card className="w-full max-w-md shadow-2xl rounded-2xl overflow-hidden animate-in fade-in-0 zoom-in-95 duration-500">
         <CardHeader className="p-0">
-           <div className="w-full h-48 bg-gray-100 dark:bg-gray-800 p-4 rounded-t-xl overflow-hidden relative flex flex-col items-center justify-center">
-              <div className="w-full max-w-xs bg-white dark:bg-gray-700 rounded-lg shadow-md p-4 transform scale-75">
-                  <div className="flex items-center">
-                      <div className="w-12 h-12 bg-purple-200 rounded-full flex items-center justify-center font-bold text-purple-700 text-lg">AS</div>
-                      <div className="ml-3">
-                          <p className="font-bold text-gray-800 dark:text-gray-200">Alex Smith</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">alex.smith@htu.edu.gh</p>
-                      </div>
-                  </div>
-                  <div className="mt-3 text-xs space-y-1">
-                      <p><span className="font-semibold text-gray-600 dark:text-gray-300">Company:</span> Innovatech</p>
-                      <p><span className="font-semibold text-gray-600 dark:text-gray-300">Status:</span> Internship Approved</p>
-                  </div>
-              </div>
+           <div className="w-full h-56 bg-gray-100 dark:bg-gray-800 p-4 rounded-t-xl overflow-hidden relative flex flex-col items-center justify-center">
+             <Carousel className="w-full max-w-xs" opts={{ loop: true }}>
+                <CarouselContent>
+                    {/* Slide 1: Profile */}
+                    <CarouselItem>
+                        <div className="bg-white dark:bg-gray-700 rounded-lg shadow-md p-4">
+                            <div className="flex items-center mb-3">
+                                <Avatar className="h-12 w-12 border-2 border-purple-300">
+                                    <AvatarFallback className="bg-purple-200 text-purple-700">AS</AvatarFallback>
+                                </Avatar>
+                                <div className="ml-3">
+                                    <p className="font-bold text-gray-800 dark:text-gray-200">Alex Smith</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">alex.smith@htu.edu.gh</p>
+                                </div>
+                            </div>
+                            <div className="space-y-1">
+                                <DetailRow icon={User} label="Status" value="Internship Approved"/>
+                                <DetailRow icon={Briefcase} label="Company" value="Innovatech"/>
+                            </div>
+                        </div>
+                    </CarouselItem>
+                    {/* Slide 2: Evaluation */}
+                    <CarouselItem>
+                        <div className="bg-white dark:bg-gray-700 rounded-lg shadow-md p-4">
+                             <h3 className="text-lg font-bold text-gray-700 dark:text-gray-300 text-center mb-2">Final Evaluation</h3>
+                             <div className="space-y-1">
+                                <DetailRow icon={Star} label="Tech Skills" value="4/5"/>
+                                <DetailRow icon={Star} label="Communication" value="5/5"/>
+                                <DetailRow icon={Star} label="Professionalism" value="5/5"/>
+                             </div>
+                        </div>
+                    </CarouselItem>
+                </CarouselContent>
+                <CarouselPrevious className="left-[-1rem] bg-white/50 hover:bg-white"/>
+                <CarouselNext className="right-[-1rem] bg-white/50 hover:bg-white"/>
+              </Carousel>
           </div>
         </CardHeader>
         <CardContent className="p-6 text-center">

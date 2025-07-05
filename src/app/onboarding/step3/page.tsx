@@ -1,11 +1,21 @@
 'use client';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, ArrowLeft, Users } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Users, MessageSquare } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 
 const OnboardingStepDot = ({ isActive }: { isActive: boolean }) => (
   <div className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${isActive ? 'bg-primary scale-110' : 'bg-primary/30'}`} />
+);
+
+const MessageBubble = ({ from, text, align, color, bg }: { from: string, text: string, align: 'start' | 'end', color: string, bg: string}) => (
+    <div className={`flex justify-${align}`}>
+        <div className={`${bg} ${color} p-2 rounded-lg shadow-sm max-w-[80%]`}>
+            <p className="text-xs font-bold">{from}</p>
+            <p className="text-sm">{text}</p>
+        </div>
+    </div>
 );
 
 export default function OnboardingStep3Page() {
@@ -13,20 +23,39 @@ export default function OnboardingStep3Page() {
     <main className="relative flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-green-50 via-white to-white p-4 sm:p-6 md:p-8">
       <Card className="w-full max-w-md shadow-2xl rounded-2xl overflow-hidden animate-in fade-in-0 zoom-in-95 duration-500">
         <CardHeader className="p-0">
-           <div className="w-full h-48 bg-gray-100 dark:bg-gray-800 p-4 rounded-t-xl overflow-hidden relative flex flex-col items-center justify-center">
-              <div className="w-full max-w-sm space-y-2 transform scale-75">
-                  <div className="flex justify-start">
-                      <div className="bg-white dark:bg-gray-700 p-2 rounded-lg shadow-sm max-w-[70%]">
-                          <p className="text-xs font-bold text-blue-500">Dr. Vance</p>
-                          <p className="text-sm text-gray-800 dark:text-gray-200">Great job on the last report. Keep up the good work!</p>
-                      </div>
-                  </div>
-                  <div className="flex justify-end">
-                      <div className="bg-blue-500 text-white p-2 rounded-lg shadow-sm max-w-[70%]">
-                          <p className="text-sm">Thank you, Dr. Vance! I appreciate the feedback.</p>
-                      </div>
-                  </div>
-              </div>
+           <div className="w-full h-56 bg-gray-100 dark:bg-gray-800 p-4 rounded-t-xl overflow-hidden relative flex flex-col items-center justify-center">
+             <Carousel className="w-full max-w-xs" opts={{ loop: true }}>
+                <CarouselContent>
+                    {/* Slide 1: Chat with Supervisor */}
+                    <CarouselItem>
+                        <div className="p-1 space-y-2">
+                            <h3 className="text-lg font-bold text-gray-700 dark:text-gray-300 text-center mb-1">Message Supervisor</h3>
+                            <MessageBubble from="Mr. Smith (Supervisor)" text="Great work on the latest task. Could you push it to the dev branch?" align="start" color="text-gray-800 dark:text-gray-200" bg="bg-white dark:bg-gray-700"/>
+                            <MessageBubble from="You" text="Will do! Pushing it now." align="end" color="text-white" bg="bg-blue-500"/>
+                        </div>
+                    </CarouselItem>
+                     {/* Slide 2: Contact Lecturer */}
+                    <CarouselItem>
+                        <div className="p-1 space-y-2">
+                             <h3 className="text-lg font-bold text-gray-700 dark:text-gray-300 text-center mb-1">Contact Lecturer</h3>
+                             <MessageBubble from="You" text="Dr. Vance, I have a question about the report format." align="end" color="text-white" bg="bg-blue-500"/>
+                             <MessageBubble from="Dr. Vance" text="Of course, let me know how I can help." align="start" color="text-gray-800 dark:text-gray-200" bg="bg-white dark:bg-gray-700"/>
+                        </div>
+                    </CarouselItem>
+                    {/* Slide 3: Get Feedback */}
+                    <CarouselItem>
+                        <div className="p-1 space-y-2">
+                             <h3 className="text-lg font-bold text-gray-700 dark:text-gray-300 text-center mb-1">Get Feedback</h3>
+                              <div className="bg-white dark:bg-gray-700 p-3 rounded-lg shadow">
+                                <p className="text-xs font-bold text-gray-500">Feedback on "Weekly Report #2"</p>
+                                <p className="text-sm text-gray-800 dark:text-gray-200 italic">"Good detail, but please elaborate more on the challenges faced."</p>
+                              </div>
+                        </div>
+                    </CarouselItem>
+                </CarouselContent>
+                <CarouselPrevious className="left-[-1rem] bg-white/50 hover:bg-white"/>
+                <CarouselNext className="right-[-1rem] bg-white/50 hover:bg-white"/>
+              </Carousel>
           </div>
         </CardHeader>
         <CardContent className="p-6 text-center">
