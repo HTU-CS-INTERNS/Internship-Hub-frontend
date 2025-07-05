@@ -1,78 +1,88 @@
 'use client';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, ArrowLeft, Users, MessageSquare } from 'lucide-react';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import { ArrowRight, ArrowLeft, Users, Send } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const OnboardingStepDot = ({ isActive }: { isActive: boolean }) => (
   <div className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${isActive ? 'bg-primary scale-110' : 'bg-primary/30'}`} />
 );
 
-const MessageBubble = ({ from, text, align, color, bg }: { from: string, text: string, align: 'start' | 'end', color: string, bg: string}) => (
-    <div className={`flex justify-${align}`}>
-        <div className={`${bg} ${color} p-2 rounded-lg shadow-sm max-w-[80%]`}>
-            <p className="text-xs font-bold">{from}</p>
-            <p className="text-sm">{text}</p>
+const MessageBubble = ({ from, text, align, avatar }: { from: string, text: string, align: 'start' | 'end', avatar: React.ReactNode}) => (
+    <div className={`flex items-end gap-2 ${align === 'end' ? 'flex-row-reverse' : ''}`}>
+        {avatar}
+        <div className={`p-2 rounded-lg shadow-sm max-w-[70%] text-xs sm:text-sm ${align === 'end' ? 'bg-blue-500 text-white rounded-br-none' : 'bg-slate-200 text-slate-800 rounded-bl-none'}`}>
+            <p className="font-bold mb-0.5">{from}</p>
+            <p>{text}</p>
         </div>
     </div>
 );
 
+const ContactItem = ({ name, role, avatarUrl, active }: { name: string, role: string, avatarUrl: string, active?: boolean }) => (
+    <div className={`flex items-center p-2 rounded-md ${active ? 'bg-blue-100' : ''}`}>
+        <Avatar className="h-8 w-8 mr-2">
+            <AvatarImage src={avatarUrl} />
+            <AvatarFallback>{name.charAt(0)}</AvatarFallback>
+        </Avatar>
+        <div>
+            <p className="text-xs font-semibold text-slate-800">{name}</p>
+            <p className="text-xs text-slate-500">{role}</p>
+        </div>
+    </div>
+)
+
 export default function OnboardingStep3Page() {
   return (
-    <main className="relative flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-green-50 via-white to-white p-4 sm:p-6 md:p-8">
-      <Card className="w-full max-w-md shadow-2xl rounded-2xl overflow-hidden animate-in fade-in-0 zoom-in-95 duration-500">
-        <CardHeader className="p-0">
-           <div className="w-full h-56 bg-gray-100 dark:bg-gray-800 p-4 rounded-t-xl overflow-hidden relative flex flex-col items-center justify-center">
-             <Carousel className="w-full max-w-xs" opts={{ loop: true }}>
-                <CarouselContent>
-                    {/* Slide 1: Chat with Supervisor */}
-                    <CarouselItem>
-                        <div className="p-1 space-y-2">
-                            <h3 className="text-lg font-bold text-gray-700 dark:text-gray-300 text-center mb-1">Message Supervisor</h3>
-                            <MessageBubble from="Mr. Smith (Supervisor)" text="Great work on the latest task. Could you push it to the dev branch?" align="start" color="text-gray-800 dark:text-gray-200" bg="bg-white dark:bg-gray-700"/>
-                            <MessageBubble from="You" text="Will do! Pushing it now." align="end" color="text-white" bg="bg-blue-500"/>
-                        </div>
-                    </CarouselItem>
-                     {/* Slide 2: Contact Lecturer */}
-                    <CarouselItem>
-                        <div className="p-1 space-y-2">
-                             <h3 className="text-lg font-bold text-gray-700 dark:text-gray-300 text-center mb-1">Contact Lecturer</h3>
-                             <MessageBubble from="You" text="Dr. Vance, I have a question about the report format." align="end" color="text-white" bg="bg-blue-500"/>
-                             <MessageBubble from="Dr. Vance" text="Of course, let me know how I can help." align="start" color="text-gray-800 dark:text-gray-200" bg="bg-white dark:bg-gray-700"/>
-                        </div>
-                    </CarouselItem>
-                    {/* Slide 3: Get Feedback */}
-                    <CarouselItem>
-                        <div className="p-1 space-y-2">
-                             <h3 className="text-lg font-bold text-gray-700 dark:text-gray-300 text-center mb-1">Get Feedback</h3>
-                              <div className="bg-white dark:bg-gray-700 p-3 rounded-lg shadow">
-                                <p className="text-xs font-bold text-gray-500">Feedback on "Weekly Report #2"</p>
-                                <p className="text-sm text-gray-800 dark:text-gray-200 italic">"Good detail, but please elaborate more on the challenges faced."</p>
-                              </div>
-                        </div>
-                    </CarouselItem>
-                </CarouselContent>
-                <CarouselPrevious className="left-[-1rem] bg-white/50 hover:bg-white"/>
-                <CarouselNext className="right-[-1rem] bg-white/50 hover:bg-white"/>
-              </Carousel>
+    <main className="flex flex-col min-h-screen bg-slate-50 overflow-hidden">
+      {/* Header Info */}
+      <div className="p-4 sm:p-6 text-center bg-white border-b border-slate-200">
+        <div className="flex justify-center items-center mb-2">
+          <div className="p-3 bg-green-100 text-green-600 rounded-full">
+            <Users className="h-5 w-5" />
           </div>
-        </CardHeader>
-        <CardContent className="p-6 text-center">
-            <div className="flex justify-center items-center mb-4">
-              <div className="p-3 bg-green-100 text-green-600 rounded-full shadow-inner">
-                <Users className="h-6 w-6" />
+        </div>
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-800">
+          Stay Connected, Get Guided
+        </h1>
+        <p className="text-sm mt-1 text-slate-500 max-w-lg mx-auto">
+          Communicate directly with your company supervisor and university lecturer. Receive timely feedback and get the support you need.
+        </p>
+      </div>
+
+      {/* Demo UI */}
+      <div className="flex-1 w-full p-2 sm:p-4 overflow-hidden">
+          <div className="w-full h-full max-w-5xl mx-auto bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden transform scale-[0.85] sm:scale-[0.9] origin-top flex">
+              {/* Sidebar */}
+              <div className="w-1/3 border-r border-slate-200 bg-slate-50 p-2 space-y-1">
+                 <h3 className="text-xs font-semibold text-slate-500 px-2 mb-1">Contacts</h3>
+                 <ContactItem name="Mr. John Smith" role="Supervisor" avatarUrl="https://placehold.co/100x100.png" active />
+                 <ContactItem name="Dr. Elara Vance" role="Lecturer" avatarUrl="https://placehold.co/100x100.png" />
               </div>
-            </div>
-            <CardTitle className="text-2xl font-headline font-bold tracking-tight text-foreground">
-              Stay Connected, Get Guided
-            </CardTitle>
-            <CardDescription className="text-base font-body leading-relaxed mt-2 text-muted-foreground">
-              Communicate directly with your company supervisor and university lecturer. Receive timely feedback and get the support you need with InternHub.
-            </CardDescription>
-        </CardContent>
-        <CardFooter className="flex flex-col gap-4 p-6 bg-muted/50">
-            <div className="flex justify-center items-center space-x-2">
+
+              {/* Chat Window */}
+              <div className="w-2/3 flex flex-col">
+                  {/* Chat Header */}
+                  <div className="p-2 border-b border-slate-200 flex items-center">
+                      <p className="font-semibold text-sm text-slate-700">Mr. John Smith</p>
+                  </div>
+                  {/* Messages */}
+                  <div className="flex-1 p-3 space-y-3 overflow-y-auto">
+                    <MessageBubble from="Mr. Smith" text="Great work on the latest task. Could you push it to the dev branch?" align="start" avatar={<Avatar className="h-6 w-6"><AvatarImage src="https://placehold.co/100x100.png" /></Avatar>} />
+                    <MessageBubble from="You" text="Will do! Pushing it now." align="end" avatar={<Avatar className="h-6 w-6"><AvatarFallback>U</AvatarFallback></Avatar>} />
+                  </div>
+                   {/* Input */}
+                   <div className="p-2 border-t border-slate-200 bg-slate-50 flex items-center gap-2">
+                       <input type="text" placeholder="Type a message..." className="flex-1 bg-white border border-slate-300 rounded-full px-3 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"/>
+                       <Button size="sm" className="h-7 rounded-full bg-blue-500 hover:bg-blue-600"><Send className="h-3 w-3"/></Button>
+                   </div>
+              </div>
+          </div>
+      </div>
+
+      {/* Navigation Footer */}
+      <footer className="sticky bottom-0 w-full bg-white/70 backdrop-blur-sm p-4 border-t border-slate-200">
+         <div className="w-full max-w-md mx-auto">
+            <div className="flex justify-center items-center space-x-2 mb-4">
               <OnboardingStepDot isActive={false}/>
               <OnboardingStepDot isActive={false}/>
               <OnboardingStepDot isActive={true}/>
@@ -91,10 +101,7 @@ export default function OnboardingStep3Page() {
                     </Button>
                 </Link>
             </div>
-        </CardFooter>
-      </Card>
-      <footer className="absolute bottom-4 text-center text-xs text-muted-foreground/80">
-        <p>&copy; {new Date().getFullYear()} InternHub - HTU</p>
+         </div>
       </footer>
     </main>
   );
