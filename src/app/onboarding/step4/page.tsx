@@ -2,7 +2,6 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, ArrowLeft, ShieldCheck } from 'lucide-react';
-import Image from 'next/image';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 const OnboardingStepDot = ({ isActive }: { isActive: boolean }) => (
@@ -14,14 +13,16 @@ export default function OnboardingStep4Page() {
     <main className="relative flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-sky-50 via-white to-white p-4 sm:p-6 md:p-8">
       <Card className="w-full max-w-md shadow-2xl rounded-2xl overflow-hidden animate-in fade-in-0 zoom-in-95 duration-500">
         <CardHeader className="p-0">
-            <Image 
-              src="https://placehold.co/600x400.png"
-              alt="App check-in preview"
-              width={600}
-              height={400}
-              className="w-full h-auto object-cover"
-              data-ai-hint="check-in map"
-            />
+            <div className="w-full h-48 bg-gray-100 dark:bg-gray-800 p-4 rounded-t-xl overflow-hidden relative flex flex-col items-center justify-center">
+              <div className="text-center transform scale-75">
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                      <ShieldCheck className="text-green-600 w-8 h-8" />
+                  </div>
+                  <h4 className="font-bold text-lg text-gray-800 dark:text-gray-200">Checked-in Successfully!</h4>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Location: Innovatech HQ</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Time: 8:58 AM</p>
+              </div>
+          </div>
         </CardHeader>
         <CardContent className="p-6 text-center">
             <div className="flex justify-center items-center mb-4">

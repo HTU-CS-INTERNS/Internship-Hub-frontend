@@ -2,7 +2,6 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, GraduationCap } from 'lucide-react';
-import Image from 'next/image';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 const OnboardingStepDot = ({ isActive }: { isActive: boolean }) => (
@@ -14,14 +13,25 @@ export default function OnboardingStep1Page() {
     <main className="relative flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-orange-50 via-white to-white p-4 sm:p-6 md:p-8">
       <Card className="w-full max-w-md shadow-2xl rounded-2xl overflow-hidden animate-in fade-in-0 zoom-in-95 duration-500">
         <CardHeader className="p-0">
-            <Image 
-              src="https://placehold.co/600x400.png"
-              alt="App dashboard preview"
-              width={600}
-              height={400}
-              className="w-full h-auto object-cover"
-              data-ai-hint="dashboard overview"
-            />
+           <div className="w-full h-48 bg-gray-100 dark:bg-gray-800 p-4 rounded-t-xl overflow-hidden relative flex flex-col items-center justify-center">
+              <div className="w-full max-w-sm space-y-3 transform scale-75 -translate-y-4">
+                  <h3 className="text-lg font-bold text-gray-700 dark:text-gray-300">Dashboard</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                      <div className="bg-white dark:bg-gray-700 p-2 rounded-lg shadow">
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Days Completed</p>
+                          <p className="text-lg font-bold text-gray-800 dark:text-gray-200">14</p>
+                      </div>
+                      <div className="bg-white dark:bg-gray-700 p-2 rounded-lg shadow">
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Reports Submitted</p>
+                          <p className="text-lg font-bold text-gray-800 dark:text-gray-200">12</p>
+                      </div>
+                  </div>
+                  <div className="bg-white dark:bg-gray-700 p-2 rounded-lg shadow">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Next Deadline</p>
+                      <p className="font-semibold text-sm text-gray-800 dark:text-gray-200">Weekly Report #3</p>
+                  </div>
+              </div>
+          </div>
         </CardHeader>
         <CardContent className="p-6 text-center">
             <div className="flex justify-center items-center mb-4">

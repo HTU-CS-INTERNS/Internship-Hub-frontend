@@ -2,7 +2,6 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Star } from 'lucide-react';
-import Image from 'next/image';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 const OnboardingStepDot = ({ isActive }: { isActive: boolean }) => (
@@ -14,14 +13,21 @@ export default function OnboardingStep5Page() {
     <main className="relative flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-purple-50 via-white to-white p-4 sm:p-6 md:p-8">
       <Card className="w-full max-w-md shadow-2xl rounded-2xl overflow-hidden animate-in fade-in-0 zoom-in-95 duration-500">
         <CardHeader className="p-0">
-            <Image 
-              src="https://placehold.co/600x400.png"
-              alt="App profile page preview"
-              width={600}
-              height={400}
-              className="w-full h-auto object-cover"
-              data-ai-hint="profile page"
-            />
+           <div className="w-full h-48 bg-gray-100 dark:bg-gray-800 p-4 rounded-t-xl overflow-hidden relative flex flex-col items-center justify-center">
+              <div className="w-full max-w-xs bg-white dark:bg-gray-700 rounded-lg shadow-md p-4 transform scale-75">
+                  <div className="flex items-center">
+                      <div className="w-12 h-12 bg-purple-200 rounded-full flex items-center justify-center font-bold text-purple-700 text-lg">AS</div>
+                      <div className="ml-3">
+                          <p className="font-bold text-gray-800 dark:text-gray-200">Alex Smith</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">alex.smith@htu.edu.gh</p>
+                      </div>
+                  </div>
+                  <div className="mt-3 text-xs space-y-1">
+                      <p><span className="font-semibold text-gray-600 dark:text-gray-300">Company:</span> Innovatech</p>
+                      <p><span className="font-semibold text-gray-600 dark:text-gray-300">Status:</span> Internship Approved</p>
+                  </div>
+              </div>
+          </div>
         </CardHeader>
         <CardContent className="p-6 text-center">
             <div className="flex justify-center items-center mb-4">

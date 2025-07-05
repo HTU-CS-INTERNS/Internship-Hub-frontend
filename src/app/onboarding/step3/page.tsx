@@ -2,7 +2,6 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, ArrowLeft, Users } from 'lucide-react';
-import Image from 'next/image';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 const OnboardingStepDot = ({ isActive }: { isActive: boolean }) => (
@@ -14,14 +13,21 @@ export default function OnboardingStep3Page() {
     <main className="relative flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-green-50 via-white to-white p-4 sm:p-6 md:p-8">
       <Card className="w-full max-w-md shadow-2xl rounded-2xl overflow-hidden animate-in fade-in-0 zoom-in-95 duration-500">
         <CardHeader className="p-0">
-            <Image 
-              src="https://placehold.co/600x400.png"
-              alt="App chat interface preview"
-              width={600}
-              height={400}
-              className="w-full h-auto object-cover"
-              data-ai-hint="chat interface"
-            />
+           <div className="w-full h-48 bg-gray-100 dark:bg-gray-800 p-4 rounded-t-xl overflow-hidden relative flex flex-col items-center justify-center">
+              <div className="w-full max-w-sm space-y-2 transform scale-75">
+                  <div className="flex justify-start">
+                      <div className="bg-white dark:bg-gray-700 p-2 rounded-lg shadow-sm max-w-[70%]">
+                          <p className="text-xs font-bold text-blue-500">Dr. Vance</p>
+                          <p className="text-sm text-gray-800 dark:text-gray-200">Great job on the last report. Keep up the good work!</p>
+                      </div>
+                  </div>
+                  <div className="flex justify-end">
+                      <div className="bg-blue-500 text-white p-2 rounded-lg shadow-sm max-w-[70%]">
+                          <p className="text-sm">Thank you, Dr. Vance! I appreciate the feedback.</p>
+                      </div>
+                  </div>
+              </div>
+          </div>
         </CardHeader>
         <CardContent className="p-6 text-center">
             <div className="flex justify-center items-center mb-4">
