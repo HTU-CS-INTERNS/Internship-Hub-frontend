@@ -1,4 +1,3 @@
-
 'use client';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -31,7 +30,7 @@ export default function OnboardingStep1Page() {
 
       {/* Bottom Colored Rectangle Section */}
       <div 
-        className="relative w-full bg-orange-500 rounded-t-[3rem] shadow-[-10px_-10px_30px_rgba(0,0,0,0.07)] text-white flex flex-col mt-8" // Added margin top
+        className="relative w-full bg-orange-500 rounded-t-[3rem] shadow-[-10px_-10px_30px_rgba(0,0,0,0.07)] text-white flex flex-col mt-8"
         style={{ minHeight: '50vh' }} 
       >
         <div className="relative z-10 w-full max-w-md mx-auto flex flex-col justify-between flex-grow p-6 sm:p-8 text-center">
@@ -59,7 +58,7 @@ export default function OnboardingStep1Page() {
               <OnboardingStepDot isActive={false} />
             </div>
             <div className="flex items-center w-full max-w-xs mx-auto gap-x-2">
-                <Link href="/register" passHref className="flex-1">
+                <Link href="/login" passHref className="flex-1">
                     <Button variant="link" size="sm" className="font-body text-white/80 hover:text-white rounded-lg w-full h-10 sm:h-11 text-xs sm:text-sm">
                         Skip
                     </Button>

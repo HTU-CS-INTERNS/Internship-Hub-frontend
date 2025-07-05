@@ -1,4 +1,3 @@
-
 'use client';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -60,7 +59,7 @@ export default function OnboardingStep3Page() {
                         <ArrowLeft className="mr-1.5 h-4 w-4 transition-transform group-hover:-translate-x-0.5" /> Back
                     </Button>
                 </Link>
-                <Link href="/register" passHref className="flex-1">
+                <Link href="/login" passHref className="flex-1">
                     <Button variant="link" size="sm" className="font-body text-white/80 hover:text-white rounded-lg w-full h-10 sm:h-11 text-xs sm:text-sm">
                         Skip
                     </Button>
