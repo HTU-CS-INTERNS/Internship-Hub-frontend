@@ -26,7 +26,8 @@ import {
   BookOpen,
   TrendingUp,
   Landmark, 
-  School
+  School,
+  ShieldAlert
 } from 'lucide-react';
 import type { UserRole, ScoringMetric, Faculty as AppFaculty, Department as AppDepartment } from '@/types'; 
 
@@ -46,12 +47,6 @@ export const USER_ROLES: Record<string, string> = {
   SUPERVISOR: 'Industrial Supervisor',
   HOD: 'Head of Department',
   ADMIN: 'Administrator',
-  // Backend uses lowercase roles
-  student: 'Student',
-  lecturer: 'Lecturer',
-  company_supervisor: 'Industrial Supervisor',
-  hod: 'Head of Department',
-  admin: 'Administrator',
 };
 
 export const NAV_LINKS: NavItem[] = [
@@ -108,9 +103,9 @@ export const NAV_LINKS: NavItem[] = [
 
   // Admin Section
   { href: '/admin/dashboard', label: 'Admin Dashboard', icon: School, roles: ['ADMIN'], section: "Administration" },
-  { href: '/admin/student-management', label: 'Student Management', icon: GraduationCap, roles: ['ADMIN'], section: "Administration" },
   { href: '/admin/university-structure', label: 'University Structure', icon: Landmark, roles: ['ADMIN'], section: "Administration" },
   { href: '/admin/user-management', label: 'User Management', icon: UserCog, roles: ['ADMIN'], section: "Administration" },
+  { href: '/admin/reported-abuse', label: 'Reported Issues', icon: ShieldAlert, roles: ['ADMIN'], section: 'Administration' },
   { href: '/admin/settings', label: 'System Settings', icon: Settings, roles: ['ADMIN'], section: "Administration" },
 ];
 
@@ -119,12 +114,20 @@ export const BOTTOM_NAV_LINKS: NavItem[] = [
     { href: '/settings', label: 'Settings', icon: Settings, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD', 'ADMIN'], section: "Settings" },
 ];
 
-// NOTE: FACULTIES and DEPARTMENTS are now fetched from API
-// Use getFaculties() and getDepartments() from api-client instead
+export const FACULTIES: AppFaculty[] = [
+  { id: 'F001', name: 'Faculty of Engineering' },
+  { id: 'F002', name: 'Faculty of Business and Management' },
+  { id: 'F003', name: 'Faculty of Information Technology' },
+];
 
-// Temporary compatibility exports - components should migrate to hooks
-export const FACULTIES: AppFaculty[] = [];
-export const DEPARTMENTS: AppDepartment[] = [];
+export const DEPARTMENTS: AppDepartment[] = [
+  { id: 'D001', name: 'Civil Engineering', facultyId: 'F001' },
+  { id: 'D002', name: 'Mechanical Engineering', facultyId: 'F001' },
+  { id: 'D003', name: 'Marketing', facultyId: 'F002' },
+  { id: 'D004', name: 'Accounting and Finance', facultyId: 'F002' },
+  { id: 'D005', name: 'Software Engineering', facultyId: 'F003' },
+  { id: 'D006', name: 'Cybersecurity', facultyId: 'F003' },
+];
 
 export const DUMMY_STUDENTS_DATA = [
   { id: 'std1', name: 'Alice Wonderland', email: 'alice@example.com', department: 'Software Engineering', faculty: 'Faculty of Engineering', avatarUrl: 'https://placehold.co/150x150.png' },

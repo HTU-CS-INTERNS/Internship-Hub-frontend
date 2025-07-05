@@ -2,49 +2,39 @@
 export type UserRole = 'STUDENT' | 'LECTURER' | 'SUPERVISOR' | 'HOD' | 'ADMIN';
 export type UserStatus = 'PENDING_ACTIVATION' | 'ACTIVE' | 'INACTIVE';
 
-// This represents the core user data, aligned with your `users` table.
 export interface UserProfileData {
-  id: number;
+  id: string; // From Supabase Auth, is a UUID
   email: string;
   role: UserRole;
   first_name: string;
   last_name: string;
   phone_number?: string;
   status: UserStatus;
-
-  // Role-specific identifiers, mirroring `students`, `lecturers` tables
-  student_id_number?: string;
-  staff_id_number?: string; // For lecturers/HODs
   
   // Denormalized/joined data for convenience in the frontend
-  faculty_id?: number;
-  department_id?: number;
-  company_id?: number;
-  job_title?: string; // For supervisors
-
+  faculty_id?: string; 
+  department_id?: string;
+  company_name?: string; 
+  
   // For display purposes, not in the `users` table directly
   avatar_url?: string;
   faculty_name?: string;
   department_name?: string;
-  company_name?: string;
 }
 
 export interface Faculty {
-  id: number;
+  id: string;
   name: string;
-  hod_id: number;
 }
 
 export interface Department {
-  id: number;
-  faculty_id: number;
+  id: string;
+  facultyId: string;
   name: string;
-  hod_id: number; // A department can also have its own HOD
 }
 
 export type InternshipStatus = 'NOT_SUBMITTED' | 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED';
 
-// This is simplified. A real implementation would link IDs.
 export interface InternshipDetails {
   companyName: string;
   companyAddress?: string;
@@ -148,4 +138,14 @@ export interface CheckIn {
   supervisor_verification_status?: 'PENDING' | 'VERIFIED' | 'FLAGGED';
   supervisor_comments?: string;
   created_at: string; // ISO string
+}
+
+export interface AbuseReport {
+    id: string;
+    title: string;
+    description: string;
+    reportedByStudentId: string;
+    reportedByName: string;
+    dateReported: string; // ISO String
+    status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED';
 }

@@ -4,7 +4,7 @@
 import * as React from 'react';
 import PageHeader from '@/components/shared/page-header';
 import { 
-    LayoutDashboard, User, Briefcase, Building, CalendarCheck, FileText as FileTextLucide, MapPin, StarIcon, ClockIcon, AlertOctagonIcon, UsersIcon, SchoolIcon, CheckCircle2, CircleDot, PlusCircle, CalendarDays, UploadCloud, Edit, MessageSquarePlus, BarChart3, SettingsIcon, UserCheck, FileUp, Users2, Activity, CheckSquare, Contact, Eye, ListChecks
+    LayoutDashboard, User, Briefcase, Building, CalendarCheck, FileText as FileTextLucide, MapPin, StarIcon, ClockIcon, AlertOctagonIcon, UsersIcon, SchoolIcon, CheckCircle2, CircleDot, PlusCircle, CalendarDays, UploadCloud, Edit, MessageSquarePlus, BarChart3, SettingsIcon, UserCheck, FileUp, Users2, Activity, CheckSquare, Contact, Eye, ListChecks, ShieldAlert, AlertCircle, Loader2
 } from 'lucide-react'; 
 import type { UserRole } from '@/types';
 import { USER_ROLES, FACULTIES, DEPARTMENTS, DUMMY_STUDENTS_DATA } from '@/lib/constants';
@@ -16,6 +16,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { format, parseISO } from 'date-fns';
@@ -26,6 +27,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import type { CheckIn } from '@/types';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
+import { reportAbuse } from '@/lib/services/issue.service';
 
 const getInitials = (name: string) => {
     if (!name) return 'U';
@@ -118,6 +121,12 @@ const StudentDashboard: React.FC<{ userName: string }> = ({ userName }) => {
     const [isCheckedInToday, setIsCheckedInToday] = React.useState(false);
     const [checkinDetails, setCheckinDetails] = React.useState<StoredCheckinData | null>(null);
 
+    // Report Abuse Dialog State
+    const [reportAbuseDialogOpen, setReportAbuseDialogOpen] = React.useState(false);
+    const [reportTitle, setReportTitle] = React.useState('');
+    const [reportDescription, setReportDescription] = React.useState('');
+    const [isSubmittingReport, setIsSubmittingReport] = React.useState(false);
+
     const getTodayDateString = React.useCallback(() => format(new Date(), 'yyyy-MM-dd'), []);
 
     React.useEffect(() => {
@@ -176,6 +185,32 @@ const StudentDashboard: React.FC<{ userName: string }> = ({ userName }) => {
         }
         toast({ title: "Quick Report Submitted!", description: `Summary for ${format(reportDate!, "PPP")} recorded.`});
         setReportSummary('');
+    };
+
+    const handleReportAbuseSubmit = async () => {
+        if (!reportTitle.trim() || !reportDescription.trim()) {
+            toast({ title: "Error", description: "Title and description are required.", variant: "destructive" });
+            return;
+        }
+        setIsSubmittingReport(true);
+        const studentId = localStorage.getItem('userEmail') || 'anonymous';
+        const studentName = localStorage.getItem('userName') || 'Anonymous';
+        
+        await reportAbuse({
+            title: reportTitle,
+            description: reportDescription,
+            reportedByStudentId: studentId,
+            reportedByName: studentName,
+        });
+
+        toast({
+            title: "Issue Reported",
+            description: "Your report has been submitted anonymously to the administrator.",
+        });
+        setIsSubmittingReport(false);
+        setReportAbuseDialogOpen(false);
+        setReportTitle('');
+        setReportDescription('');
     };
     
     const industrialSupervisor = { name: 'Mr. John Smith', avatarUrl: 'https://placehold.co/100x100.png', role: 'Industrial Supervisor' };
@@ -328,7 +363,52 @@ const StudentDashboard: React.FC<{ userName: string }> = ({ userName }) => {
                         </CardContent>
                     </Card>
                     
-                    <Card className="shadow-lg rounded-xl bg-card text-card-foreground">
+                    <Card className="shadow-lg rounded-xl bg-destructive/10 border-destructive/30 text-destructive-foreground">
+                        <CardHeader>
+                            <CardTitle className="font-headline text-lg flex items-center text-destructive"><AlertCircle className="mr-2 h-5 w-5"/> Need Help?</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-sm text-destructive-foreground/90">If you are facing any issues or grievances at your workplace, please report it immediately.</p>
+                        </CardContent>
+                        <CardFooter>
+                            <Dialog open={reportAbuseDialogOpen} onOpenChange={setReportAbuseDialogOpen}>
+                                <DialogTrigger asChild>
+                                    <Button variant="destructive" className="w-full rounded-lg">
+                                        <ShieldAlert className="mr-2 h-4 w-4"/> Report an Issue
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-[425px]">
+                                    <DialogHeader>
+                                        <DialogTitle>Report an Issue or Grievance</DialogTitle>
+                                        <DialogDescription>
+                                            Your report will be sent to the university administrator for review. Please be as detailed as possible.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="grid gap-4 py-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="report-title">Title</Label>
+                                            <Input id="report-title" value={reportTitle} onChange={(e) => setReportTitle(e.target.value)} placeholder="e.g., Unsafe working conditions" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="report-description">Description</Label>
+                                            <Textarea id="report-description" value={reportDescription} onChange={(e) => setReportDescription(e.target.value)} placeholder="Describe the issue in detail..." rows={5}/>
+                                        </div>
+                                    </div>
+                                    <DialogFooter>
+                                        <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
+                                        <Button type="button" onClick={handleReportAbuseSubmit} disabled={isSubmittingReport}>
+                                            {isSubmittingReport && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>} Submit Report
+                                        </Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
+                        </CardFooter>
+                    </Card>
+                </div>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                 <Card className="shadow-lg rounded-xl bg-card text-card-foreground">
                         <CardHeader className="border-b border-border">
                             <CardTitle className="font-headline text-lg flex items-center"><Briefcase className="mr-2 h-5 w-5 text-primary"/>Industrial Supervisor</CardTitle>
                         </CardHeader>
@@ -377,7 +457,6 @@ const StudentDashboard: React.FC<{ userName: string }> = ({ userName }) => {
                             </Link>
                         </CardFooter>
                     </Card>
-                </div>
             </div>
         </>
     );
