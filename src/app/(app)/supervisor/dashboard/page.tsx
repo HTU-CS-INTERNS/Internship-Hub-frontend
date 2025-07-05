@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -5,7 +6,15 @@ import PageHeader from '@/components/shared/page-header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Briefcase, Users, ClipboardList, Star, CheckCircle, Clock, AlertTriangle, Building, Loader2 } from 'lucide-react';
+import { Briefcase, Users, ClipboardList, Star, CheckCircle, Clock, AlertTriangle, Building, Loader2, Users2, Activity, CheckSquare } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+
+
+const getInitials = (name: string) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase() : 'U';
 
 const SupervisorDashboardStatCard: React.FC<{ 
   title: string; 
@@ -51,6 +60,9 @@ const SupervisorDashboardStatCard: React.FC<{
   );
 };
 
+interface SupervisorIntern {
+  id: string; name: string; university: string; avatar: string; dataAiHint: string; pendingTasks: number; pendingReports: number;
+}
 interface SupervisorStats {
   totalInterns: number;
   activeInterns: number;
@@ -61,10 +73,51 @@ interface SupervisorStats {
   monthlyHours: number;
 }
 
+const SupervisorInternCardMobile: React.FC<{ intern: SupervisorIntern }> = ({ intern }) => (
+  <Card className="shadow-lg rounded-xl overflow-hidden">
+    <CardHeader className="p-3 bg-muted/30 border-b">
+      <div className="flex items-center gap-3">
+        <Avatar className="h-10 w-10 border">
+          <AvatarImage src={intern.avatar} alt={intern.name} data-ai-hint={intern.dataAiHint} />
+          <AvatarFallback className="bg-primary/10 text-primary">{getInitials(intern.name)}</AvatarFallback>
+        </Avatar>
+        <div>
+          <CardTitle className="text-sm font-semibold text-foreground">{intern.name}</CardTitle>
+          <CardDescription className="text-xs text-muted-foreground">{intern.university}</CardDescription>
+        </div>
+      </div>
+    </CardHeader>
+    <CardContent className="p-3 space-y-1.5 text-xs">
+      <div className="flex justify-between items-center">
+        <span className="text-muted-foreground">Pending Tasks:</span>
+        <Badge variant={intern.pendingTasks > 0 ? "destructive" : "secondary"} className="text-xs px-1.5 py-0.5">{intern.pendingTasks}</Badge>
+      </div>
+      <div className="flex justify-between items-center">
+        <span className="text-muted-foreground">Pending Reports:</span>
+        <Badge variant={intern.pendingReports > 0 ? "destructive" : "secondary"} className="text-xs px-1.5 py-0.5">{intern.pendingReports}</Badge>
+      </div>
+    </CardContent>
+    <CardFooter className="p-3 border-t bg-muted/20">
+      <Link href={`/supervisor/interns/details/${intern.id}`} passHref className="w-full">
+        <Button variant="outline" size="sm" className="w-full rounded-lg text-xs py-2">
+          View Profile
+        </Button>
+      </Link>
+    </CardFooter>
+  </Card>
+);
+
 export default function SupervisorDashboardPage() {
   const [supervisorStats, setSupervisorStats] = React.useState<SupervisorStats | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const userName = typeof window !== 'undefined' ? localStorage.getItem('userName') || 'Supervisor' : 'Supervisor';
+  const isMobile = useIsMobile();
+  const supervisedInterns: SupervisorIntern[] = [
+        { id: 'intern1', name: 'Samuel Green', university: 'State University - CompSci', avatar: 'https://placehold.co/100x100.png', dataAiHint: 'person portrait', pendingTasks: 2, pendingReports: 1 },
+        { id: 'intern2', name: 'Olivia Blue', university: 'Tech Institute - Design', avatar: 'https://placehold.co/100x100.png', dataAiHint: 'person portrait', pendingTasks: 0, pendingReports: 0 },
+    ];
+
 
   React.useEffect(() => {
     const fetchStats = async () => {
@@ -108,187 +161,88 @@ export default function SupervisorDashboardPage() {
         breadcrumbs={[{ href: "/supervisor/dashboard", label: "Supervisor Dashboard" }]}
       />
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <SupervisorDashboardStatCard 
-          title="Total Interns" 
+          title="Assigned Interns" 
           value={supervisorStats?.totalInterns ?? '...'} 
-          icon={Users} 
+          icon={Users2} 
           description="Under your supervision"
           actionLink="/supervisor/interns"
-          actionLabel="View Interns"
+          actionLabel="View My Interns"
           isLoading={isLoading} 
         />
         <SupervisorDashboardStatCard 
-          title="Active Interns" 
-          value={supervisorStats?.activeInterns ?? '...'} 
-          icon={CheckCircle} 
-          description="Currently working"
-          variant="success"
-          isLoading={isLoading}
-        />
-        <SupervisorDashboardStatCard 
-          title="Pending Evaluations" 
+          title="Pending Approvals" 
           value={supervisorStats?.pendingEvaluations ?? '...'} 
-          icon={ClipboardList} 
-          description="Require assessment"
-          actionLink="/supervisor/evaluations"
-          actionLabel="Complete"
-          variant={supervisorStats && supervisorStats.pendingEvaluations > 3 ? "warning" : "default"}
+          icon={CheckSquare} 
+          description="3 Tasks, 1 Report"
+          actionLink="/supervisor/interns/approve-reports"
+          actionLabel="Review Submissions"
+          variant="warning"
           isLoading={isLoading}
         />
         <SupervisorDashboardStatCard 
-          title="Average Rating" 
-          value={supervisorStats ? `${supervisorStats.averageRating}/5` : '...'} 
-          icon={Star} 
-          description="Intern performance"
-          variant="success"
+          title="Intern Activity" 
+          value={'High'} 
+          icon={Activity} 
+          description="Most interns active daily"
+          actionLink="/supervisor/interns"
+          actionLabel="Monitor Activity"
           isLoading={isLoading}
         />
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card className="shadow-lg rounded-xl">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Current Interns
-            </CardTitle>
-            <CardDescription>Interns currently under your supervision</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin" />
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-                  <div>
-                    <p className="font-medium">John Doe</p>
-                    <p className="text-sm text-muted-foreground">Computer Science - Week 7</p>
-                  </div>
-                  <span className="text-sm text-green-600">On Track</span>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-                  <div>
-                    <p className="font-medium">Alice Wonderland</p>
-                    <p className="text-sm text-muted-foreground">Marketing - Week 6</p>
-                  </div>
-                  <span className="text-sm text-green-600">Excellent</span>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-yellow-50 rounded-lg">
-                  <div>
-                    <p className="font-medium">Bob Builder</p>
-                    <p className="text-sm text-muted-foreground">Engineering - Week 5</p>
-                  </div>
-                  <span className="text-sm text-yellow-600">Needs Support</span>
-                </div>
-              </div>
-            )}
-          </CardContent>
-          <CardFooter>
-            <Link href="/supervisor/interns" className="w-full">
-              <Button variant="outline" className="w-full">Manage Interns</Button>
-            </Link>
-          </CardFooter>
-        </Card>
-
-        <Card className="shadow-lg rounded-xl">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ClipboardList className="h-5 w-5" />
-              Recent Evaluations
-            </CardTitle>
-            <CardDescription>Latest performance assessments</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin" />
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-                  <div>
-                    <p className="font-medium">John Doe - Monthly Review</p>
-                    <p className="text-sm text-muted-foreground">Completed 2 days ago</p>
-                  </div>
-                  <span className="text-sm font-medium text-green-600">4.5/5</span>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-                  <div>
-                    <p className="font-medium">Alice Wonderland - Weekly</p>
-                    <p className="text-sm text-muted-foreground">Completed 1 week ago</p>
-                  </div>
-                  <span className="text-sm font-medium text-green-600">4.8/5</span>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-yellow-50 rounded-lg">
-                  <div>
-                    <p className="font-medium">Bob Builder - Weekly</p>
-                    <p className="text-sm text-muted-foreground">Due in 2 days</p>
-                  </div>
-                  <span className="text-sm text-yellow-600">Pending</span>
-                </div>
-              </div>
-            )}
-          </CardContent>
-          <CardFooter>
-            <Link href="/supervisor/evaluations" className="w-full">
-              <Button variant="outline" className="w-full">View All Evaluations</Button>
-            </Link>
-          </CardFooter>
-        </Card>
-      </div>
-
-      <Card className="shadow-lg rounded-xl">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5" />
-            Action Required
-          </CardTitle>
-          <CardDescription>Items that need your immediate attention</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin" />
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <div className="flex items-center gap-3 p-3 bg-red-50 rounded-lg">
-                <AlertTriangle className="h-4 w-4 text-red-600" />
-                <div className="flex-1">
-                  <p className="font-medium">1 overdue report review</p>
-                  <p className="text-sm text-muted-foreground">Bob Builder's weekly report is 2 days overdue</p>
-                </div>
-                <Link href="/supervisor/reports">
-                  <Button size="sm" variant="outline">Review</Button>
-                </Link>
-              </div>
-              <div className="flex items-center gap-3 p-3 bg-yellow-50 rounded-lg">
-                <Clock className="h-4 w-4 text-yellow-600" />
-                <div className="flex-1">
-                  <p className="font-medium">2 pending evaluations</p>
-                  <p className="text-sm text-muted-foreground">Monthly performance reviews due this week</p>
-                </div>
-                <Link href="/supervisor/evaluations">
-                  <Button size="sm" variant="outline">Complete</Button>
-                </Link>
-              </div>
-              <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
-                <Building className="h-4 w-4 text-blue-600" />
-                <div className="flex-1">
-                  <p className="font-medium">Update company profile</p>
-                  <p className="text-sm text-muted-foreground">Review and update internship opportunities</p>
-                </div>
-                <Link href="/supervisor/company">
-                  <Button size="sm" variant="outline">Update</Button>
-                </Link>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+       <Card className="shadow-lg rounded-xl mt-6">
+                <CardHeader>
+                    <CardTitle className="font-headline text-lg">My Interns</CardTitle>
+                    <CardDescription>Quick overview of interns you are supervising.</CardDescription>
+                </CardHeader>
+                <CardContent className={cn(isMobile ? "p-0 space-y-4" : "p-0")}>
+                    {isMobile ? (
+                        supervisedInterns.map(intern => <SupervisorInternCardMobile key={intern.id} intern={intern} />)
+                    ) : (
+                     <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Intern</TableHead>
+                                <TableHead>University/Program</TableHead>
+                                <TableHead className="text-center">Pending Tasks</TableHead>
+                                <TableHead className="text-center">Pending Reports</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {supervisedInterns.map(intern => (
+                                <TableRow key={intern.id}>
+                                    <TableCell>
+                                        <div className="flex items-center gap-3">
+                                            <Avatar className="h-9 w-9">
+                                                <AvatarImage src={intern.avatar} alt={intern.name} data-ai-hint={intern.dataAiHint} />
+                                                <AvatarFallback>{getInitials(intern.name)}</AvatarFallback>
+                                            </Avatar>
+                                            <div>
+                                                <p className="font-medium">{intern.name}</p>
+                                            </div>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>{intern.university}</TableCell>
+                                    <TableCell className="text-center"><Badge variant={intern.pendingTasks > 0 ? "destructive" : "secondary"}>{intern.pendingTasks}</Badge></TableCell>
+                                    <TableCell className="text-center"><Badge variant={intern.pendingReports > 0 ? "destructive" : "secondary"}>{intern.pendingReports}</Badge></TableCell>
+                                    <TableCell className="text-right">
+                                        <Link href={`/supervisor/interns/details/${intern.id}`} passHref>
+                                            <Button variant="ghost" size="sm">View Profile</Button>
+                                        </Link>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                    )}
+                </CardContent>
+                 <CardFooter className="justify-end p-4 border-t">
+                    <Button variant="outline" size="sm" asChild><Link href="/supervisor/interns">View All Interns</Link></Button>
+                </CardFooter>
+            </Card>
     </div>
   );
 }

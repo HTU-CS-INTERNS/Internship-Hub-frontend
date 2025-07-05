@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -6,6 +7,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { BookOpen, Users, ClipboardList, FileCheck, MessageSquare, TrendingUp, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+
+const getInitials = (name: string) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase() : 'U';
 
 const LecturerDashboardStatCard: React.FC<{ 
   title: string; 
@@ -51,6 +59,9 @@ const LecturerDashboardStatCard: React.FC<{
   );
 };
 
+interface AssignedStudent {
+  id: string; name: string; department: string; avatar: string; dataAiHint: string; overdueTasks: number; pendingReports: number;
+}
 interface LecturerStats {
   totalStudents: number;
   activeInternships: number;
@@ -60,11 +71,51 @@ interface LecturerStats {
   averageScore: number;
   messagesUnread: number;
 }
+const LecturerStudentCardMobile: React.FC<{ student: AssignedStudent }> = ({ student }) => (
+  <Card className="shadow-lg rounded-xl overflow-hidden">
+    <CardHeader className="p-3 bg-muted/30 border-b">
+      <div className="flex items-center gap-3">
+        <Avatar className="h-10 w-10 border">
+          <AvatarImage src={student.avatar} alt={student.name} data-ai-hint={student.dataAiHint} />
+          <AvatarFallback className="bg-primary/10 text-primary">{getInitials(student.name)}</AvatarFallback>
+        </Avatar>
+        <div>
+          <CardTitle className="text-sm font-semibold text-foreground">{student.name}</CardTitle>
+          <CardDescription className="text-xs text-muted-foreground">{student.department}</CardDescription>
+        </div>
+      </div>
+    </CardHeader>
+    <CardContent className="p-3 space-y-1.5 text-xs">
+      <div className="flex justify-between items-center">
+        <span className="text-muted-foreground">Overdue Tasks:</span>
+        <Badge variant={student.overdueTasks > 0 ? "destructive" : "secondary"} className="text-xs px-1.5 py-0.5">{student.overdueTasks}</Badge>
+      </div>
+      <div className="flex justify-between items-center">
+        <span className="text-muted-foreground">Pending Reports:</span>
+        <Badge variant={student.pendingReports > 0 ? "destructive" : "secondary"} className="text-xs px-1.5 py-0.5">{student.pendingReports}</Badge>
+      </div>
+    </CardContent>
+    <CardFooter className="p-3 border-t bg-muted/20">
+      <Link href={`/assignments/student/${student.id}`} passHref className="w-full">
+        <Button variant="outline" size="sm" className="w-full rounded-lg text-xs py-2">
+           View Details
+        </Button>
+      </Link>
+    </CardFooter>
+  </Card>
+);
 
 export default function LecturerDashboardPage() {
   const [lecturerStats, setLecturerStats] = React.useState<LecturerStats | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const userName = typeof window !== 'undefined' ? localStorage.getItem('userName') || 'Lecturer' : 'Lecturer';
+  const isMobile = useIsMobile();
+  const assignedStudents: AssignedStudent[] = [
+        { id: 'std1', name: 'Alice Wonderland', department: 'Software Engineering', avatar: 'https://placehold.co/100x100.png', dataAiHint: 'person portrait', overdueTasks: 1, pendingReports: 0 },
+        { id: 'std2', name: 'Bob The Intern', department: 'Mechanical Engineering', avatar: 'https://placehold.co/100x100.png', dataAiHint: 'person portrait', overdueTasks: 0, pendingReports: 1 },
+        { id: 'std3', name: 'Charlie Brown', department: 'Marketing', avatar: 'https://placehold.co/100x100.png', dataAiHint: 'person portrait', overdueTasks: 2, pendingReports: 2 },
+    ];
 
   React.useEffect(() => {
     const fetchStats = async () => {
@@ -148,134 +199,57 @@ export default function LecturerDashboardPage() {
         />
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card className="shadow-lg rounded-xl">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ClipboardList className="h-5 w-5" />
-              Recent Reports
-            </CardTitle>
-            <CardDescription>Reports requiring your attention</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin" />
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="flex justify-between items-center p-3 bg-yellow-50 rounded-lg">
-                  <div>
-                    <p className="font-medium">John Doe - Week 7</p>
-                    <p className="text-sm text-muted-foreground">TechCorp Ghana</p>
-                  </div>
-                  <span className="text-sm text-yellow-600">Pending Review</span>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-yellow-50 rounded-lg">
-                  <div>
-                    <p className="font-medium">Alice Wonderland - Week 6</p>
-                    <p className="text-sm text-muted-foreground">Marketing Pro Ltd</p>
-                  </div>
-                  <span className="text-sm text-yellow-600">Pending Review</span>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-                  <div>
-                    <p className="font-medium">Bob Builder - Week 7</p>
-                    <p className="text-sm text-muted-foreground">Engineering Corp</p>
-                  </div>
-                  <span className="text-sm text-green-600">Approved</span>
-                </div>
-              </div>
-            )}
-          </CardContent>
-          <CardFooter>
-            <Link href="/lecturer/reports" className="w-full">
-              <Button variant="outline" className="w-full">Review All Reports</Button>
-            </Link>
-          </CardFooter>
-        </Card>
-
-        <Card className="shadow-lg rounded-xl">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              Student Performance
-            </CardTitle>
-            <CardDescription>Overall performance metrics</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin" />
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Average Score</span>
-                  <span className="text-2xl font-bold text-green-600">87.5%</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">Students Above 80%</span>
-                  <span className="font-medium">18/24</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">Students Below 60%</span>
-                  <span className="font-medium text-red-600">2/24</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">Reports On Time</span>
-                  <span className="font-medium">94%</span>
-                </div>
-              </div>
-            )}
-          </CardContent>
-          <CardFooter>
-            <Link href="/lecturer/analytics" className="w-full">
-              <Button variant="outline" className="w-full">View Analytics</Button>
-            </Link>
-          </CardFooter>
-        </Card>
-      </div>
-
-      <Card className="shadow-lg rounded-xl">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertCircle className="h-5 w-5" />
-            Action Required
-          </CardTitle>
-          <CardDescription>Items that need your immediate attention</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin" />
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <div className="flex items-center gap-3 p-3 bg-yellow-50 rounded-lg">
-                <AlertCircle className="h-4 w-4 text-yellow-600" />
-                <div className="flex-1">
-                  <p className="font-medium">5 pending task assignments</p>
-                  <p className="text-sm text-muted-foreground">Assign weekly tasks to students</p>
-                </div>
-                <Link href="/lecturer/tasks">
-                  <Button size="sm" variant="outline">Assign</Button>
-                </Link>
-              </div>
-              <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
-                <MessageSquare className="h-4 w-4 text-blue-600" />
-                <div className="flex-1">
-                  <p className="font-medium">3 unread messages</p>
-                  <p className="text-sm text-muted-foreground">Student questions and updates</p>
-                </div>
-                <Link href="/lecturer/messages">
-                  <Button size="sm" variant="outline">Reply</Button>
-                </Link>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+       <Card className="shadow-lg rounded-xl mt-6">
+                <CardHeader>
+                    <CardTitle className="font-headline text-lg">My Students</CardTitle>
+                    <CardDescription>Quick overview of students you are supervising.</CardDescription>
+                </CardHeader>
+                <CardContent className={cn(isMobile ? "p-0 space-y-4" : "p-0")}>
+                    {isMobile ? (
+                        assignedStudents.map(student => <LecturerStudentCardMobile key={student.id} student={student} />)
+                    ) : (
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Student</TableHead>
+                                    <TableHead>Department</TableHead>
+                                    <TableHead className="text-center">Overdue Tasks</TableHead>
+                                    <TableHead className="text-center">Pending Reports</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {assignedStudents.map(student => (
+                                    <TableRow key={student.id}>
+                                        <TableCell>
+                                            <div className="flex items-center gap-3">
+                                                <Avatar className="h-9 w-9">
+                                                    <AvatarImage src={student.avatar} alt={student.name} data-ai-hint={student.dataAiHint} />
+                                                    <AvatarFallback>{getInitials(student.name)}</AvatarFallback>
+                                                </Avatar>
+                                                <div>
+                                                    <p className="font-medium">{student.name}</p>
+                                                </div>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>{student.department}</TableCell>
+                                        <TableCell className="text-center"><Badge variant={student.overdueTasks > 0 ? "destructive" : "secondary"}>{student.overdueTasks}</Badge></TableCell>
+                                        <TableCell className="text-center"><Badge variant={student.pendingReports > 0 ? "destructive" : "secondary"}>{student.pendingReports}</Badge></TableCell>
+                                        <TableCell className="text-right">
+                                            <Link href={`/assignments/student/${student.id}`} passHref>
+                                                <Button variant="ghost" size="sm">View Details</Button>
+                                            </Link>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    )}
+                </CardContent>
+                 <CardFooter className="justify-end p-4 border-t">
+                    <Button variant="outline" size="sm" asChild><Link href="/assignments">View All Students</Link></Button>
+                </CardFooter>
+            </Card>
     </div>
   );
 }

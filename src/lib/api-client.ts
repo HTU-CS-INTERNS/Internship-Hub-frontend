@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { UserProfileData } from "@/types";
@@ -105,7 +106,7 @@ class ApiClient {
     }
 
     async getCurrentUser(): Promise<UserProfileData> {
-        return this.request<UserProfileData>('api/users/me');
+        return this.request<UserProfileData>('api/auth/me');
     }
 
     async logout(): Promise<void> {

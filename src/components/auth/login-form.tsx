@@ -58,36 +58,16 @@ export function LoginForm() {
         localStorage.setItem('userName', `${user.first_name} ${user.last_name}`);
         localStorage.setItem('userEmail', user.email);
         localStorage.setItem('user', JSON.stringify(user));
-        // This is a temporary measure to make other parts of the app work
-        localStorage.setItem('isLoggedIn', 'true');
       }
 
       toast({
         title: "Login Successful!",
-        description: `Welcome back, ${user.first_name || user.email}! You are logged in as a ${USER_ROLES[user.role] || user.role}.`,
+        description: `Welcome back, ${user.first_name || user.email}!`,
         variant: "default",
       });
 
-      // Redirect based on user role
-      switch (user.role?.toLowerCase()) {
-        case 'admin':
-          router.push('/dashboard');
-          break;
-        case 'lecturer':
-          router.push('/dashboard');
-          break;
-        case 'company_supervisor':
-          router.push('/dashboard');
-          break;
-        case 'hod':
-          router.push('/department-ops');
-          break;
-        case 'student':
-          router.push('/dashboard');
-          break;
-        default:
-          router.push('/dashboard');
-      }
+      // ALWAYS redirect to the generic dashboard. The redirector page will handle the rest.
+      router.push('/dashboard');
 
     } catch (error: any) {
       toast({
