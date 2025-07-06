@@ -169,13 +169,16 @@ const StudentDashboard: React.FC<{ userName: string }> = ({ userName }) => {
         }
     }, [getTodayDateString]);
     
-    const studentCheckInChartData = isCheckedInToday 
-        ? [{ name: 'Checked In', value: 100, fill: 'hsl(var(--primary))' }]
-        : [{ name: 'Not Checked In', value: 100, fill: 'hsl(var(--muted))' }];
+    const studentCheckInChartData = [{ 
+        name: isCheckedInToday ? 'Checked In' : 'Not Checked In', 
+        value: 100, 
+        fill: isCheckedInToday ? 'hsl(var(--primary))' : 'hsl(var(--muted))' 
+    }];
     
-    const studentCheckInChartConfig = isCheckedInToday
-        ? { "Checked In": { label: "Checked In" } }
-        : { "Not Checked In": { label: "Not Checked In" } };
+    const studentCheckInChartConfig = {
+        "Checked In": { label: "Checked In" },
+        "Not Checked In": { label: "Not Checked In" }
+    };
 
 
     const handleQuickReportSubmit = () => {

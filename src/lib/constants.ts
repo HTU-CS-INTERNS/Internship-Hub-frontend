@@ -53,6 +53,14 @@ export const NAV_LINKS: NavItem[] = [
   // Main Section
   { href: '/dashboard', label: 'Dashboard', icon: Home, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD', 'ADMIN'], section: "Main", mobile: true },
   {
+    href: '/student/dashboard',
+    label: 'My Dashboard',
+    icon: LayoutDashboard,
+    roles: ['STUDENT'],
+    section: "Main",
+    mobile: true
+  },
+  {
     href: '/student/tasks',
     label: 'Daily Tasks',
     icon: ListChecks,
@@ -62,18 +70,94 @@ export const NAV_LINKS: NavItem[] = [
   },
   {
     href: '/student/reports',
-    label: 'Reports',
+    label: 'Daily Reports',
     icon: FileText,
     roles: ['STUDENT'],
     section: "Main",
     mobile: true
   },
-  { href: '/student/company', label: 'My Company', icon: Building, roles: ['STUDENT'], section: "Main", mobile: false },
+  {
+    href: '/student/attendance',
+    label: 'Attendance',
+    icon: CalendarDays,
+    roles: ['STUDENT'],
+    section: "Main",
+    mobile: true
+  },
+  { 
+    href: '/student/company', 
+    label: 'My Company', 
+    icon: Building, 
+    roles: ['STUDENT'], 
+    section: "Main", 
+    mobile: false 
+  },
+  {
+    href: '/student/internship',
+    label: 'My Internship',
+    icon: Briefcase,
+    roles: ['STUDENT'],
+    section: "Main",
+    mobile: true
+  },
+  {
+    href: '/student/profile',
+    label: 'Internship Profile',
+    icon: User,
+    roles: ['STUDENT'],
+    section: "Main",
+    mobile: true
+  },
 
   // Tools Section
-  { href: '/student/check-in', label: 'Check-in', icon: MapPin, roles: ['STUDENT'], section: "Tools", mobile: true },
-  { href: '/schedule', label: 'My Schedule', icon: CalendarDays, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], section: "Tools", mobile: false },
-  { href: '/communication', label: 'Feedback Hub', icon: MessageSquare, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD', 'ADMIN'], section: "Tools", mobile: true },
+  { 
+    href: '/student/check-in', 
+    label: 'Check-in', 
+    icon: MapPin, 
+    roles: ['STUDENT'], 
+    section: "Tools", 
+    mobile: true 
+  },
+  {
+    href: '/student/documents',
+    label: 'Documents',
+    icon: FileCheck,
+    roles: ['STUDENT'],
+    section: "Tools",
+    mobile: true
+  },
+  { 
+    href: '/schedule', 
+    label: 'My Schedule', 
+    icon: CalendarDays, 
+    roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], 
+    section: "Tools", 
+    mobile: false 
+  },
+  { 
+    href: '/communication', 
+    label: 'Feedback Hub', 
+    icon: MessageSquare, 
+    roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD', 'ADMIN'], 
+    section: "Tools", 
+    mobile: true 
+  },
+  {
+    href: '/student/evaluations',
+    label: 'Evaluations',
+    icon: CheckSquare,
+    roles: ['STUDENT'],
+    section: "Tools",
+    mobile: true
+  },
+  {
+    href: '/student/progress',
+    label: 'Progress Tracking',
+    icon: TrendingUp,
+    roles: ['STUDENT'],
+    section: "Tools",
+    mobile: true
+  },
 
   // Management for other roles
   {
@@ -99,19 +183,71 @@ export const NAV_LINKS: NavItem[] = [
     roles: ['HOD'],
     section: "Management"
   },
-  { href: '/analytics', label: 'Analytics', icon: BarChart3, roles: ['LECTURER', 'SUPERVISOR', 'HOD', 'ADMIN'], section: "Management" },
+  { 
+    href: '/analytics', 
+    label: 'Analytics', 
+    icon: BarChart3, 
+    roles: ['LECTURER', 'SUPERVISOR', 'HOD', 'ADMIN'], 
+    section: "Management" 
+  },
 
   // Admin Section
-  { href: '/admin/dashboard', label: 'Admin Dashboard', icon: School, roles: ['ADMIN'], section: "Administration" },
-  { href: '/admin/university-structure', label: 'University Structure', icon: Landmark, roles: ['ADMIN'], section: "Administration" },
-  { href: '/admin/user-management', label: 'User Management', icon: UserCog, roles: ['ADMIN'], section: "Administration" },
-  { href: '/admin/reported-abuse', label: 'Reported Issues', icon: ShieldAlert, roles: ['ADMIN'], section: 'Administration' },
-  { href: '/admin/settings', label: 'System Settings', icon: Settings, roles: ['ADMIN'], section: "Administration" },
+  { 
+    href: '/admin/dashboard', 
+    label: 'Admin Dashboard', 
+    icon: School, 
+    roles: ['ADMIN'], 
+    section: "Administration" 
+  },
+  { 
+    href: '/admin/university-structure', 
+    label: 'University Structure', 
+    icon: Landmark, 
+    roles: ['ADMIN'], 
+    section: "Administration" 
+  },
+  { 
+    href: '/admin/user-management', 
+    label: 'User Management', 
+    icon: UserCog, 
+    roles: ['ADMIN'], 
+    section: "Administration" 
+  },
+  { 
+    href: '/admin/student-management', 
+    label: 'Student Management', 
+    icon: Users, 
+    roles: ['ADMIN'], 
+    section: "Administration" 
+  },
+  { 
+    href: '/admin/internship-management', 
+    label: 'Internship Management', 
+    icon: Briefcase, 
+    roles: ['ADMIN'], 
+    section: "Administration" 
+  },
+  { 
+    href: '/admin/reported-abuse', 
+    label: 'Reported Issues', 
+    icon: ShieldAlert, 
+    roles: ['ADMIN'], 
+    section: 'Administration' 
+  },
+  { 
+    href: '/admin/settings', 
+    label: 'System Settings', 
+    icon: Settings, 
+    roles: ['ADMIN'], 
+    section: "Administration" 
+  },
 ];
 
 export const BOTTOM_NAV_LINKS: NavItem[] = [
-    { href: '/profile', label: 'Profile', icon: UserCog, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD', 'ADMIN'], section: "Settings", mobile: true },
+    { href: '/profile', label: 'My Profile', icon: UserCircle, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD', 'ADMIN'], section: "Settings", mobile: true },
+    { href: '/notifications', label: 'Notifications', icon: Bell, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD', 'ADMIN'], section: "Settings", mobile: true },
     { href: '/settings', label: 'Settings', icon: Settings, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD', 'ADMIN'], section: "Settings" },
+    { href: '/help', label: 'Help & Support', icon: BookOpen, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD', 'ADMIN'], section: "Settings" },
 ];
 
 export const FACULTIES: AppFaculty[] = [

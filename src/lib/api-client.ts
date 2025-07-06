@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { UserProfileData } from "@/types";
@@ -191,6 +190,41 @@ class ApiClient {
 
     async getInternship(id: number): Promise<any> {
         return this.request(`api/internships/${id}`);
+    }
+
+    // Student internship submission methods
+    async submitInternshipForApproval(data: {
+        company_name: string;
+        company_address: string;
+        supervisor_name: string;
+        supervisor_email: string;
+        start_date: string;
+        end_date: string;
+        location: string;
+    }): Promise<any> {
+        return this.request('api/internships/submit', {
+            method: 'POST',
+            body: data,
+        });
+    }
+
+    async getMyInternshipSubmission(): Promise<any> {
+        return this.request('api/internships/my-submission');
+    }
+
+    // Admin internship management methods
+    async getPendingInternshipSubmissions(): Promise<any[]> {
+        return this.request<any[]>('api/internships/pending');
+    }
+
+    async reviewInternshipSubmission(submissionId: number, data: {
+        status: 'APPROVED' | 'REJECTED' | 'PENDING_APPROVAL';
+        rejection_reason?: string;
+    }): Promise<any> {
+        return this.request(`api/internships/pending/${submissionId}/review`, {
+            method: 'PUT',
+            body: data,
+        });
     }
 
     // Daily Tasks methods (nested under internships)

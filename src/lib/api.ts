@@ -33,7 +33,7 @@ async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
             break;
 
         case '/auth/me':
-            return await apiClient.getCurrentUser() as T;
+            return await apiClient.request<T>('api/users/me') as T;
 
         case '/auth/verify-student':
             // This endpoint might need to be implemented in the backend

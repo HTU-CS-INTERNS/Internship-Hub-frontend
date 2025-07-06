@@ -13,15 +13,15 @@ export async function submitPlacementForApproval(
   try {
     const payload = {
       company_name: details.companyName,
+      company_address: details.companyAddress || '',
       supervisor_name: details.supervisorName,
       supervisor_email: details.supervisorEmail,
       start_date: details.startDate,
       end_date: details.endDate,
       location: details.location,
-      status: 'PENDING_APPROVAL',
     };
 
-    await apiClient.createInternship(payload);
+    await apiClient.submitInternshipForApproval(payload);
   } catch (error) {
     console.error('Error submitting placement for approval:', error);
     throw error;
