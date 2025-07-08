@@ -20,7 +20,7 @@ export default function DashboardRedirectPage() {
           router.replace('/lecturer/dashboard');
           break;
         case 'SUPERVISOR':
-          router.replace('/supervisor/dashboard');
+          router.replace('/industrial-supervisor/dashboard');
           break;
         case 'HOD':
           router.replace('/department-ops');

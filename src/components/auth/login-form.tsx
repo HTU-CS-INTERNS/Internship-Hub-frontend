@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -17,10 +16,24 @@ import {
 import { Input } from '@/components/ui/input';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import type { UserProfileData } from '@/types';
-import { USER_ROLES } from '@/lib/constants';
+import type { UserProfileData, UserRole } from '@/types';
 import { Loader2 } from 'lucide-react';
 import api from '@/lib/api';
+
+// Role normalization function to handle backend/frontend role differences
+function normalizeRole(role: string): UserRole {
+  const roleMap: Record<string, UserRole> = {
+    'admin': 'ADMIN',
+    'student': 'STUDENT', 
+    'lecturer': 'LECTURER',
+    'company_supervisor': 'SUPERVISOR',
+    'supervisor': 'SUPERVISOR',
+    'hod': 'HOD'
+  };
+  
+  // Return normalized role or fallback to uppercase version
+  return roleMap[role.toLowerCase()] || role.toUpperCase() as UserRole;
+}
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
@@ -51,13 +64,15 @@ export function LoginForm() {
       });
 
       const { user, session } = response;
+      const normalizedRole = normalizeRole(user.role);
+      const userWithNormalizedRole = { ...user, role: normalizedRole };
       
       if (typeof window !== "undefined") {
         localStorage.setItem('authToken', session.access_token);
-        localStorage.setItem('userRole', user.role);
+        localStorage.setItem('userRole', normalizedRole);
         localStorage.setItem('userName', `${user.first_name} ${user.last_name}`);
         localStorage.setItem('userEmail', user.email);
-        localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem('user', JSON.stringify(userWithNormalizedRole));
       }
 
       toast({

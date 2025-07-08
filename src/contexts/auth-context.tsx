@@ -58,12 +58,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('AuthContext: User data received:', userData);
         
         if (userData) {
-          setUser(userData);
-          localStorage.setItem('user', JSON.stringify(userData));
-          localStorage.setItem('userRole', userData.role);
+          const normalizedRole = normalizeRole(userData.role);
+          const userWithNormalizedRole = { ...userData, role: normalizedRole };
+          setUser(userWithNormalizedRole);
+          localStorage.setItem('user', JSON.stringify(userWithNormalizedRole));
+          localStorage.setItem('userRole', normalizedRole);
           localStorage.setItem('userName', `${userData.first_name} ${userData.last_name}`);
           localStorage.setItem('userEmail', userData.email);
-          console.log('AuthContext: User authenticated successfully, role:', userData.role);
+          console.log('AuthContext: User authenticated successfully, original role:', userData.role, 'normalized role:', normalizedRole);
         } else {
             throw new Error("User not found for token");
         }
@@ -79,8 +81,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (storedUser) {
             try {
               const userData = JSON.parse(storedUser);
-              setUser(userData);
-              console.log('AuthContext: Using stored user data as fallback:', userData.role);
+              const normalizedRole = normalizeRole(userData.role);
+              const userWithNormalizedRole = { ...userData, role: normalizedRole };
+              setUser(userWithNormalizedRole);
+              console.log('AuthContext: Using stored user data as fallback, original role:', userData.role, 'normalized role:', normalizedRole);
             } catch (parseError) {
               console.error('AuthContext: Failed to parse stored user data:', parseError);
               handleLogout();
@@ -124,4 +128,19 @@ export function useAuth() {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
+}
+
+// Role normalization function to handle backend/frontend role differences
+function normalizeRole(role: string): UserRole {
+  const roleMap: Record<string, UserRole> = {
+    'admin': 'ADMIN',
+    'student': 'STUDENT', 
+    'lecturer': 'LECTURER',
+    'company_supervisor': 'SUPERVISOR',
+    'supervisor': 'SUPERVISOR',
+    'hod': 'HOD'
+  };
+  
+  // Return normalized role or fallback to uppercase version
+  return roleMap[role.toLowerCase()] || role.toUpperCase() as UserRole;
 }

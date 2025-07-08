@@ -161,7 +161,7 @@ export const NAV_LINKS: NavItem[] = [
 
   // Management for other roles
   {
-    href: '/supervisor/interns', 
+    href: '/industrial-supervisor/interns', 
     label: 'My Interns',
     icon: Briefcase,
     roles: ['SUPERVISOR'],
