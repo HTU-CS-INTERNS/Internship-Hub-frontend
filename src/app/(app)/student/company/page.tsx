@@ -8,24 +8,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import Image from 'next/image';
-
-const DUMMY_COMPANY_DATA = {
-  name: "Innovatech Solutions Inc.",
-  address: "123 Tech Park Avenue, Silicon Valley, CA 94000",
-  logoUrl: "https://placehold.co/150x150.png?text=Innovatech",
-  description: "Innovatech Solutions Inc. is a leading provider of cutting-edge software solutions, specializing in AI-driven analytics and cloud computing. We are committed to fostering innovation and providing an enriching environment for our interns to learn and grow.",
-  website: "https://example.com/innovatech",
-  industry: "Software Development & AI",
-  size: "200-500 employees",
-};
-
-const DUMMY_SUPERVISOR_DATA = {
-  name: "Mr. John Smith",
-  title: "Senior Software Engineer",
-  email: "john.smith@innovatech.example.com",
-  phone: "+1 (555) 123-4567",
-  avatarUrl: "https://placehold.co/100x100.png",
-};
+import { useAuth } from '@/contexts/auth-context';
+import { StudentApiService } from '@/lib/services/studentApi';
+import EmptyState from '@/components/shared/empty-state';
 
 const getInitials = (name: string) => {
   if (!name) return '';
@@ -33,9 +18,77 @@ const getInitials = (name: string) => {
 };
 
 export default function CompanyPage() {
-  // In a real app, this data would be fetched based on the student's internship details
-  const company = DUMMY_COMPANY_DATA;
-  const supervisor = DUMMY_SUPERVISOR_DATA;
+  const { user } = useAuth();
+  const [companyData, setCompanyData] = React.useState<any>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+
+  // Fetch company data from API
+  React.useEffect(() => {
+    const fetchCompanyData = async () => {
+      if (!user) return;
+      
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        const data = await StudentApiService.getCompanyInfo();
+        setCompanyData(data);
+      } catch (err) {
+        console.error('Failed to fetch company data:', err);
+        setError('Failed to load company information');
+        setCompanyData(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCompanyData();
+  }, [user]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading company information...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <Building className="h-8 w-8 text-destructive mx-auto mb-4" />
+          <p className="text-destructive">{error}</p>
+          <Button 
+            variant="outline" 
+            onClick={() => window.location.reload()} 
+            className="mt-4"
+          >
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!companyData) {
+    return (
+      <EmptyState
+        icon={Building}
+        title="No Company Information"
+        description="Your internship company information will appear here once your internship is assigned."
+        actionLabel="Contact Support"
+        onAction={() => console.log('Contact support')}
+      />
+    );
+  }
+
+  const company = companyData.company || {};
+  const supervisor = companyData.supervisor || {};
 
   return (
     <div className="space-y-8 p-4 md:p-6">

@@ -12,14 +12,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { FACULTIES, DEPARTMENTS } from '@/lib/constants';
 import type { Faculty as AppFaculty, Department as AppDepartment } from '@/types';
 import { useToast } from '@/hooks/use-toast';
+import { AdminApiService } from '@/lib/services/adminApi';
+import EmptyState from '@/components/shared/empty-state';
 
 interface EditableFaculty extends AppFaculty { isEditing?: boolean; newName?: string; }
 interface EditableDepartment extends AppDepartment { isEditing?: boolean; newName?: string; newFacultyId?: string; }
 
 export default function UniversityStructurePage() {
   const { toast } = useToast();
-  const [faculties, setFaculties] = React.useState<EditableFaculty[]>(() => FACULTIES.map(f => ({...f, isEditing: false, newName: f.name })));
-  const [departments, setDepartments] = React.useState<EditableDepartment[]>(() => DEPARTMENTS.map(d => ({...d, isEditing: false, newName: d.name, newFacultyId: d.facultyId })));
+  const [faculties, setFaculties] = React.useState<EditableFaculty[]>([]);
+  const [departments, setDepartments] = React.useState<EditableDepartment[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
   
   const [showAddFacultyDialog, setShowAddFacultyDialog] = React.useState(false);
   const [newFacultyName, setNewFacultyName] = React.useState('');
@@ -33,8 +37,37 @@ export default function UniversityStructurePage() {
   const [showEditDepartmentDialog, setShowEditDepartmentDialog] = React.useState(false);
   const [editingDepartment, setEditingDepartment] = React.useState<EditableDepartment | null>(null);
 
+  // Fetch university structure data
+  React.useEffect(() => {
+    const fetchUniversityStructure = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const [facultiesData, departmentsData] = await Promise.all([
+          AdminApiService.getFaculties(),
+          AdminApiService.getDepartments()
+        ]);
+        
+        const facultiesArray = Array.isArray(facultiesData) ? facultiesData : [];
+        const departmentsArray = Array.isArray(departmentsData) ? departmentsData : [];
+        
+        setFaculties(facultiesArray.map(f => ({...f, isEditing: false, newName: f.name})));
+        setDepartments(departmentsArray.map(d => ({...d, isEditing: false, newName: d.name, newFacultyId: d.facultyId})));
+      } catch (err) {
+        console.error('Failed to fetch university structure:', err);
+        setError('Failed to load university structure');
+        // Fallback to constants as backup
+        setFaculties(FACULTIES.map(f => ({...f, isEditing: false, newName: f.name})));
+        setDepartments(DEPARTMENTS.map(d => ({...d, isEditing: false, newName: d.name, newFacultyId: d.facultyId})));
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const handleAddFaculty = () => {
+    fetchUniversityStructure();
+  }, []);
+
+  const handleAddFaculty = async () => {
     if (!newFacultyName.trim() || !newFacultyId.trim()) {
         toast({ title: "Error", description: "Faculty Name and ID are required.", variant: "destructive"});
         return;
@@ -43,14 +76,30 @@ export default function UniversityStructurePage() {
         toast({ title: "Error", description: `Faculty ID "${newFacultyId}" already exists.`, variant: "destructive"});
         return;
     }
-    setFaculties(prev => [...prev, { id: newFacultyId, name: newFacultyName, isEditing: false, newName: newFacultyName }]);
-    toast({ title: "Faculty Added", description: `Faculty "${newFacultyName}" created successfully.`});
-    setShowAddFacultyDialog(false);
-    setNewFacultyName('');
-    setNewFacultyId('');
+    
+    try {
+      const newFaculty = await AdminApiService.createFaculty({
+        id: newFacultyId,
+        name: newFacultyName
+      });
+      
+      // Handle the response - either use the returned data or create a new object
+      const facultyToAdd: EditableFaculty = newFaculty && typeof newFaculty === 'object' 
+        ? { ...(newFaculty as AppFaculty), isEditing: false, newName: (newFaculty as AppFaculty).name }
+        : { id: newFacultyId, name: newFacultyName, isEditing: false, newName: newFacultyName };
+      
+      setFaculties(prev => [...prev, facultyToAdd]);
+      toast({ title: "Faculty Added", description: `Faculty "${newFacultyName}" created successfully.`});
+      setShowAddFacultyDialog(false);
+      setNewFacultyName('');
+      setNewFacultyId('');
+    } catch (error) {
+      console.error('Failed to create faculty:', error);
+      toast({ title: "Error", description: "Failed to create faculty. Please try again.", variant: "destructive"});
+    }
   };
 
-  const handleAddDepartment = () => {
+  const handleAddDepartment = async () => {
      if (!newDepartmentName.trim() || !newDepartmentId.trim() || !selectedFacultyForNewDept) {
         toast({ title: "Error", description: "Department Name, ID, and selected Faculty are required.", variant: "destructive"});
         return;
@@ -59,13 +108,30 @@ export default function UniversityStructurePage() {
         toast({ title: "Error", description: `Department ID "${newDepartmentId}" already exists.`, variant: "destructive"});
         return;
     }
-    setDepartments(prev => [...prev, { id: newDepartmentId, name: newDepartmentName, facultyId: selectedFacultyForNewDept, isEditing: false, newName: newDepartmentName, newFacultyId: selectedFacultyForNewDept }]);
-    toast({ title: "Department Added", description: `Department "${newDepartmentName}" added to ${faculties.find(f=>f.id === selectedFacultyForNewDept)?.name}.`});
-    setShowAddDepartmentDialog(false);
-    setNewDepartmentName('');
-    setNewDepartmentId('');
-    setSelectedFacultyForNewDept('');
-  }
+    
+    try {
+      const newDepartment = await AdminApiService.createDepartment({
+        id: newDepartmentId,
+        name: newDepartmentName,
+        facultyId: selectedFacultyForNewDept
+      });
+      
+      // Handle the response - either use the returned data or create a new object
+      const departmentToAdd: EditableDepartment = newDepartment && typeof newDepartment === 'object'
+        ? { ...(newDepartment as AppDepartment), isEditing: false, newName: (newDepartment as AppDepartment).name, newFacultyId: (newDepartment as AppDepartment).facultyId }
+        : { id: newDepartmentId, name: newDepartmentName, facultyId: selectedFacultyForNewDept, isEditing: false, newName: newDepartmentName, newFacultyId: selectedFacultyForNewDept };
+      
+      setDepartments(prev => [...prev, departmentToAdd]);
+      toast({ title: "Department Added", description: `Department "${newDepartmentName}" added to ${faculties.find(f=>f.id === selectedFacultyForNewDept)?.name}.`});
+      setShowAddDepartmentDialog(false);
+      setNewDepartmentName('');
+      setNewDepartmentId('');
+      setSelectedFacultyForNewDept('');
+    } catch (error) {
+      console.error('Failed to create department:', error);
+      toast({ title: "Error", description: "Failed to create department. Please try again.", variant: "destructive"});
+    }
+  };
 
   const toggleEditFaculty = (id: string) => {
     setFaculties(prev => prev.map(f => f.id === id ? {...f, isEditing: !f.isEditing, newName: f.name } : f));
@@ -113,6 +179,54 @@ export default function UniversityStructurePage() {
         variant: 'default'
     });
   };
+
+  // Handle loading state
+  if (isLoading) {
+    return (
+      <div className="space-y-8 p-4 md:p-6">
+        <PageHeader
+          title="University Structure Management"
+          description="Define and manage faculties and departments within the university."
+          icon={Landmark}
+          breadcrumbs={[
+            { href: "/admin/dashboard", label: "Admin Dashboard" },
+            { label: "University Structure" }
+          ]}
+        />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card className="shadow-lg rounded-xl">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-center h-40">
+                <div className="text-center space-y-2">
+                  <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+                  <p className="text-sm text-muted-foreground">Loading faculties...</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="shadow-lg rounded-xl">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-center h-40">
+                <div className="text-center space-y-2">
+                  <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+                  <p className="text-sm text-muted-foreground">Loading departments...</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // Handle error state (but still show interface with fallback data)
+  if (error) {
+    toast({ 
+      title: "Warning", 
+      description: "Using local data as fallback. Some features may be limited.", 
+      variant: "default" 
+    });
+  }
 
   return (
     <div className="space-y-8 p-4 md:p-6">
@@ -307,5 +421,3 @@ export default function UniversityStructurePage() {
     </div>
   );
 }
-
-    

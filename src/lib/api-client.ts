@@ -105,7 +105,7 @@ class ApiClient {
     }
 
     async getCurrentUser(): Promise<UserProfileData> {
-        return this.request<UserProfileData>('api/auth/me');
+        return this.request<UserProfileData>('api/users/me');
     }
 
     async logout(): Promise<void> {
@@ -166,11 +166,11 @@ class ApiClient {
     }
 
     async getStudentProfile(): Promise<any> {
-        return this.request('api/students/me');
+        return this.request('api/students/me/profile');
     }
 
     async updateStudentProfile(data: any): Promise<any> {
-        return this.request('api/students/me', {
+        return this.request('api/students/me/profile', {
             method: 'PUT',
             body: data,
         });
@@ -298,6 +298,49 @@ class ApiClient {
 
     async verifyStudentOtp(data: { email: string; otp_code: string; password: string }): Promise<{ message: string; user: any }> {
         return this.request('api/student-verification/verify-otp', {
+            method: 'POST',
+            body: data,
+        });
+    }
+
+    // Supervisor verification methods
+    async sendSupervisorOtp(email: string): Promise<{ message: string; email: string; otp?: string }> {
+        return this.request('api/supervisor-verification/send-otp', {
+            method: 'POST',
+            body: { email },
+        });
+    }
+
+    async verifySupervisorOtp(data: { 
+        email: string; 
+        otp_code: string; 
+        password: string;
+        job_title?: string;
+        phone_number?: string;
+    }): Promise<{ message: string; user: any }> {
+        return this.request('api/supervisor-verification/verify-otp', {
+            method: 'POST',
+            body: data,
+        });
+    }
+
+    // Lecturer verification methods
+    async sendLecturerOtp(email: string): Promise<{ message: string; email: string; otp?: string }> {
+        return this.request('api/lecturer-verification/send-otp', {
+            method: 'POST',
+            body: { email },
+        });
+    }
+
+    async verifyLecturerOtp(data: { 
+        email: string; 
+        otp_code: string; 
+        password: string;
+        staff_id?: string;
+        phone_number?: string;
+        office_location?: string;
+    }): Promise<{ message: string; user: any }> {
+        return this.request('api/lecturer-verification/verify-otp', {
             method: 'POST',
             body: data,
         });

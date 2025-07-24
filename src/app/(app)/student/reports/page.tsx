@@ -14,60 +14,9 @@ import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile'; 
 import { useToast } from '@/hooks/use-toast';
 import { format, parseISO } from 'date-fns';
-
-export const DUMMY_REPORTS: (DailyReport & { title?: string; challengesFaced?: string; securePhotoUrl?: string; attachments?: string[]; supervisorComments?: string })[] = [
-  { 
-    id: 'report1', 
-    date: '2024-07-26', 
-    title: 'Weekly Auth Module Summary',
-    description: 'Weekly summary of authentication module progress. Focused on JWT implementation and secure endpoint testing. Reviewed security protocols and updated documentation.', 
-    outcomes: 'Module 70% complete. Security review passed.', 
-    learningObjectives: 'Advanced JWT, security best practices, technical documentation.', 
-    studentId: 'stu1', 
-    status: 'APPROVED',
-    challengesFaced: "Minor issues with token refresh logic, resolved by adjusting expiration strategy.",
-    attachments: ['auth_architecture.pdf', 'security_review_notes.txt'],
-    securePhotoUrl: 'https://placehold.co/600x400.png',
-    supervisorComments: "Good progress this week, Alice. The JWT implementation looks solid. Keep up the great work!"
-  },
-  { 
-    id: 'report2', 
-    date: '2024-07-27', 
-    title: 'Mid-Internship Presentation Prep',
-    description: 'Mid-internship review presentation preparation and content finalization for all key sections. Practiced delivery and timing.', 
-    outcomes: 'Presentation draft ready. Confident in delivery.', 
-    learningObjectives: 'Presentation skills, summarizing technical work for diverse audiences.', 
-    studentId: 'stu1', 
-    status: 'SUBMITTED',
-    challengesFaced: "Condensing all work into a short presentation was challenging.",
-    attachments: ['mid_term_presentation.pptx'],
-    supervisorComments: "Looking forward to seeing the presentation."
-  },
-  { 
-    id: 'report3', 
-    date: '2024-07-25', 
-    title: 'New Feature X Planning',
-    description: 'Initial setup and planning for the new feature X, including requirement gathering, user story creation, and timeline estimation.', 
-    outcomes: 'Project plan created. User stories documented.', 
-    learningObjectives: 'Agile planning, requirement elicitation techniques.', 
-    studentId: 'stu1', 
-    status: 'PENDING',
-    challengesFaced: "Ambiguity in initial requirements, clarified with product manager.",
-    securePhotoUrl: 'https://placehold.co/600x400.png'
-  },
-  { 
-    id: 'report4', 
-    date: '2024-07-24', 
-    title: 'Bug Fixing Sprint v1.2',
-    description: 'Bug fixing for version 1.2 release, addressing critical issues reported by QA. Focused on payment module bugs.', 
-    outcomes: 'Critical bugs in payment module resolved. Test coverage improved.', 
-    learningObjectives: 'Advanced debugging techniques, payment gateway integration nuances.', 
-    studentId: 'stu1', 
-    status: 'REJECTED',
-    challengesFaced: "One particularly elusive bug took significant time to trace and fix.",
-    supervisorComments: "Some non-critical bugs remain. Please address them and resubmit the affected module for testing."
-  },
-];
+import { useAuth } from '@/contexts/auth-context';
+import { StudentApiService } from '@/lib/services/studentApi';
+import EmptyState from '@/components/shared/empty-state';
 
 const statusColors: Record<DailyReport['status'], string> = {
   PENDING: 'bg-[hsl(var(--accent)/0.1)] text-[hsl(var(--accent))] border-[hsl(var(--accent)/0.2)]',
@@ -77,7 +26,11 @@ const statusColors: Record<DailyReport['status'], string> = {
 };
 
 export default function ReportsPage() {
-  const [filteredReports, setFilteredReports] = React.useState<DailyReport[]>(DUMMY_REPORTS);
+  const { user } = useAuth();
+  const [allReports, setAllReports] = React.useState<DailyReport[]>([]);
+  const [filteredReports, setFilteredReports] = React.useState<DailyReport[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
   const [statusFilter, setStatusFilter] = React.useState<Record<DailyReport['status'], boolean>>({
     PENDING: true,
     SUBMITTED: true,
@@ -87,9 +40,37 @@ export default function ReportsPage() {
   const isMobile = useIsMobile();
   const { toast } = useToast();
 
+  // Fetch reports data from API
   React.useEffect(() => {
-    setFilteredReports(DUMMY_REPORTS.filter(report => statusFilter[report.status]));
-  }, [statusFilter]);
+    const fetchReports = async () => {
+      if (!user) return;
+      
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        const reportsData = await StudentApiService.getReports();
+        const reports = Array.isArray(reportsData) ? reportsData : [];
+        setAllReports(reports);
+        setFilteredReports(reports.filter(report => 
+          report.status && statusFilter[report.status as DailyReport['status']]
+        ));
+      } catch (err) {
+        console.error('Failed to fetch reports:', err);
+        setError('Failed to load reports');
+        setAllReports([]);
+        setFilteredReports([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchReports();
+  }, [user]);
+
+  React.useEffect(() => {
+    setFilteredReports(allReports.filter(report => statusFilter[report.status]));
+  }, [statusFilter, allReports]);
   
   const handleStatusFilterChange = (status: DailyReport['status']) => {
     setStatusFilter(prev => ({ ...prev, [status]: !prev[status] }));
@@ -134,6 +115,35 @@ export default function ReportsPage() {
       </CardFooter>
     </Card>
   );
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading reports...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <FileText className="h-8 w-8 text-destructive mx-auto mb-4" />
+          <p className="text-destructive">{error}</p>
+          <Button 
+            variant="outline" 
+            onClick={() => window.location.reload()} 
+            className="mt-4"
+          >
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 p-4 md:p-6">
@@ -229,16 +239,20 @@ export default function ReportsPage() {
             </Table>
             )
           ) : (
-             <div className={cn("text-center py-12 text-muted-foreground", isMobile ? "p-0 pt-8" : "p-6")}>
-              <FileText className="mx-auto h-12 w-12 mb-4 opacity-30" />
-              <p className="text-lg font-semibold">No reports found.</p>
-              <p>Submit a new report or adjust your filters.</p>
+            <div className={cn("py-12", isMobile ? "p-4" : "p-6")}>
+              <EmptyState
+                icon={FileText}
+                title="No Reports Found"
+                description="You haven't submitted any reports yet or none match your current filters."
+                actionLabel="Submit New Report"
+                onAction={() => window.location.href = '/student/reports/new'}
+              />
             </div>
           )}
         </CardContent>
         {!isMobile && filteredReports.length > 0 && (
           <CardFooter className="justify-end p-4 border-t">
-             <p className="text-sm text-muted-foreground">Showing {filteredReports.length} of {DUMMY_REPORTS.length} reports</p>
+             <p className="text-sm text-muted-foreground">Showing {filteredReports.length} of {allReports.length} reports</p>
           </CardFooter>
         )}
       </Card>

@@ -30,8 +30,8 @@ export default function StudentAttendancePage() {
   const [error, setError] = useState<string | null>(null);
   
   // Get realtime metrics for attendance data
-  const { data: metricsData } = useRealtimeMetrics({
-    userId: user?.id || 0,
+  const { metrics: metricsData } = useRealtimeMetrics({
+    userId: typeof user?.id === 'string' ? user.id : undefined,
     role: 'student',
     refreshInterval: 30000
   });

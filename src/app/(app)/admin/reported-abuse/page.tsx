@@ -9,7 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import type { AbuseReport } from '@/types';
-import { getAbuseReports, updateReportStatus } from '@/lib/services/issue.service';
+import { AdminApiService } from '@/lib/services/adminApi';
+import EmptyState from '@/components/shared/empty-state';
 
 const statusColors: Record<AbuseReport['status'], string> = {
     OPEN: 'bg-red-100 text-red-700 border-red-500/30 dark:bg-red-900/50 dark:text-red-300',
@@ -20,10 +21,23 @@ const statusColors: Record<AbuseReport['status'], string> = {
 export default function ReportedAbusePage() {
   const { toast } = useToast();
   const [reports, setReports] = React.useState<AbuseReport[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
 
   const fetchReports = React.useCallback(async () => {
-    const allReports = await getAbuseReports();
-    setReports(allReports.sort((a, b) => new Date(b.dateReported).getTime() - new Date(a.dateReported).getTime()));
+    try {
+      setIsLoading(true);
+      setError(null);
+      const allReports = await AdminApiService.getAbuseReports();
+      const reportsArray = Array.isArray(allReports) ? allReports : [];
+      setReports(reportsArray.sort((a, b) => new Date(b.dateReported).getTime() - new Date(a.dateReported).getTime()));
+    } catch (err) {
+      console.error('Failed to fetch abuse reports:', err);
+      setError('Failed to load reports');
+      setReports([]);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   React.useEffect(() => {
@@ -31,12 +45,21 @@ export default function ReportedAbusePage() {
   }, [fetchReports]);
 
   const handleUpdateStatus = async (reportId: string, status: AbuseReport['status']) => {
-    await updateReportStatus(reportId, status);
-    toast({
+    try {
+      await AdminApiService.updateAbuseReportStatus(reportId, status);
+      toast({
         title: "Status Updated",
         description: `Report #${reportId.substring(0,6)} has been marked as ${status}.`,
-    });
-    fetchReports(); // Refresh list
+      });
+      fetchReports(); // Refresh list
+    } catch (error) {
+      console.error('Failed to update report status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update report status. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const openReports = reports.filter(r => r.status === 'OPEN' || r.status === 'IN_PROGRESS');
@@ -45,19 +68,19 @@ export default function ReportedAbusePage() {
   return (
     <div className="space-y-8 p-4 md:p-6">
       <PageHeader
-        title="Reported Issues"
-        description="Review and manage all student-reported issues and grievances."
+        title="Reported Abuse"
+        description="Review and manage all student-reported abuse and grievances."
         icon={ShieldAlert}
         breadcrumbs={[
           { href: "/admin/dashboard", label: "Admin Dashboard" },
-          { label: "Reported Issues" }
+          { label: "Reported Abuse" }
         ]}
       />
       <Card className="shadow-lg rounded-xl">
         <CardHeader>
-          <CardTitle className="font-headline text-lg">Active Issues</CardTitle>
+          <CardTitle className="font-headline text-lg">Active Abuse Reports</CardTitle>
           <CardDescription>
-            Issues that are open or currently under investigation.
+            Abuse reports that are open or currently under investigation.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -91,15 +114,15 @@ export default function ReportedAbusePage() {
           ) : (
             <div className="text-center py-10 text-muted-foreground">
               <CheckCircle className="mx-auto h-12 w-12 mb-3 text-green-500" />
-              <p>No active issues to review at this time.</p>
+              <p>No active abuse reports to review at this time.</p>
             </div>
           )}
         </CardContent>
       </Card>
        <Card className="shadow-lg rounded-xl mt-6">
         <CardHeader>
-            <CardTitle className="font-headline text-lg">Resolved Issues</CardTitle>
-            <CardDescription>Archived issues for reference.</CardDescription>
+            <CardTitle className="font-headline text-lg">Resolved Abuse Reports</CardTitle>
+            <CardDescription>Archived abuse reports for reference.</CardDescription>
         </CardHeader>
         <CardContent>
            {resolvedReports.length > 0 ? (
@@ -118,7 +141,7 @@ export default function ReportedAbusePage() {
                 </Card>
              ))
            ) : (
-            <p className="text-muted-foreground text-sm">No resolved issues found.</p>
+            <p className="text-muted-foreground text-sm">No resolved abuse reports found.</p>
            )}
         </CardContent>
       </Card>

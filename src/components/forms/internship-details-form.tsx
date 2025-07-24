@@ -274,7 +274,20 @@ export default function InternshipDetailsForm({ defaultValues, onSuccess, isResu
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             {isResubmitting ? 'Resubmit for HOD Approval' : 'Submit for HOD Approval'}
             </Button>
-             <Button type="button" variant="outline" className="w-full sm:w-auto rounded-lg" onClick={() => onSuccess?.(form.getValues() as InternshipDetails)} disabled={isLoading}>
+             <Button
+                type="button"
+                variant="outline"
+                className="w-full sm:w-auto rounded-lg"
+                onClick={() => {
+                  const values = form.getValues();
+                  onSuccess?.({
+                    ...values,
+                    startDate: values.startDate ? format(values.startDate, 'yyyy-MM-dd') : '',
+                    endDate: values.endDate ? format(values.endDate, 'yyyy-MM-dd') : '',
+                  } as InternshipDetails);
+                }}
+                disabled={isLoading}
+              >
                 Cancel
             </Button>
         </div>

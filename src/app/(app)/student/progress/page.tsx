@@ -13,6 +13,7 @@ import {
   Calendar, 
   CheckCircle, 
   Clock,
+  AlertCircle,
   BarChart3,
   LineChart,
   Activity,
@@ -82,8 +83,8 @@ export default function StudentProgressPage() {
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'all'>('month');
 
   // Get realtime metrics
-  const { data: metricsData } = useRealtimeMetrics({
-    userId: user?.id || 1, 
+  const { metrics: metricsData, isLoading: metricsLoading, error: metricsError } = useRealtimeMetrics({
+    userId: user?.id?.toString(), 
     role: 'student',
     refreshInterval: 30000
   });
@@ -104,9 +105,9 @@ export default function StudentProgressPage() {
           StudentApiService.getActivityData(selectedPeriod)
         ]);
 
-        setSkills(skillsData || []);
-        setMilestones(milestonesData || []);
-        setActivityData(activityDataResult || []);
+        setSkills(Array.isArray(skillsData) ? skillsData : []);
+        setMilestones(Array.isArray(milestonesData) ? milestonesData : []);
+        setActivityData(Array.isArray(activityDataResult) ? activityDataResult : []);
       } catch (err) {
         console.error('Failed to fetch progress data:', err);
         setError('Failed to load progress data');
@@ -298,72 +299,93 @@ export default function StudentProgressPage() {
         </TabsList>
 
         <TabsContent value="skills" className="space-y-4">
-          {/* Skills Overview */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Award className="h-5 w-5" />
-                Skill Development Progress
-              </CardTitle>
-              <CardDescription>
-                Track your progress across technical, soft, and domain-specific skills
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RechartsBarChart data={skillChartData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="current" fill="#3B82F6" name="Current Level" />
-                    <Bar dataKey="target" fill="#E5E7EB" name="Target Level" />
-                  </RechartsBarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Skills by Category */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {Object.entries(skillsByCategory).map(([category, categorySkills]) => (
-              <Card key={category}>
+          {skills.length === 0 ? (
+            <EmptyState
+              icon={Award}
+              title="No Skills Data"
+              description="Your skills progress will appear here once you start tracking your development."
+              actionLabel="Add Skills"
+              onAction={() => console.log('Add skills')}
+            />
+          ) : (
+            <>
+              {/* Skills Overview */}
+              <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    {getSkillCategoryIcon(category as SkillProgress['category'])}
-                    {category.charAt(0).toUpperCase() + category.slice(1)} Skills
+                  <CardTitle className="flex items-center gap-2">
+                    <Award className="h-5 w-5" />
+                    Skill Development Progress
                   </CardTitle>
+                  <CardDescription>
+                    Track your progress across technical, soft, and domain-specific skills
+                  </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  {categorySkills.map((skill) => (
-                    <div key={skill.id}>
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm font-medium">{skill.name}</span>
-                        <span className="text-sm text-muted-foreground">
-                          {skill.currentLevel}%
-                        </span>
-                      </div>
-                      <Progress value={skill.currentLevel} className="h-2" />
-                      <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                        <span>Target: {skill.targetLevel}%</span>
-                        <span>Last assessed: {format(new Date(skill.lastAssessed), 'MMM dd')}</span>
-                      </div>
-                    </div>
-                  ))}
+                <CardContent>
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RechartsBarChart data={skillChartData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
+                        <YAxis />
+                        <Tooltip />
+                        <Bar dataKey="current" fill="#3B82F6" name="Current Level" />
+                        <Bar dataKey="target" fill="#E5E7EB" name="Target Level" />
+                      </RechartsBarChart>
+                    </ResponsiveContainer>
+                  </div>
                 </CardContent>
               </Card>
-            ))}
-          </div>
+
+              {/* Skills by Category */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {Object.entries(skillsByCategory).map(([category, categorySkills]) => (
+                  <Card key={category}>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        {getSkillCategoryIcon(category as SkillProgress['category'])}
+                        {category.charAt(0).toUpperCase() + category.slice(1)} Skills
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {categorySkills.map((skill) => (
+                        <div key={skill.id}>
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-sm font-medium">{skill.name}</span>
+                            <span className="text-sm text-muted-foreground">
+                              {skill.currentLevel}%
+                            </span>
+                          </div>
+                          <Progress value={skill.currentLevel} className="h-2" />
+                          <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                            <span>Target: {skill.targetLevel}%</span>
+                            <span>Last assessed: {format(new Date(skill.lastAssessed), 'MMM dd')}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </>
+          )}
         </TabsContent>
 
         <TabsContent value="milestones" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="h-5 w-5" />
-                Internship Milestones
-              </CardTitle>
+          {milestones.length === 0 ? (
+            <EmptyState
+              icon={Target}
+              title="No Milestones Set"
+              description="Your internship milestones and objectives will appear here once they are defined."
+              actionLabel="Set Milestones"
+              onAction={() => console.log('Set milestones')}
+            />
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5" />
+                  Internship Milestones
+                </CardTitle>
               <CardDescription>
                 Key objectives and achievements throughout your internship
               </CardDescription>
@@ -405,20 +427,31 @@ export default function StudentProgressPage() {
               </div>
             </CardContent>
           </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="activity" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="h-5 w-5" />
-                Daily Activity
-              </CardTitle>
-              <CardDescription>
-                Your daily work patterns and productivity metrics
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+          {activityData.length === 0 ? (
+            <EmptyState
+              icon={Activity}
+              title="No Activity Data"
+              description="Your daily activity and productivity metrics will appear here once you start working."
+              actionLabel="View Analytics"
+              onAction={() => console.log('View analytics')}
+            />
+          ) : (
+            <>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Activity className="h-5 w-5" />
+                    Daily Activity
+                  </CardTitle>
+                  <CardDescription>
+                    Your daily work patterns and productivity metrics
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <RechartsLineChart data={chartData}>
@@ -466,6 +499,8 @@ export default function StudentProgressPage() {
               </CardContent>
             </Card>
           </div>
+            </>
+          )}
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-4">

@@ -17,7 +17,8 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { NAV_LINKS, BOTTOM_NAV_LINKS, USER_ROLES } from '@/lib/constants';
-import type { NavItem, UserRole } from '@/types';
+import type { UserRole } from '@/types';
+import type { NavItem } from '@/lib/constants';
 import { LogOut, ChevronLeft, ChevronRight, GraduationCap } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/auth-context';

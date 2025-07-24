@@ -5,8 +5,9 @@ import PageHeader from '@/components/shared/page-header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { School, Users, BarChart3, Landmark, UserCog, Building, UserCheck, TrendingUp, Briefcase, Settings, Loader2 } from 'lucide-react';
-// Removed Firestore imports: db, collection, getCountFromServer
+import { School, Users, BarChart3, Landmark, UserCog, Building, UserCheck, TrendingUp, Briefcase, Settings, Loader2, AlertCircle } from 'lucide-react';
+import { AdminApiService } from '@/lib/services/adminApi';
+import EmptyState from '@/components/shared/empty-state';
 
 const AdminDashboardStatCard: React.FC<{ title: string; value: string | number; icon: React.ElementType; description?: string; actionLink?: string; actionLabel?: string; isLoading?: boolean }> = ({ title, value, icon: Icon, description, actionLink, actionLabel, isLoading }) => (
   <Card className="shadow-lg rounded-xl">
@@ -54,22 +55,16 @@ export default function AdminDashboardPage() {
       setIsLoading(true);
       setError(null);
       try {
-        // Simulate fetching data (as Firestore is removed)
-        await new Promise(resolve => setTimeout(resolve, 1200)); 
-        
-        const fetchedData: UniversityStats = {
-          totalInterns: 782,
-          activeInternships: 715,
-          unassignedInterns: 28,
-          totalLecturers: 85,
-          avgLecturerWorkload: 9.2, 
-          totalCompanies: 125,
-          totalFaculties: 5, // Using dummy data for faculties
-        };
-        setUniversityStats(fetchedData);
+        const dashboardData = await AdminApiService.getDashboardStats();
+        if (dashboardData && typeof dashboardData === 'object') {
+          setUniversityStats(dashboardData as UniversityStats);
+        } else {
+          setError("Failed to load dashboard statistics. Please try again later.");
+        }
       } catch (err) {
         console.error("Error fetching admin dashboard stats:", err);
         setError("Failed to load dashboard statistics. Please try again later.");
+        setUniversityStats(null);
       } finally {
         setIsLoading(false);
       }
@@ -81,7 +76,33 @@ export default function AdminDashboardPage() {
   const engagementPercentage = universityStats ? ((universityStats.activeInternships / universityStats.totalInterns) * 100).toFixed(0) : '0';
 
   if (error) {
-    return <div className="p-6 text-center text-destructive">{error}</div>;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <AlertCircle className="h-8 w-8 text-destructive mx-auto mb-4" />
+          <p className="text-destructive">{error}</p>
+          <Button 
+            variant="outline" 
+            onClick={() => window.location.reload()} 
+            className="mt-4"
+          >
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!universityStats && !isLoading) {
+    return (
+      <EmptyState
+        icon={School}
+        title="No Dashboard Data"
+        description="Dashboard statistics could not be loaded. Please check your connection and try again."
+        actionLabel="Reload Dashboard"
+        onAction={() => window.location.reload()}
+      />
+    );
   }
 
   return (

@@ -56,8 +56,8 @@ export default function StudentInternshipPage() {
   const [error, setError] = useState<string | null>(null);
   
   // Get realtime metrics
-  const { data: metricsData } = useRealtimeMetrics({
-    userId: user?.id || 0,
+  const { metrics: metricsData } = useRealtimeMetrics({
+    userId: user?.id ? String(user.id) : undefined,
     role: 'student',
     refreshInterval: 30000
   });

@@ -17,7 +17,7 @@ export class StudentApiService {
   // Get student's internship details (using the actual backend endpoint)
   static async getInternshipDetails() {
     try {
-      const internships = await api('/api/internships/me');
+      const internships = await api<any[]>('/api/internships/me');
       return internships?.[0] || null; // Return first internship or null
     } catch (error) {
       console.error('Failed to fetch internship details:', error);
@@ -280,6 +280,116 @@ export class StudentApiService {
       });
     } catch (error) {
       console.error('Failed to update profile:', error);
+      throw error;
+    }
+  }
+
+  // Update report
+  static async updateReport(reportId: string, reportData: any) {
+    try {
+      return await api(`/students/reports/${reportId}`, {
+        method: 'PUT',
+        body: reportData
+      });
+    } catch (error) {
+      console.error('Failed to update report:', error);
+      throw error;
+    }
+  }
+
+  // Delete document
+  static async deleteDocument(documentId: string) {
+    try {
+      return await api(`/students/documents/${documentId}`, {
+        method: 'DELETE'
+      });
+    } catch (error) {
+      console.error('Failed to delete document:', error);
+      throw error;
+    }
+  }
+
+  // Submit attendance (for manual attendance tracking)
+  static async submitAttendance(attendanceData: any) {
+    try {
+      return await api('/students/attendance', {
+        method: 'POST',
+        body: attendanceData
+      });
+    } catch (error) {
+      console.error('Failed to submit attendance:', error);
+      throw error;
+    }
+  }
+
+  // Update skill progress
+  static async updateSkillProgress(skillId: string, progressData: any) {
+    try {
+      return await api(`/students/skills/${skillId}/progress`, {
+        method: 'PUT',
+        body: progressData
+      });
+    } catch (error) {
+      console.error('Failed to update skill progress:', error);
+      throw error;
+    }
+  }
+
+  // Update milestone progress
+  static async updateMilestoneProgress(milestoneId: string, progressData: any) {
+    try {
+      return await api(`/students/milestones/${milestoneId}/progress`, {
+        method: 'PUT',
+        body: progressData
+      });
+    } catch (error) {
+      console.error('Failed to update milestone progress:', error);
+      throw error;
+    }
+  }
+
+  // Get my active internship details (single internship)
+  static async getMyInternship() {
+    try {
+      return await api('/api/students/me/active-internship');
+    } catch (error) {
+      console.error('Failed to fetch internship details:', error);
+      throw error;
+    }
+  }
+
+  // Get my internship submission
+  static async getMyInternshipSubmission() {
+    try {
+      return await api('/api/internships/my-submission');
+    } catch (error) {
+      console.error('Failed to fetch internship submission:', error);
+      return null;
+    }
+  }
+
+  // Submit an internship for approval
+  static async submitInternshipForApproval(submissionData: any) {
+    try {
+      return await api('/api/internships/submit', {
+        method: 'POST',
+        body: submissionData,
+      });
+    } catch (error) {
+      console.error('Failed to submit internship for approval:', error);
+      throw error;
+    }
+  }
+
+  // Perform check-in
+  static async checkIn(latitude: number, longitude: number) {
+    try {
+      return await api('/api/students/me/check-in', {
+        method: 'POST',
+        body: { latitude, longitude },
+      });
+    } catch (error) {
+      console.error('Failed to perform check-in:', error);
       throw error;
     }
   }

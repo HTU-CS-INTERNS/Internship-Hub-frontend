@@ -2,7 +2,7 @@
 'use client';
 import * as React from 'react';
 import PageHeader from '@/components/shared/page-header';
-import { UserCog, UserPlus, Search, Filter, UserCheck, UserX, CaseUpper, CalendarX2, Briefcase, Edit, Mail, Landmark, Building as BuildingIcon, ShieldCheck } from 'lucide-react';
+import { UserCog, UserPlus, Search, Filter, UserCheck, UserX, CaseUpper, CalendarX2, Briefcase, Edit, Mail, Landmark, Building as BuildingIcon, ShieldCheck, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,9 @@ import type { UserRole, Faculty, Department } from '@/types';
 import { USER_ROLES, FACULTIES, DEPARTMENTS } from '@/lib/constants';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
+import { AdminApiService } from '@/lib/services/adminApi';
+import EmptyState from '@/components/shared/empty-state';
+import { useToast } from '@/hooks/use-toast';
 
 type UserStatus = 'Active' | 'Inactive' | 'Pending';
 type AssignmentStatus = 'Assigned' | 'Unassigned';
@@ -62,6 +65,11 @@ const statusIcon: Record<UserStatus, React.ElementType> = {
 };
 
 export default function UserManagementPage() {
+  const { toast } = useToast();
+  const [allUsers, setAllUsers] = React.useState<ManagedUser[]>([]);
+  const [filteredUsers, setFilteredUsers] = React.useState<ManagedUser[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
   const [searchTerm, setSearchTerm] = React.useState('');
   const [roleFilter, setRoleFilter] = React.useState<UserRole | typeof ALL_ROLES_VALUE>(ALL_ROLES_VALUE);
   const [statusFilter, setStatusFilter] = React.useState<UserStatus | typeof ALL_STATUSES_VALUE>(ALL_STATUSES_VALUE);
@@ -69,6 +77,29 @@ export default function UserManagementPage() {
   const [facultyFilter, setFacultyFilter] = React.useState<string>(ALL_FACULTIES_VALUE);
   const [departmentFilter, setDepartmentFilter] = React.useState<string>(ALL_DEPARTMENTS_VALUE);
   const isMobile = useIsMobile();
+
+  // Fetch users data
+  React.useEffect(() => {
+    const fetchUsers = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const usersData = await AdminApiService.getAllUsers();
+        const users = Array.isArray(usersData) ? usersData : [];
+        setAllUsers(users);
+        setFilteredUsers(users);
+      } catch (err) {
+        console.error('Failed to fetch users:', err);
+        setError('Failed to load users');
+        setAllUsers([]);
+        setFilteredUsers([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   const availableDepartments = React.useMemo(() => {
     if (facultyFilter === ALL_FACULTIES_VALUE) return DEPARTMENTS;
@@ -80,26 +111,30 @@ export default function UserManagementPage() {
       setDepartmentFilter(ALL_DEPARTMENTS_VALUE);
     }
   }, [availableDepartments, departmentFilter]);
-  
-  const filteredUsers = DUMMY_ALL_USERS.filter(user => {
-    const searchMatch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        user.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const roleMatch = roleFilter === ALL_ROLES_VALUE || user.role === roleFilter;
-    const statusMatch = statusFilter === ALL_STATUSES_VALUE || user.status === statusFilter;
-    const facultyMatch = facultyFilter === ALL_FACULTIES_VALUE || user.facultyId === facultyFilter;
-    const departmentMatch = departmentFilter === ALL_DEPARTMENTS_VALUE || user.departmentId === departmentFilter;
-    
-    let assignmentMatch = true;
-    if (roleFilter === 'STUDENT') {
-      assignmentMatch = assignmentFilter === ALL_ASSIGNMENT_STATUSES_VALUE || user.assignmentStatus === assignmentFilter;
-    }
-    
-    if (user.role === 'SUPERVISOR' || user.role === 'ADMIN') {
-        return searchMatch && roleMatch && statusMatch;
-    }
 
-    return searchMatch && roleMatch && statusMatch && facultyMatch && departmentMatch && assignmentMatch;
-  });
+  // Filter users based on criteria
+  React.useEffect(() => {
+    const filtered = allUsers.filter(user => {
+      const searchMatch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          user.email.toLowerCase().includes(searchTerm.toLowerCase());
+      const roleMatch = roleFilter === ALL_ROLES_VALUE || user.role === roleFilter;
+      const statusMatch = statusFilter === ALL_STATUSES_VALUE || user.status === statusFilter;
+      const facultyMatch = facultyFilter === ALL_FACULTIES_VALUE || user.facultyId === facultyFilter;
+      const departmentMatch = departmentFilter === ALL_DEPARTMENTS_VALUE || user.departmentId === departmentFilter;
+      
+      let assignmentMatch = true;
+      if (roleFilter === 'STUDENT') {
+        assignmentMatch = assignmentFilter === ALL_ASSIGNMENT_STATUSES_VALUE || user.assignmentStatus === assignmentFilter;
+      }
+      
+      if (user.role === 'SUPERVISOR' || user.role === 'ADMIN') {
+          return searchMatch && roleMatch && statusMatch;
+      }
+
+      return searchMatch && roleMatch && statusMatch && facultyMatch && departmentMatch && assignmentMatch;
+    });
+    setFilteredUsers(filtered);
+  }, [allUsers, searchTerm, roleFilter, statusFilter, assignmentFilter, facultyFilter, departmentFilter]);
 
   const roleHasOrgStructure = roleFilter === 'STUDENT' || roleFilter === 'LECTURER' || roleFilter === 'HOD';
   
@@ -136,6 +171,93 @@ export default function UserManagementPage() {
     );
  };
 
+
+  // Handle loading state
+  if (isLoading) {
+    return (
+      <div className="space-y-8 p-4 md:p-6">
+        <PageHeader
+          title="User Management"
+          description="Oversee all user accounts across the university internship program."
+          icon={UserCog}
+          breadcrumbs={[
+            { href: "/admin/dashboard", label: "Admin Dashboard" },
+            { label: "User Management" }
+          ]}
+        />
+        <Card className="shadow-lg rounded-xl">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-center h-40">
+              <div className="text-center space-y-2">
+                <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+                <p className="text-sm text-muted-foreground">Loading users...</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Handle error state
+  if (error) {
+    return (
+      <div className="space-y-8 p-4 md:p-6">
+        <PageHeader
+          title="User Management"
+          description="Oversee all user accounts across the university internship program."
+          icon={UserCog}
+          breadcrumbs={[
+            { href: "/admin/dashboard", label: "Admin Dashboard" },
+            { label: "User Management" }
+          ]}
+        />
+        <EmptyState
+          icon={AlertCircle}
+          title="Failed to Load Users"
+          description="We couldn't load the user data. Please try again."
+          actionLabel="Try Again"
+          onAction={() => window.location.reload()}
+        />
+      </div>
+    );
+  }
+
+  // Handle empty state
+  if (filteredUsers.length === 0 && !isLoading && !error) {
+    return (
+      <div className="space-y-8 p-4 md:p-6">
+        <PageHeader
+          title="User Management"
+          description="Oversee all user accounts across the university internship program."
+          icon={UserCog}
+          breadcrumbs={[
+            { href: "/admin/dashboard", label: "Admin Dashboard" },
+            { label: "User Management" }
+          ]}
+          actions={
+            <div className="flex gap-2">
+              <Button className="rounded-lg"><UserPlus className="mr-2 h-4 w-4"/> Add New User</Button>
+            </div>
+          }
+        />
+        <EmptyState
+          icon={UserCog}
+          title={allUsers.length === 0 ? "No Users Found" : "No Users Match Filters"}
+          description={allUsers.length === 0 ? "There are no users in the system yet." : "Try adjusting your search criteria or filters."}
+          actionLabel={allUsers.length === 0 ? "Add First User" : "Clear Filters"}
+          onAction={allUsers.length === 0 ? () => {} : () => {
+            setSearchTerm('');
+            setRoleFilter(ALL_ROLES_VALUE);
+            setStatusFilter(ALL_STATUSES_VALUE);
+            setAssignmentFilter(ALL_ASSIGNMENT_STATUSES_VALUE);
+            setFacultyFilter(ALL_FACULTIES_VALUE);
+            setDepartmentFilter(ALL_DEPARTMENTS_VALUE);
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 p-4 md:p-6">

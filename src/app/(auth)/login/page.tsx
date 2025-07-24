@@ -47,6 +47,18 @@ export default function LoginPage() {
                 <Link href="/student-verification">Verify your account</Link>
               </Button>
             </div>
+            <div>
+              <span className="text-primary-foreground/80">Supervisor account: </span>
+              <Button variant="link" asChild className="p-0 h-auto text-primary-foreground hover:text-primary-foreground/90 underline">
+                <Link href="/supervisor-verification">Activate account</Link>
+              </Button>
+            </div>
+            <div>
+              <span className="text-primary-foreground/80">Lecturer account: </span>
+              <Button variant="link" asChild className="p-0 h-auto text-primary-foreground hover:text-primary-foreground/90 underline">
+                <Link href="/lecturer-verification">Activate account</Link>
+              </Button>
+            </div>
             <p className="text-xs text-primary-foreground/70 mt-6">&copy; {new Date().getFullYear()} InternHub - HTU</p>
           </div>
         </div>

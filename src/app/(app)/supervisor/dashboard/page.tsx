@@ -12,7 +12,9 @@ import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-
+import EmptyState from '@/components/shared/empty-state';
+import { SupervisorApiService } from '@/lib/services/supervisorApi';
+import { toast } from 'sonner';
 
 const getInitials = (name: string) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase() : 'U';
 
@@ -61,8 +63,17 @@ const SupervisorDashboardStatCard: React.FC<{
 };
 
 interface SupervisorIntern {
-  id: string; name: string; university: string; avatar: string; dataAiHint: string; pendingTasks: number; pendingReports: number;
+  id: string; 
+  name: string; 
+  university: string; 
+  department: string;
+  avatar?: string; 
+  pendingTasks: number; 
+  pendingReports: number;
+  progress: number;
+  status: string;
 }
+
 interface SupervisorStats {
   totalInterns: number;
   activeInterns: number;
@@ -71,6 +82,8 @@ interface SupervisorStats {
   completedTasks: number;
   overdueReports: number;
   monthlyHours: number;
+  pendingTasks: number;
+  pendingReports: number;
 }
 
 const SupervisorInternCardMobile: React.FC<{ intern: SupervisorIntern }> = ({ intern }) => (
@@ -78,7 +91,7 @@ const SupervisorInternCardMobile: React.FC<{ intern: SupervisorIntern }> = ({ in
     <CardHeader className="p-3 bg-muted/30 border-b">
       <div className="flex items-center gap-3">
         <Avatar className="h-10 w-10 border">
-          <AvatarImage src={intern.avatar} alt={intern.name} data-ai-hint={intern.dataAiHint} />
+          <AvatarImage src={intern.avatar} alt={intern.name} />
           <AvatarFallback className="bg-primary/10 text-primary">{getInitials(intern.name)}</AvatarFallback>
         </Avatar>
         <div>
@@ -88,6 +101,10 @@ const SupervisorInternCardMobile: React.FC<{ intern: SupervisorIntern }> = ({ in
       </div>
     </CardHeader>
     <CardContent className="p-3 space-y-1.5 text-xs">
+      <div className="flex justify-between items-center">
+        <span className="text-muted-foreground">Progress:</span>
+        <Badge variant="secondary" className="text-xs px-1.5 py-0.5">{intern.progress}%</Badge>
+      </div>
       <div className="flex justify-between items-center">
         <span className="text-muted-foreground">Pending Tasks:</span>
         <Badge variant={intern.pendingTasks > 0 ? "destructive" : "secondary"} className="text-xs px-1.5 py-0.5">{intern.pendingTasks}</Badge>
@@ -109,44 +126,78 @@ const SupervisorInternCardMobile: React.FC<{ intern: SupervisorIntern }> = ({ in
 
 export default function SupervisorDashboardPage() {
   const [supervisorStats, setSupervisorStats] = React.useState<SupervisorStats | null>(null);
+  const [supervisedInterns, setSupervisedInterns] = React.useState<SupervisorIntern[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [isLoadingInterns, setIsLoadingInterns] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const userName = typeof window !== 'undefined' ? localStorage.getItem('userName') || 'Supervisor' : 'Supervisor';
   const isMobile = useIsMobile();
-  const supervisedInterns: SupervisorIntern[] = [
-        { id: 'intern1', name: 'Samuel Green', university: 'State University - CompSci', avatar: 'https://placehold.co/100x100.png', dataAiHint: 'person portrait', pendingTasks: 2, pendingReports: 1 },
-        { id: 'intern2', name: 'Olivia Blue', university: 'Tech Institute - Design', avatar: 'https://placehold.co/100x100.png', dataAiHint: 'person portrait', pendingTasks: 0, pendingReports: 0 },
-    ];
-
 
   React.useEffect(() => {
-    const fetchStats = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        // Simulate fetching data
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        const fetchedData: SupervisorStats = {
-          totalInterns: 6,
-          activeInterns: 5,
-          pendingEvaluations: 2,
-          averageRating: 4.2,
-          completedTasks: 28,
-          overdueReports: 1,
-          monthlyHours: 168,
-        };
-        setSupervisorStats(fetchedData);
-      } catch (err) {
-        console.error("Error fetching supervisor dashboard stats:", err);
-        setError("Failed to load dashboard statistics. Please try again later.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchStats();
+    fetchDashboardData();
   }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      setIsLoading(true);
+      setIsLoadingInterns(true);
+      
+      const [statsData, internsData] = await Promise.all([
+        SupervisorApiService.getDashboardStats(),
+        SupervisorApiService.getMyInterns({ limit: 6 })
+      ]);
+
+      if (statsData && typeof statsData === 'object') {
+        setSupervisorStats({
+          totalInterns: (statsData as any).totalInterns || 0,
+          activeInterns: (statsData as any).activeInterns || 0,
+          pendingEvaluations: (statsData as any).pendingEvaluations || 0,
+          averageRating: (statsData as any).averageRating || 0,
+          completedTasks: (statsData as any).tasksCompleted || 0,
+          overdueReports: (statsData as any).overdueReports || 0,
+          monthlyHours: (statsData as any).monthlyHours || 0,
+          pendingTasks: (statsData as any).activeTasks || 0,
+          pendingReports: (statsData as any).pendingReports || 0
+        });
+      } else {
+        // Fallback data if API fails
+        setSupervisorStats({
+          totalInterns: 0,
+          activeInterns: 0,
+          pendingEvaluations: 0,
+          averageRating: 0,
+          completedTasks: 0,
+          overdueReports: 0,
+          monthlyHours: 0,
+          pendingTasks: 0,
+          pendingReports: 0
+        });
+      }
+
+      if (internsData && Array.isArray(internsData)) {
+        setSupervisedInterns(internsData.map((intern: any) => ({
+          id: intern.id,
+          name: intern.name || intern.user?.name || 'Unknown',
+          university: intern.university || intern.user?.university || 'Unknown University',
+          department: intern.department || 'Unknown Department',
+          avatar: intern.avatar || intern.user?.avatar,
+          pendingTasks: intern.pendingTasks || 0,
+          pendingReports: intern.pendingReports || 0,
+          progress: intern.progress || 0,
+          status: intern.status || 'active'
+        })));
+      } else {
+        setSupervisedInterns([]);
+      }
+    } catch (error) {
+      console.error('Failed to fetch dashboard data:', error);
+      setError('Failed to load dashboard data');
+      toast.error('Failed to load dashboard data');
+    } finally {
+      setIsLoading(false);
+      setIsLoadingInterns(false);
+    }
+  };
 
   if (error) {
     return <div className="p-6 text-center text-destructive">{error}</div>;
@@ -198,14 +249,28 @@ export default function SupervisorDashboardPage() {
                     <CardDescription>Quick overview of interns you are supervising.</CardDescription>
                 </CardHeader>
                 <CardContent className={cn(isMobile ? "p-0 space-y-4" : "p-0")}>
-                    {isMobile ? (
-                        supervisedInterns.map(intern => <SupervisorInternCardMobile key={intern.id} intern={intern} />)
+                    {isLoadingInterns ? (
+                        <div className="flex items-center justify-center p-8">
+                            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                            <span className="ml-2 text-muted-foreground">Loading interns...</span>
+                        </div>
+                    ) : supervisedInterns.length === 0 ? (
+                        <EmptyState
+                            icon={Users2}
+                            title="No Interns Assigned"
+                            description="You don't have any interns assigned to you yet. Contact your administrator if you expect to have interns."
+                        />
+                    ) : isMobile ? (
+                        <div className="p-4 space-y-4">
+                            {supervisedInterns.map(intern => <SupervisorInternCardMobile key={intern.id} intern={intern} />)}
+                        </div>
                     ) : (
                      <Table>
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Intern</TableHead>
                                 <TableHead>University/Program</TableHead>
+                                <TableHead className="text-center">Progress</TableHead>
                                 <TableHead className="text-center">Pending Tasks</TableHead>
                                 <TableHead className="text-center">Pending Reports</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
@@ -217,17 +282,29 @@ export default function SupervisorDashboardPage() {
                                     <TableCell>
                                         <div className="flex items-center gap-3">
                                             <Avatar className="h-9 w-9">
-                                                <AvatarImage src={intern.avatar} alt={intern.name} data-ai-hint={intern.dataAiHint} />
+                                                <AvatarImage src={intern.avatar} alt={intern.name} />
                                                 <AvatarFallback>{getInitials(intern.name)}</AvatarFallback>
                                             </Avatar>
                                             <div>
                                                 <p className="font-medium">{intern.name}</p>
+                                                <p className="text-sm text-muted-foreground">{intern.department}</p>
                                             </div>
                                         </div>
                                     </TableCell>
                                     <TableCell>{intern.university}</TableCell>
-                                    <TableCell className="text-center"><Badge variant={intern.pendingTasks > 0 ? "destructive" : "secondary"}>{intern.pendingTasks}</Badge></TableCell>
-                                    <TableCell className="text-center"><Badge variant={intern.pendingReports > 0 ? "destructive" : "secondary"}>{intern.pendingReports}</Badge></TableCell>
+                                    <TableCell className="text-center">
+                                        <Badge variant="secondary">{intern.progress}%</Badge>
+                                    </TableCell>
+                                    <TableCell className="text-center">
+                                        <Badge variant={intern.pendingTasks > 0 ? "destructive" : "secondary"}>
+                                            {intern.pendingTasks}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell className="text-center">
+                                        <Badge variant={intern.pendingReports > 0 ? "destructive" : "secondary"}>
+                                            {intern.pendingReports}
+                                        </Badge>
+                                    </TableCell>
                                     <TableCell className="text-right">
                                         <Link href={`/supervisor/interns/details/${intern.id}`} passHref>
                                             <Button variant="ghost" size="sm">View Profile</Button>
@@ -239,9 +316,13 @@ export default function SupervisorDashboardPage() {
                     </Table>
                     )}
                 </CardContent>
-                 <CardFooter className="justify-end p-4 border-t">
-                    <Button variant="outline" size="sm" asChild><Link href="/supervisor/interns">View All Interns</Link></Button>
-                </CardFooter>
+                {!isLoadingInterns && supervisedInterns.length > 0 && (
+                    <CardFooter className="justify-end p-4 border-t">
+                        <Button variant="outline" size="sm" asChild>
+                            <Link href="/supervisor/interns">View All Interns</Link>
+                        </Button>
+                    </CardFooter>
+                )}
             </Card>
     </div>
   );

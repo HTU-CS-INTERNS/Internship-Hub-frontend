@@ -16,6 +16,9 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
+import { AdminApiService } from '@/lib/services/adminApi';
+import EmptyState from '@/components/shared/empty-state';
+import { Users, AlertCircle } from 'lucide-react';
 
 interface PendingStudent {
   id: number;
@@ -47,14 +50,25 @@ interface PendingStudent {
 function PendingStudentsList() {
   const [pendingStudents, setPendingStudents] = useState<PendingStudent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const fetchPendingStudents = async () => {
     try {
       setLoading(true);
-      const data = await apiClient.request<PendingStudent[]>('api/students/pending');
-      setPendingStudents(data);
+      setError(null);
+      // Try AdminApiService first, fallback to direct API call
+      try {
+        const data = await AdminApiService.getPendingStudents();
+        setPendingStudents(Array.isArray(data) ? data : []);
+      } catch (adminApiError) {
+        console.log('AdminApiService failed, trying direct API call...');
+        const data = await apiClient.request<PendingStudent[]>('api/students/pending');
+        setPendingStudents(data);
+      }
     } catch (error) {
+      console.error('Failed to fetch pending students:', error);
+      setError('Failed to load pending students');
       toast({
         title: 'Error',
         description: 'Failed to fetch pending students',

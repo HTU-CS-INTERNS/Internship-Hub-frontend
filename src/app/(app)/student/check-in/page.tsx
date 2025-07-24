@@ -14,6 +14,7 @@ import PageHeader from '@/components/shared/page-header';
 import { createCheckInForStudent, getCheckInsByStudentId } from '@/lib/services/checkInService';
 import type { CheckInCreatePayload } from '@/lib/services/checkInService'; 
 import { useRouter } from 'next/navigation';
+import { StudentApiService } from '@/lib/services/studentApi';
 
 type CheckinStep = 'initial' | 'gpsPrompt' | 'manualReason' | 'geofenceWarning' | 'success';
 
@@ -23,6 +24,22 @@ interface StoredCheckinData {
   date: string; 
   photoPreview?: string | null; 
   isGpsVerified?: boolean;
+}
+
+// Helper function to calculate distance between two coordinates
+function haversineDistance(coords1: {lat: number, lng: number}, coords2: {lat: number, lng: number}): number {
+  const R = 6371e3; // Earth's radius in meters
+  const φ1 = coords1.lat * Math.PI/180;
+  const φ2 = coords2.lat * Math.PI/180;
+  const Δφ = (coords2.lat-coords1.lat) * Math.PI/180;
+  const Δλ = (coords2.lng-coords1.lng) * Math.PI/180;
+
+  const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+          Math.cos(φ1) * Math.cos(φ2) *
+          Math.sin(Δλ/2) * Math.sin(Δλ/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+  return R * c; // Distance in meters
 }
 
 export default function CheckInPage() {
@@ -103,13 +120,25 @@ export default function CheckInPage() {
       async (position) => {
         const { latitude, longitude } = position.coords;
         
-        // --- Geofence Logic (Client-Side Simulation) ---
-        // In a real app, fetch company geofence details from backend.
-        // For mock: Assume company is at (34.0522, -118.2437) and radius 500m.
-        // const companyLat = 34.0522; const companyLng = -118.2437; const radius = 500;
-        // const distance = haversineDistance({lat: latitude, lng: longitude}, {lat: companyLat, lng: companyLng});
-        // const withinGeofence = distance <= radius;
-        const withinGeofence = Math.random() < 0.8; // Simulate 80% chance of being within geofence
+        // --- Geofence Logic ---
+        // Fetch company location data for geofence verification
+        let withinGeofence = true; // Default to true if we can't verify
+        try {
+          const companyData = await StudentApiService.getCompanyInfo();
+          // Type assertion to inform TypeScript about the expected structure
+          const companyInfo = companyData as { company?: { coordinates?: { lat: number; lng: number; radius?: number } } };
+          if (companyInfo?.company?.coordinates) {
+            const { lat: companyLat, lng: companyLng, radius = 500 } = companyInfo.company.coordinates;
+            const distance = haversineDistance(
+              { lat: latitude, lng: longitude }, 
+              { lat: companyLat, lng: companyLng }
+            );
+            withinGeofence = distance <= radius;
+          }
+        } catch (error) {
+          console.warn('Could not fetch company location for geofence check:', error);
+          // Continue with check-in if we can't verify location
+        }
 
         const checkInData: CheckInCreatePayload = {
           latitude: latitude,
