@@ -19,16 +19,16 @@ import { toast } from 'sonner';
 
 interface PendingTask {
   id: string;
-  title: string;
   description: string;
-  dueDate: string;
-  priority: 'low' | 'medium' | 'high';
-  status: 'pending' | 'submitted' | 'approved' | 'rejected';
-  internId: string;
+  task_date: string;
+  status: 'pending' | 'completed' | 'rejected';
+  internship_id: string;
   internName: string;
-  outcomes?: string;
-  submittedAt: string;
-  attachments?: string[];
+  internEmail?: string;
+  created_at: string;
+  updated_at: string;
+  expected_outcome?: string;
+  learning_objective?: string;
 }
 
 const taskStatusColors: Record<string, string> = {
@@ -52,7 +52,6 @@ export default function ApproveTasksPage() {
   const [priorityFilter, setPriorityFilter] = React.useState('all');
   const [selectedTask, setSelectedTask] = React.useState<PendingTask | null>(null);
   const [feedback, setFeedback] = React.useState('');
-  const [rating, setRating] = React.useState<number>(0);
   const [rejectReason, setRejectReason] = React.useState('');
   const [showApproveDialog, setShowApproveDialog] = React.useState(false);
   const [showRejectDialog, setShowRejectDialog] = React.useState(false);
@@ -63,19 +62,25 @@ export default function ApproveTasksPage() {
       const data = await SupervisorApiService.getPendingTasks();
       
       if (data && Array.isArray(data)) {
-        setPendingTasks(data.map((task: any) => ({
-          id: task.id,
-          title: task.title || 'Untitled Task',
-          description: task.description || 'No description provided',
-          dueDate: task.dueDate || new Date().toISOString(),
-          priority: task.priority || 'medium',
-          status: task.status || 'submitted',
-          internId: task.internId || task.student?.id,
-          internName: task.internName || task.student?.name || 'Unknown Intern',
-          outcomes: task.outcomes || task.submission?.outcomes,
-          submittedAt: task.submittedAt || task.submission?.submittedAt || new Date().toISOString(),
-          attachments: task.attachments || task.submission?.attachments || []
-        })));
+        setPendingTasks(data.map((task: any) => {
+          const student = task.internships?.students;
+          const user = student?.users;
+          const internName = user ? `${user.first_name} ${user.last_name}` : 'Unknown Intern';
+          
+          return {
+            id: task.id.toString(),
+            description: task.description || 'No description provided',
+            task_date: task.task_date || new Date().toISOString(),
+            status: task.status || 'pending',
+            internship_id: task.internship_id?.toString() || task.internships?.id?.toString() || '',
+            internName,
+            internEmail: user?.email || '',
+            created_at: task.created_at || new Date().toISOString(),
+            updated_at: task.updated_at || new Date().toISOString(),
+            expected_outcome: task.expected_outcome,
+            learning_objective: task.learning_objective
+          };
+        }));
       } else {
         setPendingTasks([]);
       }
@@ -96,12 +101,11 @@ export default function ApproveTasksPage() {
     
     try {
       setProcessingId(selectedTask.id);
-      await SupervisorApiService.approveTask(selectedTask.id, feedback, rating);
+      await SupervisorApiService.approveTask(selectedTask.id, feedback);
       
       toast.success('Task approved successfully');
       setShowApproveDialog(false);
       setFeedback('');
-      setRating(0);
       setSelectedTask(null);
       fetchPendingTasks();
     } catch (error) {
@@ -133,11 +137,10 @@ export default function ApproveTasksPage() {
   };
 
   const filteredTasks = pendingTasks.filter(task => {
-    const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         task.internName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         task.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesPriority = priorityFilter === 'all' || task.priority === priorityFilter;
-    return matchesSearch && matchesPriority;
+    const matchesSearch = task.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         task.internName.toLowerCase().includes(searchTerm.toLowerCase());
+    // Remove priority filter since it's not in the database schema
+    return matchesSearch;
   });
 
   if (isLoading) {
@@ -162,29 +165,17 @@ export default function ApproveTasksPage() {
         ]}
       />
 
-      {/* Search and Filter Controls */}
+      {/* Search Controls - Remove priority filter */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search tasks by title, intern name, or description..."
+            placeholder="Search tasks by description or intern name..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
           />
         </div>
-        <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-          <SelectTrigger className="w-[180px]">
-            <Filter className="h-4 w-4 mr-2" />
-            <SelectValue placeholder="Filter by priority" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Priorities</SelectItem>
-            <SelectItem value="high">High Priority</SelectItem>
-            <SelectItem value="medium">Medium Priority</SelectItem>
-            <SelectItem value="low">Low Priority</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
 
       <Card className="shadow-lg rounded-xl">
@@ -193,8 +184,8 @@ export default function ApproveTasksPage() {
           <CardDescription>
             {filteredTasks.length > 0 
                 ? `You have ${filteredTasks.length} task(s) awaiting your review.` 
-                : searchTerm || priorityFilter !== 'all'
-                  ? "No tasks match your current filters."
+                : searchTerm
+                  ? "No tasks match your current search."
                   : "No tasks are currently pending your approval."
             }
           </CardDescription>
@@ -208,31 +199,26 @@ export default function ApproveTasksPage() {
                      <div className="flex justify-between items-start">
                           <div className="flex-1">
                               <div className="flex items-center gap-2 mb-1">
-                                <h4 className="font-semibold text-foreground">{task.title}</h4>
-                                <Badge variant="outline" className={cn("text-xs", priorityColors[task.priority])}>
-                                  {task.priority}
+                                <h4 className="font-semibold text-foreground">Task for {task.internName}</h4>
+                                <Badge variant="outline" className={cn("text-xs", taskStatusColors[task.status])}>
+                                  {task.status}
                                 </Badge>
                               </div>
-                              <p className="text-sm text-muted-foreground">By: {task.internName}</p>
+                              <p className="text-sm text-muted-foreground">Intern: {task.internName}</p>
                               <p className="text-xs text-muted-foreground">
-                                Due: {format(new Date(task.dueDate), "PPP")} | 
-                                Submitted: {format(new Date(task.submittedAt), "PPp")}
+                                Due: {task.task_date ? format(new Date(task.task_date), "PPP") : 'No due date'} | 
+                                Created: {format(new Date(task.created_at), "PPp")}
                               </p>
                           </div>
-                          <Badge variant="outline" className={cn("text-xs shrink-0", taskStatusColors[task.status])}>
-                            {task.status}
-                          </Badge>
                       </div>
                   </CardHeader>
                    <CardContent className="text-sm">
                       <p className="mb-2"><strong>Description:</strong> {task.description}</p>
-                      {task.outcomes && (
-                        <p><strong>Outcomes:</strong> {task.outcomes}</p>
+                      {task.expected_outcome && (
+                        <p className="mb-2"><strong>Expected Outcome:</strong> {task.expected_outcome}</p>
                       )}
-                      {task.attachments && task.attachments.length > 0 && (
-                        <p className="text-xs text-muted-foreground mt-2">
-                          {task.attachments.length} attachment(s)
-                        </p>
+                      {task.learning_objective && (
+                        <p><strong>Learning Objective:</strong> {task.learning_objective}</p>
                       )}
                    </CardContent>
                   <CardFooter className="justify-end gap-2 pt-2">
@@ -306,21 +292,6 @@ export default function ApproveTasksPage() {
                               onChange={(e) => setFeedback(e.target.value)}
                             />
                           </div>
-                          <div>
-                            <label className="text-sm font-medium">Rating (1-5)</label>
-                            <Select value={rating.toString()} onValueChange={(value) => setRating(parseInt(value))}>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select rating" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="5">5 - Excellent</SelectItem>
-                                <SelectItem value="4">4 - Good</SelectItem>
-                                <SelectItem value="3">3 - Satisfactory</SelectItem>
-                                <SelectItem value="2">2 - Needs Improvement</SelectItem>
-                                <SelectItem value="1">1 - Poor</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
                         </div>
                         <DialogFooter>
                           <Button variant="outline" onClick={() => setShowApproveDialog(false)}>
@@ -338,7 +309,7 @@ export default function ApproveTasksPage() {
                       </DialogContent>
                     </Dialog>
 
-                     <Link href={`/supervisor/interns/details/${task.internId}?taskId=${task.id}`} passHref> 
+                     <Link href={`/supervisor/interns/details/${task.internship_id}?taskId=${task.id}`} passHref> 
                          <Button variant="ghost" size="sm" disabled={!!processingId}>
                            <Eye className="mr-1 h-4 w-4"/>View Details
                          </Button>
@@ -350,17 +321,17 @@ export default function ApproveTasksPage() {
           ) : (
              <EmptyState
                icon={CheckSquare}
-               title={searchTerm || priorityFilter !== 'all' ? "No Tasks Found" : "All Caught Up!"}
+               title={searchTerm ? "No Tasks Found" : "All Caught Up!"}
                description={
-                 searchTerm || priorityFilter !== 'all'
+                 searchTerm
                    ? "No tasks match your current search criteria."
                    : "No tasks require your attention at this moment."
                }
                onAction={
-                 (searchTerm || priorityFilter !== 'all') ? () => { setSearchTerm(''); setPriorityFilter('all'); } : undefined
+                 searchTerm ? () => setSearchTerm('') : undefined
                }
                actionLabel={
-                 (searchTerm || priorityFilter !== 'all') ? "Clear Filters" : undefined
+                 searchTerm ? "Clear Search" : undefined
                }
              />
           )}

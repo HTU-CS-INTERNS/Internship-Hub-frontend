@@ -32,15 +32,17 @@ interface InternDetails {
   progress: number;
   status: string;
   pendingTasks: number;
-  pendingReports: number;
   tasksCompleted: number;
-  reportsSubmitted: number;
   lastActivity?: string;
   startDate: string;
   endDate: string;
-  supervisor: string;
   phoneNumber?: string;
-  address?: string;
+  totalCheckIns: number;
+  students?: any;
+  companies?: any;
+  daily_tasks?: any[];
+  daily_reports?: any[];
+  location_check_ins?: any[];
 }
 
 interface ActivityLog {
@@ -105,25 +107,37 @@ export default function InternDetailPage() {
       const data = await SupervisorApiService.getInternDetails(internId);
       
       if (data && typeof data === 'object') {
+        const student = (data as any).students;
+        const user = student?.users;
+        const userName = user ? `${user.first_name} ${user.last_name}` : 'Unknown';
+        
+        // Calculate task metrics
+        const tasks = (data as any).daily_tasks || [];
+        const completedTasks = tasks.filter((t: any) => t.status === 'completed').length;
+        const pendingTasks = tasks.filter((t: any) => t.status === 'pending').length;
+        const progress = tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0;
+        
         setIntern({
-          id: (data as any).id,
-          name: (data as any).name || (data as any).user?.name || 'Unknown',
-          email: (data as any).email || (data as any).user?.email || 'No email',
-          avatar: (data as any).avatar || (data as any).user?.avatar,
-          university: (data as any).university || (data as any).user?.university || 'Unknown University',
-          department: (data as any).department || 'Unknown Department',
-          progress: (data as any).progress || 0,
+          id: (data as any).id.toString(),
+          name: userName,
+          email: user?.email || 'No email',
+          avatar: undefined, // Profile pictures not implemented yet
+          university: student?.faculties?.name || 'Unknown University',
+          department: student?.departments?.name || 'Unknown Department',
+          progress,
           status: (data as any).status || 'active',
-          pendingTasks: (data as any).pendingTasks || 0,
-          pendingReports: (data as any).pendingReports || 0,
-          tasksCompleted: (data as any).tasksCompleted || 0,
-          reportsSubmitted: (data as any).reportsSubmitted || 0,
-          lastActivity: (data as any).lastActivity || 'No recent activity',
-          startDate: (data as any).startDate || new Date().toISOString(),
-          endDate: (data as any).endDate || new Date().toISOString(),
-          supervisor: (data as any).supervisor || 'Unknown',
-          phoneNumber: (data as any).phoneNumber || (data as any).user?.phoneNumber,
-          address: (data as any).address || (data as any).user?.address
+          pendingTasks,
+          tasksCompleted: completedTasks,
+          lastActivity: 'Recent activity', // Calculate from check-ins or tasks
+          startDate: (data as any).start_date || new Date().toISOString(),
+          endDate: (data as any).end_date || new Date().toISOString(),
+          phoneNumber: user?.phone_number,
+          totalCheckIns: ((data as any).location_check_ins || []).length,
+          students: student,
+          companies: (data as any).companies,
+          daily_tasks: tasks,
+          daily_reports: (data as any).daily_reports || [],
+          location_check_ins: (data as any).location_check_ins || []
         });
       } else {
         toast({
@@ -187,29 +201,12 @@ export default function InternDetailPage() {
     try {
       setIsSubmittingEvaluation(true);
       
-      const evaluationData = {
-        period: 'current', // or get from form
-        overallRating,
-        technicalSkills: evaluationScores.technical_skills || 0,
-        communication: evaluationScores.communication || 0,
-        teamwork: evaluationScores.teamwork || 0,
-        initiative: evaluationScores.initiative || 0,
-        punctuality: evaluationScores.punctuality || 0,
-        comments: overallComments,
-        recommendations: 'Based on performance evaluation' // could be separate field
-      };
-
-      await SupervisorApiService.submitEvaluation(internId, evaluationData);
-      
+      // This feature is not yet implemented in the backend
       toast({
-        title: "Success",
-        description: "Evaluation submitted successfully"
+        title: "Feature Not Available",
+        description: "Overall evaluations are not yet implemented. Please use task-specific evaluations instead.",
+        variant: "destructive"
       });
-      
-      // Reset form
-      setEvaluationScores({});
-      setOverallComments('');
-      setOverallRating(0);
       
     } catch (error) {
       console.error('Failed to submit evaluation:', error);
@@ -252,7 +249,7 @@ export default function InternDetailPage() {
     <div className="space-y-8 p-4 md:p-6">
       <PageHeader
         title={intern.name}
-        description={`Details, submissions, and evaluation for ${intern.university}.`}
+        description={`Task management and evaluation for ${intern.name} from ${intern.university}.`}
         icon={User}
         breadcrumbs={[
           { href: "/supervisor/dashboard", label: "Dashboard" },
@@ -312,22 +309,15 @@ export default function InternDetailPage() {
                   <p className="text-xs text-muted-foreground">Tasks Completed</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-blue-600">{intern.reportsSubmitted}</p>
-                  <p className="text-xs text-muted-foreground">Reports Submitted</p>
+                  <p className="text-2xl font-bold text-orange-600">{intern.totalCheckIns}</p>
+                  <p className="text-xs text-muted-foreground">Check-ins</p>
                 </div>
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center">
-                  <Badge variant={intern.pendingTasks > 0 ? "destructive" : "secondary"}>
-                    {intern.pendingTasks} Pending Tasks
-                  </Badge>
-                </div>
-                <div className="text-center">
-                  <Badge variant={intern.pendingReports > 0 ? "destructive" : "secondary"}>
-                    {intern.pendingReports} Pending Reports
-                  </Badge>
-                </div>
+              <div className="text-center">
+                <Badge variant={intern.pendingTasks > 0 ? "destructive" : "secondary"}>
+                  {intern.pendingTasks} Tasks Need Review
+                </Badge>
               </div>
               
               <p className="text-xs text-muted-foreground">

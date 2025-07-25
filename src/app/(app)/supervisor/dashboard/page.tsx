@@ -67,9 +67,8 @@ interface SupervisorIntern {
   name: string; 
   university: string; 
   department: string;
-  avatar?: string; 
+  avatar?: string | null; 
   pendingTasks: number; 
-  pendingReports: number;
   progress: number;
   status: string;
 }
@@ -91,7 +90,7 @@ const SupervisorInternCardMobile: React.FC<{ intern: SupervisorIntern }> = ({ in
     <CardHeader className="p-3 bg-muted/30 border-b">
       <div className="flex items-center gap-3">
         <Avatar className="h-10 w-10 border">
-          <AvatarImage src={intern.avatar} alt={intern.name} />
+          <AvatarImage src={intern.avatar || undefined} alt={intern.name} />
           <AvatarFallback className="bg-primary/10 text-primary">{getInitials(intern.name)}</AvatarFallback>
         </Avatar>
         <div>
@@ -110,8 +109,10 @@ const SupervisorInternCardMobile: React.FC<{ intern: SupervisorIntern }> = ({ in
         <Badge variant={intern.pendingTasks > 0 ? "destructive" : "secondary"} className="text-xs px-1.5 py-0.5">{intern.pendingTasks}</Badge>
       </div>
       <div className="flex justify-between items-center">
-        <span className="text-muted-foreground">Pending Reports:</span>
-        <Badge variant={intern.pendingReports > 0 ? "destructive" : "secondary"} className="text-xs px-1.5 py-0.5">{intern.pendingReports}</Badge>
+        <span className="text-muted-foreground">Status:</span>
+        <Badge variant={intern.status === 'active' ? "default" : "secondary"} className="text-xs px-1.5 py-0.5">
+          {intern.status === 'active' ? 'Active' : intern.status.charAt(0).toUpperCase() + intern.status.slice(1)}
+        </Badge>
       </div>
     </CardContent>
     <CardFooter className="p-3 border-t bg-muted/20">
@@ -175,17 +176,22 @@ export default function SupervisorDashboardPage() {
       }
 
       if (internsData && Array.isArray(internsData)) {
-        setSupervisedInterns(internsData.map((intern: any) => ({
-          id: intern.id,
-          name: intern.name || intern.user?.name || 'Unknown',
-          university: intern.university || intern.user?.university || 'Unknown University',
-          department: intern.department || 'Unknown Department',
-          avatar: intern.avatar || intern.user?.avatar,
-          pendingTasks: intern.pendingTasks || 0,
-          pendingReports: intern.pendingReports || 0,
-          progress: intern.progress || 0,
-          status: intern.status || 'active'
-        })));
+        setSupervisedInterns(internsData.map((intern: any) => {
+          const student = intern.students;
+          const user = student?.users;
+          const internName = user ? `${user.first_name} ${user.last_name}` : 'Unknown';
+          
+          return {
+            id: intern.id.toString(),
+            name: internName,
+            university: student?.faculties?.name || 'Unknown University',
+            department: student?.departments?.name || 'Unknown Department',
+            avatar: null, // Profile pictures not implemented
+            pendingTasks: intern.pendingTasks || 0,
+            progress: intern.progress || 0,
+            status: intern.status || 'active'
+          };
+        }));
       } else {
         setSupervisedInterns([]);
       }
@@ -223,20 +229,23 @@ export default function SupervisorDashboardPage() {
           isLoading={isLoading} 
         />
         <SupervisorDashboardStatCard 
-          title="Pending Approvals" 
+          title="Pending Task Approvals" 
           value={supervisorStats?.pendingEvaluations ?? '...'} 
           icon={CheckSquare} 
-          description="3 Tasks, 1 Report"
-          actionLink="/supervisor/interns/approve-reports"
-          actionLabel="Review Submissions"
+          description="Tasks awaiting your review"
+          actionLink="/supervisor/interns/approve-tasks"
+          actionLabel="Review Tasks"
           variant="warning"
           isLoading={isLoading}
         />
         <SupervisorDashboardStatCard 
-          title="Intern Activity" 
-          value={'High'} 
+          title="Task Completion Rate" 
+          value={supervisorStats && supervisorStats.totalInterns > 0 ? 
+            `${Math.round(((supervisorStats.completedTasks || 0) / Math.max((supervisorStats.completedTasks || 0) + (supervisorStats.pendingTasks || 0), 1)) * 100)}%` : 
+            '0%'
+          } 
           icon={Activity} 
-          description="Most interns active daily"
+          description="Overall task completion"
           actionLink="/supervisor/interns"
           actionLabel="Monitor Activity"
           isLoading={isLoading}
@@ -272,7 +281,7 @@ export default function SupervisorDashboardPage() {
                                 <TableHead>University/Program</TableHead>
                                 <TableHead className="text-center">Progress</TableHead>
                                 <TableHead className="text-center">Pending Tasks</TableHead>
-                                <TableHead className="text-center">Pending Reports</TableHead>
+                                <TableHead className="text-center">Status</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -282,7 +291,7 @@ export default function SupervisorDashboardPage() {
                                     <TableCell>
                                         <div className="flex items-center gap-3">
                                             <Avatar className="h-9 w-9">
-                                                <AvatarImage src={intern.avatar} alt={intern.name} />
+                                                <AvatarImage src={intern.avatar || undefined} alt={intern.name} />
                                                 <AvatarFallback>{getInitials(intern.name)}</AvatarFallback>
                                             </Avatar>
                                             <div>
@@ -301,8 +310,8 @@ export default function SupervisorDashboardPage() {
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="text-center">
-                                        <Badge variant={intern.pendingReports > 0 ? "destructive" : "secondary"}>
-                                            {intern.pendingReports}
+                                        <Badge variant={intern.status === 'active' ? "default" : "secondary"}>
+                                            {intern.status === 'active' ? 'Active' : intern.status.charAt(0).toUpperCase() + intern.status.slice(1)}
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="text-right">

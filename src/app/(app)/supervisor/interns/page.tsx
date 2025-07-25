@@ -20,15 +20,15 @@ import { toast } from 'sonner';
 interface InternUnderSupervision {
   id: string;
   name: string;
-  avatar?: string;
+  avatar?: string | null;
   email: string;
   university: string;
   department: string;
   pendingTasks: number;
-  pendingReports: number;
   lastActivity?: string;
   progress: number;
   status: string;
+  totalCheckIns?: number;
 }
 
 const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
@@ -51,19 +51,25 @@ export default function InternsPage() {
       const data = await SupervisorApiService.getMyInterns();
       
       if (data && Array.isArray(data)) {
-        setInterns(data.map((intern: any) => ({
-          id: intern.id,
-          name: intern.name || intern.user?.name || 'Unknown',
-          avatar: intern.avatar || intern.user?.avatar,
-          email: intern.email || intern.user?.email || 'No email',
-          university: intern.university || intern.user?.university || 'Unknown University',
-          department: intern.department || 'Unknown Department',
-          pendingTasks: intern.pendingTasks || 0,
-          pendingReports: intern.pendingReports || 0,
-          lastActivity: intern.lastActivity || 'No recent activity',
-          progress: intern.progress || 0,
-          status: intern.status || 'active'
-        })));
+        setInterns(data.map((intern: any) => {
+          const student = intern.students;
+          const user = student?.users;
+          const internName = user ? `${user.first_name} ${user.last_name}` : 'Unknown';
+          
+          return {
+            id: intern.id.toString(),
+            name: internName,
+            avatar: null, // Profile pictures not implemented
+            email: user?.email || 'No email',
+            university: student?.faculties?.name || 'Unknown University',
+            department: student?.departments?.name || 'Unknown Department',
+            pendingTasks: intern.pendingTasks || 0,
+            lastActivity: 'Recent activity', // Could be calculated from check-ins
+            progress: intern.progress || 0,
+            status: intern.status || 'active',
+            totalCheckIns: intern.totalCheckIns || 0
+          };
+        }));
       } else {
         setInterns([]);
       }
@@ -91,7 +97,7 @@ export default function InternsPage() {
         <CardHeader className="p-3 bg-muted/30 border-b">
              <div className="flex items-center gap-3">
                 <Avatar className="h-10 w-10 border">
-                    <AvatarImage src={intern.avatar} alt={intern.name} />
+                    <AvatarImage src={intern.avatar || undefined} alt={intern.name} />
                     <AvatarFallback className="bg-primary/10 text-primary">{getInitials(intern.name)}</AvatarFallback>
                 </Avatar>
                 <div>
@@ -233,7 +239,7 @@ export default function InternsPage() {
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-9 w-9">
-                        <AvatarImage src={intern.avatar} alt={intern.name} />
+                        <AvatarImage src={intern.avatar || undefined} alt={intern.name} />
                         <AvatarFallback>{getInitials(intern.name)}</AvatarFallback>
                       </Avatar>
                       <div>
