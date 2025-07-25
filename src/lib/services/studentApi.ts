@@ -39,12 +39,22 @@ export class StudentApiService {
   static async getTasks(internshipId?: number, taskDate?: string) {
     try {
       if (!internshipId) {
-        // Get internship first
-        const internship = await this.getInternshipDetails();
+        // Get internship first using the correct method
+        const internship = await this.getMyInternship() as any;
         if (!internship?.id) {
+          console.log('No active internship found for tasks');
           return [];
         }
-        internshipId = internship.id;
+        // Parse internship ID properly
+        const parsedId = typeof internship.id === 'string' ? parseInt(internship.id, 10) : Number(internship.id);
+        
+        // Validate the parsed ID
+        if (isNaN(parsedId) || parsedId <= 0) {
+          console.warn('Invalid internship ID from getMyInternship:', internship.id);
+          return [];
+        }
+        
+        internshipId = parsedId;
       }
       
       const params = taskDate ? `?task_date=${taskDate}` : '';
@@ -59,12 +69,22 @@ export class StudentApiService {
   static async getReports(internshipId?: number, reportDate?: string, status?: string) {
     try {
       if (!internshipId) {
-        // Get internship first
-        const internship = await this.getInternshipDetails();
+        // Get internship first using the correct method
+        const internship = await this.getMyInternship() as any;
         if (!internship?.id) {
+          console.log('No active internship found for reports');
           return [];
         }
-        internshipId = internship.id;
+        // Parse internship ID properly
+        const parsedId = typeof internship.id === 'string' ? parseInt(internship.id, 10) : Number(internship.id);
+        
+        // Validate the parsed ID
+        if (isNaN(parsedId) || parsedId <= 0) {
+          console.warn('Invalid internship ID from getMyInternship:', internship.id);
+          return [];
+        }
+        
+        internshipId = parsedId;
       }
       
       const params = new URLSearchParams();

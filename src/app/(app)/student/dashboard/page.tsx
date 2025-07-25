@@ -239,19 +239,45 @@ const StudentDashboard: React.FC = () => {
 
                     // If a submission exists and is APPROVED, fetch active internship and related data
                     if (submission && submission.status === 'APPROVED') {
-                        const internship = await StudentApiService.getMyInternship() as Internship | null;
-                        setActiveInternship(internship);
+                        try {
+                            const internship = await StudentApiService.getMyInternship() as Internship | null;
+                            console.log('Fetched internship:', internship); // Debug log
+                            setActiveInternship(internship);
 
-                        if (internship) {
-                            // Fetch today's tasks
-                            const tasks = await StudentApiService.getTasks(parseInt(internship.id), getTodayDateString()) as DailyTask[];
-                            setDailyTasks(tasks || []);
+                            if (internship && internship.id) {
+                                // Validate internship ID before parsing
+                                const internshipId = typeof internship.id === 'string' ? parseInt(internship.id, 10) : internship.id;
+                                console.log('Parsed internship ID:', internshipId); // Debug log
+                                
+                                // Only proceed if we have a valid numeric ID
+                                if (!isNaN(internshipId) && internshipId > 0) {
+                                    try {
+                                        // Fetch today's tasks
+                                        const tasks = await StudentApiService.getTasks(internshipId, getTodayDateString()) as DailyTask[];
+                                        setDailyTasks(tasks || []);
+                                    } catch (taskError) {
+                                        console.error('Error fetching tasks:', taskError);
+                                        // Don't break the whole dashboard for task errors
+                                        setDailyTasks([]);
+                                    }
 
-                            // Fetch today's check-in (this method may need to be implemented)
-                            // const checkIns = await StudentApiService.getMyCheckIns();
-                            // const todayCheckInEntry = checkIns.find(ci => format(parseISO(ci.check_in_timestamp), 'yyyy-MM-dd') === getTodayDateString());
-                            // setTodayCheckIn(todayCheckInEntry || null);
+                                    // Fetch today's check-in (this method may need to be implemented)
+                                    // const checkIns = await StudentApiService.getMyCheckIns();
+                                    // const todayCheckInEntry = checkIns.find(ci => format(parseISO(ci.check_in_timestamp), 'yyyy-MM-dd') === getTodayDateString());
+                                    // setTodayCheckIn(todayCheckInEntry || null);
+                                } else {
+                                    console.warn('Invalid internship ID:', internship.id);
+                                }
+                            } else {
+                                console.log('No internship or internship ID found');
+                            }
+                        } catch (internshipError) {
+                            console.error('Error fetching internship:', internshipError);
+                            // If fetching internship fails, continue without it
+                            setActiveInternship(null);
                         }
+                    } else {
+                        console.log('No approved submission found, status:', submission?.status);
                     }
                 } else {
                     // Handle non-student or unauthenticated user (e.g., redirect)

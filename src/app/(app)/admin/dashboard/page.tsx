@@ -73,7 +73,9 @@ export default function AdminDashboardPage() {
     fetchStats();
   }, []);
 
-  const engagementPercentage = universityStats ? ((universityStats.activeInternships / universityStats.totalInterns) * 100).toFixed(0) : '0';
+  const engagementPercentage = (universityStats?.activeInternships && universityStats?.totalInterns) 
+    ? ((universityStats.activeInternships / universityStats.totalInterns) * 100).toFixed(0) 
+    : '0';
 
   if (error) {
     return (
@@ -120,7 +122,7 @@ export default function AdminDashboardPage() {
         <AdminDashboardStatCard title="Active Internships" value={universityStats?.activeInternships ?? '...'} icon={Building} description={!isLoading && universityStats ? `${engagementPercentage}% engagement` : undefined} isLoading={isLoading} />
         <AdminDashboardStatCard title="Unassigned Interns" value={universityStats?.unassignedInterns ?? '...'} icon={UserCheck} description="Require lecturer assignment" actionLink="/admin/user-management" actionLabel="Assign Lecturers" isLoading={isLoading}/>
         <AdminDashboardStatCard title="Total Lecturers" value={universityStats?.totalLecturers ?? '...'} icon={UserCog} description="Faculty members supervising interns" isLoading={isLoading} />
-        <AdminDashboardStatCard title="Avg. Lecturer Workload" value={universityStats ? `${universityStats.avgLecturerWorkload.toFixed(1)} interns` : '...'} icon={TrendingUp} description="University average" isLoading={isLoading} />
+        <AdminDashboardStatCard title="Avg. Lecturer Workload" value={universityStats?.avgLecturerWorkload ? `${universityStats.avgLecturerWorkload.toFixed(1)} interns` : '...'} icon={TrendingUp} description="University average" isLoading={isLoading} />
         <AdminDashboardStatCard title="Partner Companies" value={universityStats?.totalCompanies ?? '...'} icon={Briefcase} description="Providing internship opportunities" isLoading={isLoading} />
       </div>
 

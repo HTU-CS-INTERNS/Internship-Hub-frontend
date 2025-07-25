@@ -351,8 +351,7 @@ export default function UniversityStructurePage() {
                                 <SelectValue placeholder="Select a Faculty" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="" disabled>Select a Faculty</SelectItem>
-                                {faculties.map(f => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}
+                                {faculties.filter(f => f.id != null).map(f => <SelectItem key={f.id} value={String(f.id)}>{f.name}</SelectItem>)}
                             </SelectContent>
                         </Select>
                     </div>
@@ -391,7 +390,7 @@ export default function UniversityStructurePage() {
                                 <SelectValue placeholder="Select a Faculty" />
                             </SelectTrigger>
                             <SelectContent>
-                                {faculties.map(f => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}
+                                {faculties.map(f => <SelectItem key={f.id} value={String(f.id)}>{f.name}</SelectItem>)}
                             </SelectContent>
                         </Select>
                     </div>

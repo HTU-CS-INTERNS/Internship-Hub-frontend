@@ -29,6 +29,7 @@ import { StudentApiService } from '@/lib/services/studentApi';
 import EmptyState from '@/components/shared/empty-state';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import InternshipSubmissionForm from '@/components/student/InternshipSubmissionForm';
 
 interface StudentProfile {
   id: string;
@@ -232,9 +233,10 @@ export default function StudentProfilePage() {
       </div>
 
       <Tabs defaultValue="personal" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="personal">Personal Info</TabsTrigger>
           <TabsTrigger value="academic">Academic Details</TabsTrigger>
+          <TabsTrigger value="internship">Internship</TabsTrigger>
           <TabsTrigger value="emergency">Emergency Contact</TabsTrigger>
         </TabsList>
 
@@ -448,6 +450,10 @@ export default function StudentProfilePage() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="internship" className="space-y-6">
+          <InternshipSubmissionForm />
         </TabsContent>
 
         <TabsContent value="emergency" className="space-y-6">

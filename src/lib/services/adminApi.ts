@@ -6,7 +6,7 @@ export class AdminApiService {
   // Dashboard Stats
   static async getDashboardStats() {
     try {
-      return await api('/admin/dashboard/stats');
+      return await api('/api/admin/dashboard/stats');
     } catch (error) {
       console.error('Failed to fetch admin dashboard stats:', error);
       return null;
@@ -30,7 +30,7 @@ export class AdminApiService {
       if (filters?.limit) params.append('limit', filters.limit.toString());
       
       const queryString = params.toString() ? `?${params.toString()}` : '';
-      return await api(`/admin/users${queryString}`);
+      return await api(`/api/admin/users${queryString}`);
     } catch (error) {
       console.error('Failed to fetch users:', error);
       return [];
@@ -39,7 +39,7 @@ export class AdminApiService {
 
   static async updateUser(userId: string, userData: any) {
     try {
-      return await api(`/admin/users/${userId}`, {
+      return await api(`/api/admin/users/${userId}`, {
         method: 'PUT',
         body: userData
       });
@@ -51,7 +51,7 @@ export class AdminApiService {
 
   static async deleteUser(userId: string) {
     try {
-      return await api(`/admin/users/${userId}`, {
+      return await api(`/api/admin/users/${userId}`, {
         method: 'DELETE'
       });
     } catch (error) {
@@ -62,7 +62,7 @@ export class AdminApiService {
 
   static async createUser(userData: any) {
     try {
-      return await api('/admin/users', {
+      return await api('/api/admin/users', {
         method: 'POST',
         body: userData
       });
@@ -75,7 +75,7 @@ export class AdminApiService {
   // University Structure Management
   static async getFaculties() {
     try {
-      return await api('/admin/faculties');
+      return await api('/api/admin/faculties');
     } catch (error) {
       console.error('Failed to fetch faculties:', error);
       return [];
@@ -84,7 +84,7 @@ export class AdminApiService {
 
   static async getDepartments(facultyId?: string) {
     try {
-      const url = facultyId ? `/admin/departments?facultyId=${facultyId}` : '/admin/departments';
+      const url = facultyId ? `/api/admin/departments?facultyId=${facultyId}` : '/api/admin/departments';
       return await api(url);
     } catch (error) {
       console.error('Failed to fetch departments:', error);
@@ -94,7 +94,7 @@ export class AdminApiService {
 
   static async createFaculty(facultyData: any) {
     try {
-      return await api('/admin/faculties', {
+      return await api('/api/admin/faculties', {
         method: 'POST',
         body: facultyData
       });
@@ -106,7 +106,7 @@ export class AdminApiService {
 
   static async updateFaculty(facultyId: string, facultyData: any) {
     try {
-      return await api(`/admin/faculties/${facultyId}`, {
+      return await api(`/api/admin/faculties/${facultyId}`, {
         method: 'PUT',
         body: facultyData
       });
@@ -118,7 +118,7 @@ export class AdminApiService {
 
   static async deleteFaculty(facultyId: string) {
     try {
-      return await api(`/admin/faculties/${facultyId}`, {
+      return await api(`/api/admin/faculties/${facultyId}`, {
         method: 'DELETE'
       });
     } catch (error) {
@@ -129,7 +129,7 @@ export class AdminApiService {
 
   static async createDepartment(departmentData: any) {
     try {
-      return await api('/admin/departments', {
+      return await api('/api/admin/departments', {
         method: 'POST',
         body: departmentData
       });
@@ -141,7 +141,7 @@ export class AdminApiService {
 
   static async updateDepartment(departmentId: string, departmentData: any) {
     try {
-      return await api(`/admin/departments/${departmentId}`, {
+      return await api(`/api/admin/departments/${departmentId}`, {
         method: 'PUT',
         body: departmentData
       });
@@ -153,7 +153,7 @@ export class AdminApiService {
 
   static async deleteDepartment(departmentId: string) {
     try {
-      return await api(`/admin/departments/${departmentId}`, {
+      return await api(`/api/admin/departments/${departmentId}`, {
         method: 'DELETE'
       });
     } catch (error) {
@@ -181,7 +181,7 @@ export class AdminApiService {
       if (filters?.limit) params.append('limit', filters.limit.toString());
       
       const queryString = params.toString() ? `?${params.toString()}` : '';
-      return await api(`/admin/students${queryString}`);
+      return await api(`/api/admin/students${queryString}`);
     } catch (error) {
       console.error('Failed to fetch students:', error);
       return [];
@@ -190,7 +190,7 @@ export class AdminApiService {
 
   static async updateStudent(studentId: string, studentData: any) {
     try {
-      return await api(`/admin/students/${studentId}`, {
+      return await api(`/api/admin/students/${studentId}`, {
         method: 'PUT',
         body: studentData
       });
@@ -202,7 +202,7 @@ export class AdminApiService {
 
   static async getPendingStudents() {
     try {
-      return await api('/admin/students/pending');
+      return await api('/api/admin/students/pending');
     } catch (error) {
       console.error('Failed to fetch pending students:', error);
       return [];
@@ -266,7 +266,7 @@ export class AdminApiService {
       if (filters?.limit) params.append('limit', filters.limit.toString());
       
       const queryString = params.toString() ? `?${params.toString()}` : '';
-      return await api(`/admin/companies${queryString}`);
+      return await api(`/api/admin/companies${queryString}`);
     } catch (error) {
       console.error('Failed to fetch companies:', error);
       return [];
@@ -275,7 +275,7 @@ export class AdminApiService {
 
   static async createCompany(companyData: any) {
     try {
-      return await api('/admin/companies', {
+      return await api('/api/admin/companies', {
         method: 'POST',
         body: companyData
       });
@@ -287,7 +287,7 @@ export class AdminApiService {
 
   static async updateCompany(companyId: string, companyData: any) {
     try {
-      return await api(`/admin/companies/${companyId}`, {
+      return await api(`/api/admin/companies/${companyId}`, {
         method: 'PUT',
         body: companyData
       });
@@ -299,7 +299,7 @@ export class AdminApiService {
 
   static async deleteCompany(companyId: string) {
     try {
-      return await api(`/admin/companies/${companyId}`, {
+      return await api(`/api/admin/companies/${companyId}`, {
         method: 'DELETE'
       });
     } catch (error) {
@@ -308,20 +308,19 @@ export class AdminApiService {
     }
   }
 
-  // System Oversight
+  // System Oversight - Note: These endpoints may not exist in backend yet
   static async getSystemStats() {
     try {
-      return await api('/admin/system/stats');
+      return await api('/api/admin/system/stats');
     } catch (error) {
       console.error('Failed to fetch system stats:', error);
       return null;
     }
   }
 
-  // System Health & Monitoring
   static async getSystemHealth() {
     try {
-      return await api('/admin/system/health');
+      return await api('/api/admin/system/health');
     } catch (error) {
       console.error('Failed to fetch system health:', error);
       return null;
@@ -344,7 +343,7 @@ export class AdminApiService {
       if (filters?.limit) params.append('limit', filters.limit.toString());
       
       const queryString = params.toString() ? `?${params.toString()}` : '';
-      return await api(`/admin/system/logs${queryString}`);
+      return await api(`/api/admin/system/logs${queryString}`);
     } catch (error) {
       console.error('Failed to fetch system logs:', error);
       return [];
@@ -354,7 +353,7 @@ export class AdminApiService {
   // Reports and Analytics
   static async getAnalyticsData(period: 'week' | 'month' | 'quarter' | 'year' = 'month') {
     try {
-      return await api(`/admin/analytics?period=${period}`);
+      return await api(`/api/admin/analytics?period=${period}`);
     } catch (error) {
       console.error('Failed to fetch analytics data:', error);
       return null;
@@ -363,7 +362,7 @@ export class AdminApiService {
 
   static async exportReport(reportType: string, filters?: any) {
     try {
-      return await api('/admin/reports/export', {
+      return await api('/api/admin/reports/export', {
         method: 'POST',
         body: { reportType, filters }
       });
@@ -376,7 +375,7 @@ export class AdminApiService {
   // Settings Management
   static async getSystemSettings() {
     try {
-      return await api('/admin/settings');
+      return await api('/api/admin/settings');
     } catch (error) {
       console.error('Failed to fetch system settings:', error);
       return {};
@@ -385,7 +384,7 @@ export class AdminApiService {
 
   static async updateSystemSettings(settings: any) {
     try {
-      return await api('/admin/settings', {
+      return await api('/api/admin/settings', {
         method: 'PUT',
         body: settings
       });
@@ -398,14 +397,14 @@ export class AdminApiService {
   // Real-time Updates
   static async getRealtimeStats() {
     try {
-      return await api('/admin/realtime/stats');
+      return await api('/api/admin/realtime/stats');
     } catch (error) {
       console.error('Failed to fetch realtime stats:', error);
       return null;
     }
   }
 
-  // Abuse Reports
+  // Abuse Reports - Note: These endpoints may not exist in backend yet
   static async getAbuseReports(filters?: {
     status?: string;
     priority?: string;
@@ -420,7 +419,7 @@ export class AdminApiService {
       if (filters?.limit) params.append('limit', filters.limit.toString());
       
       const queryString = params.toString() ? `?${params.toString()}` : '';
-      return await api(`/admin/abuse-reports${queryString}`);
+      return await api(`/api/admin/abuse-reports${queryString}`);
     } catch (error) {
       console.error('Failed to fetch abuse reports:', error);
       return [];
@@ -429,7 +428,7 @@ export class AdminApiService {
 
   static async updateAbuseReport(reportId: string, updateData: any) {
     try {
-      return await api(`/admin/abuse-reports/${reportId}`, {
+      return await api(`/api/admin/abuse-reports/${reportId}`, {
         method: 'PUT',
         body: updateData
       });
@@ -441,7 +440,7 @@ export class AdminApiService {
 
   static async updateAbuseReportStatus(reportId: string, status: string) {
     try {
-      return await api(`/admin/abuse-reports/${reportId}/status`, {
+      return await api(`/api/admin/abuse-reports/${reportId}/status`, {
         method: 'PUT',
         body: { status }
       });

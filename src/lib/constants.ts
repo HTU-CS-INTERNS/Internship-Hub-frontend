@@ -244,7 +244,8 @@ export const NAV_LINKS: NavItem[] = [
 ];
 
 export const BOTTOM_NAV_LINKS: NavItem[] = [
-    { href: '/profile', label: 'My Profile', icon: UserCircle, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD', 'ADMIN'], section: "Settings", mobile: true },
+    { href: '/student/profile', label: 'My Profile', icon: UserCircle, roles: ['STUDENT'], section: "Settings", mobile: true },
+    { href: '/profile', label: 'My Profile', icon: UserCircle, roles: ['LECTURER', 'SUPERVISOR', 'HOD', 'ADMIN'], section: "Settings", mobile: true },
     { href: '/notifications', label: 'Notifications', icon: Bell, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD', 'ADMIN'], section: "Settings", mobile: true },
     { href: '/settings', label: 'Settings', icon: Settings, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD', 'ADMIN'], section: "Settings" },
     { href: '/help', label: 'Help & Support', icon: BookOpen, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD', 'ADMIN'], section: "Settings" },
