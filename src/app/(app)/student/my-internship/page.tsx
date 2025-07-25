@@ -1,29 +1,49 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import dynamic from 'next/dynamic';
-import { useAuth } from '@/contexts/auth-context';
-import { StudentApiService } from '@/lib/services/studentApi';
-import { useToast } from '@/hooks/use-toast';
-import PageHeader from '@/components/shared/page-header';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { MapPin, Building, Calendar, CheckCircle, AlertTriangle, Briefcase } from 'lucide-react';
-import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
+import * as React from "react";
+import dynamic from "next/dynamic";
+import { useAuth } from "@/contexts/auth-context";
+import { StudentApiService } from "@/lib/services/studentApi";
+import { useToast } from "@/hooks/use-toast";
+import PageHeader from "@/components/shared/page-header";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  AlertTriangle,
+  Briefcase,
+  Building,
+  Calendar,
+  CheckCircle,
+  MapPin,
+} from "lucide-react";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
 
 // Fix for default icon issue with webpack
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+  iconRetinaUrl:
+    "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png",
+  iconUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png",
 });
 
-const MapContainer = dynamic(() => import('react-leaflet').then(mod => mod.MapContainer), { ssr: false });
-const TileLayer = dynamic(() => import('react-leaflet').then(mod => mod.TileLayer), { ssr: false });
-const Marker = dynamic(() => import('react-leaflet').then(mod => mod.Marker), { ssr: false });
-const Circle = dynamic(() => import('react-leaflet').then(mod => mod.Circle), { ssr: false });
+const MapContainer = dynamic(
+  () => import("react-leaflet").then((mod) => mod.MapContainer),
+  { ssr: false },
+);
+const TileLayer = dynamic(
+  () => import("react-leaflet").then((mod) => mod.TileLayer),
+  { ssr: false },
+);
+const Marker = dynamic(
+  () => import("react-leaflet").then((mod) => mod.Marker),
+  { ssr: false },
+);
+const Circle = dynamic(
+  () => import("react-leaflet").then((mod) => mod.Circle),
+  { ssr: false },
+);
 
 interface InternshipDetails {
   id: number;
@@ -92,7 +112,9 @@ interface CheckInResult {
 export default function MyInternshipPage() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [internship, setInternship] = React.useState<InternshipDetails | null>(null);
+  const [internship, setInternship] = React.useState<InternshipDetails | null>(
+    null,
+  );
   const [isLoading, setIsLoading] = React.useState(true);
   const [isCheckingIn, setIsCheckingIn] = React.useState(false);
 
@@ -102,15 +124,15 @@ export default function MyInternshipPage() {
         setIsLoading(false);
         return;
       }
-      
+
       try {
         const data = await StudentApiService.getMyInternship();
         setInternship(data as InternshipDetails);
       } catch (error) {
         toast({
-          title: 'Error',
-          description: 'Failed to fetch internship details.',
-          variant: 'destructive',
+          title: "Error",
+          description: "Failed to fetch internship details.",
+          variant: "destructive",
         });
       } finally {
         setIsLoading(false);
@@ -124,9 +146,9 @@ export default function MyInternshipPage() {
     setIsCheckingIn(true);
     if (!navigator.geolocation) {
       toast({
-        title: 'Geolocation not supported',
-        description: 'Your browser does not support geolocation.',
-        variant: 'destructive',
+        title: "Geolocation not supported",
+        description: "Your browser does not support geolocation.",
+        variant: "destructive",
       });
       setIsCheckingIn(false);
       return;
@@ -136,24 +158,28 @@ export default function MyInternshipPage() {
       async (position) => {
         const { latitude, longitude } = position.coords;
         try {
-          const result = await StudentApiService.checkIn(latitude, longitude) as CheckInResult;
+          const result = await StudentApiService.checkIn(
+            latitude,
+            longitude,
+          ) as CheckInResult;
           if (result.is_within_geofence) {
             toast({
-              title: 'Check-in Successful',
-              description: 'You are within the company geofence.',
+              title: "Check-in Successful",
+              description: "You are within the company geofence.",
             });
           } else {
             toast({
-              title: 'Check-in Warning',
-              description: 'You are outside the company geofence. Your check-in has been logged.',
-              variant: 'destructive',
+              title: "Check-in Warning",
+              description:
+                "You are outside the company geofence. Your check-in has been logged.",
+              variant: "destructive",
             });
           }
         } catch (error) {
           toast({
-            title: 'Check-in Failed',
-            description: 'Could not complete check-in. Please try again.',
-            variant: 'destructive',
+            title: "Check-in Failed",
+            description: "Could not complete check-in. Please try again.",
+            variant: "destructive",
           });
         } finally {
           setIsCheckingIn(false);
@@ -161,12 +187,12 @@ export default function MyInternshipPage() {
       },
       (error) => {
         toast({
-          title: 'Geolocation Error',
+          title: "Geolocation Error",
           description: `Could not get your location: ${error.message}`,
-          variant: 'destructive',
+          variant: "destructive",
         });
         setIsCheckingIn(false);
-      }
+      },
     );
   };
 
@@ -208,11 +234,15 @@ export default function MyInternshipPage() {
             <div className="flex items-center">
               <Calendar className="h-5 w-5 mr-3 text-primary" />
               <span>
-                {new Date(internship.start_date).toLocaleDateString()} - {new Date(internship.end_date).toLocaleDateString()}
+                {new Date(internship.start_date).toLocaleDateString()} -{" "}
+                {new Date(internship.end_date).toLocaleDateString()}
               </span>
             </div>
-            <Button onClick={handleCheckIn} disabled={isCheckingIn || !companyLocation}>
-              {isCheckingIn ? 'Checking In...' : 'Perform Check-In'}
+            <Button
+              onClick={handleCheckIn}
+              disabled={isCheckingIn || !companyLocation}
+            >
+              {isCheckingIn ? "Checking In..." : "Perform Check-In"}
             </Button>
             {!companyLocation && (
               <p className="text-sm text-muted-foreground flex items-center mt-2">
@@ -227,25 +257,35 @@ export default function MyInternshipPage() {
           <CardHeader>
             <CardTitle>Company Location</CardTitle>
           </CardHeader>
-          <CardContent style={{ height: '300px' }}>
-            {companyLocation ? (
-              <MapContainer center={companyLocation} zoom={15} style={{ height: '100%', width: '100%' }}>
-                <TileLayer
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                />
-                <Marker position={companyLocation} />
-                <Circle
+          <CardContent style={{ height: "300px" }}>
+            {companyLocation
+              ? (
+                <MapContainer
                   center={companyLocation}
-                  radius={internship.companies.geofence_radius_meters || 100}
-                  pathOptions={{ color: 'blue', fillColor: 'blue', fillOpacity: 0.2 }}
-                />
-              </MapContainer>
-            ) : (
-              <div className="flex items-center justify-center h-full text-muted-foreground">
-                Location not available.
-              </div>
-            )}
+                  zoom={15}
+                  style={{ height: "100%", width: "100%" }}
+                >
+                  <TileLayer
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  />
+                  <Marker position={companyLocation} />
+                  <Circle
+                    center={companyLocation}
+                    radius={internship.companies.geofence_radius_meters || 100}
+                    pathOptions={{
+                      color: "blue",
+                      fillColor: "blue",
+                      fillOpacity: 0.2,
+                    }}
+                  />
+                </MapContainer>
+              )
+              : (
+                <div className="flex items-center justify-center h-full text-muted-foreground">
+                  Location not available.
+                </div>
+              )}
           </CardContent>
         </Card>
       </div>
