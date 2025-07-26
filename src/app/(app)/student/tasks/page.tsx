@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { format, parseISO } from 'date-fns';
 import { getTasksForStudent } from '@/lib/services/task.service'; // Import service
+import { createTask, updateTaskStatus } from '@/lib/services/task.service';
 
 const statusColors: Record<DailyTask['status'], string> = {
   PENDING: 'bg-[hsl(var(--accent)/0.1)] text-[hsl(var(--accent))] border-[hsl(var(--accent)/0.2)]',

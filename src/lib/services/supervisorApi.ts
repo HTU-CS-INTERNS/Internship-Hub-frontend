@@ -6,7 +6,7 @@ export class SupervisorApiService {
   // Dashboard Stats
   static async getDashboardStats() {
     try {
-      return await api('/supervisor/dashboard/stats');
+      return await api('/api/supervisor/dashboard/stats');
     } catch (error) {
       console.error('Failed to fetch supervisor dashboard stats:', error);
       return null;
@@ -28,7 +28,7 @@ export class SupervisorApiService {
       if (filters?.limit) params.append('limit', filters.limit.toString());
       
       const queryString = params.toString() ? `?${params.toString()}` : '';
-      return await api(`/supervisor/interns${queryString}`);
+      return await api(`/api/supervisor/interns${queryString}`);
     } catch (error) {
       console.error('Failed to fetch interns:', error);
       return [];
@@ -37,7 +37,7 @@ export class SupervisorApiService {
 
   static async getInternDetails(internId: string) {
     try {
-      return await api(`/supervisor/interns/${internId}`);
+      return await api(`/api/supervisor/interns/${internId}`);
     } catch (error) {
       console.error('Failed to fetch intern details:', error);
       return null;
@@ -46,7 +46,7 @@ export class SupervisorApiService {
 
   static async updateInternStatus(internId: string, status: string, notes?: string) {
     try {
-      return await api(`/supervisor/interns/${internId}/status`, {
+      return await api(`/api/supervisor/interns/${internId}/status`, {
         method: 'PUT',
         body: { status, notes }
       });
@@ -73,7 +73,7 @@ export class SupervisorApiService {
       if (filters?.limit) params.append('limit', filters.limit.toString());
       
       const queryString = params.toString() ? `?${params.toString()}` : '';
-      return await api(`/supervisor/tasks/pending${queryString}`);
+      return await api(`/api/supervisor/tasks/pending${queryString}`);
     } catch (error) {
       console.error('Failed to fetch pending tasks:', error);
       return [];
@@ -82,7 +82,7 @@ export class SupervisorApiService {
 
   static async approveTask(taskId: string, feedback?: string, rating?: number) {
     try {
-      return await api(`/supervisor/tasks/${taskId}/approve`, {
+      return await api(`/api/supervisor/tasks/${taskId}/approve`, {
         method: 'POST',
         body: { feedback, rating }
       });
@@ -94,7 +94,7 @@ export class SupervisorApiService {
 
   static async rejectTask(taskId: string, reason: string) {
     try {
-      return await api(`/supervisor/tasks/${taskId}/reject`, {
+      return await api(`/api/supervisor/tasks/${taskId}/reject`, {
         method: 'POST',
         body: { reason }
       });
@@ -111,7 +111,7 @@ export class SupervisorApiService {
     learning_objective?: string;
   }) {
     try {
-      return await api(`/supervisor/interns/${internId}/tasks`, {
+      return await api(`/api/supervisor/interns/${internId}/tasks`, {
         method: 'POST',
         body: {
           description: taskData.description,
@@ -166,7 +166,7 @@ export class SupervisorApiService {
       if (filters?.internId) params.append('internId', filters.internId);
       
       const queryString = params.toString() ? `?${params.toString()}` : '';
-      return await api(`/supervisor/tasks/stats${queryString}`);
+      return await api(`/api/supervisor/tasks/stats${queryString}`);
     } catch (error) {
       console.error('Failed to fetch task stats:', error);
       return null;
@@ -175,7 +175,7 @@ export class SupervisorApiService {
 
   static async getInternTaskAnalytics(internId: string) {
     try {
-      return await api(`/supervisor/interns/${internId}/task-analytics`);
+      return await api(`/api/supervisor/interns/${internId}/task-analytics`);
     } catch (error) {
       console.error('Failed to fetch intern task analytics:', error);
       return null;
@@ -192,7 +192,7 @@ export class SupervisorApiService {
     };
   }) {
     try {
-      return await api(`/supervisor/tasks/${taskId}/evaluate`, {
+      return await api(`/api/supervisor/tasks/${taskId}/evaluate`, {
         method: 'POST',
         body: evaluationData
       });
@@ -222,7 +222,7 @@ export class SupervisorApiService {
       if (filters?.limit) params.append('limit', filters.limit.toString());
       
       const queryString = params.toString() ? `?${params.toString()}` : '';
-      return await api(`/supervisor/interns/${internId}/activity${queryString}`);
+      return await api(`/api/supervisor/interns/${internId}/activity${queryString}`);
     } catch (error) {
       console.error('Failed to fetch intern activity log:', error);
       return [];
@@ -256,7 +256,7 @@ export class SupervisorApiService {
   // Company Profile & Settings
   static async getCompanyProfile() {
     try {
-      return await api('/supervisor/company/profile');
+      return await api('/api/supervisor/company/profile');
     } catch (error) {
       console.error('Failed to fetch company profile:', error);
       return null;
@@ -265,7 +265,7 @@ export class SupervisorApiService {
 
   static async updateCompanyProfile(profileData: any) {
     try {
-      return await api('/supervisor/company/profile', {
+      return await api('/api/supervisor/company/profile', {
         method: 'PUT',
         body: profileData
       });
@@ -277,7 +277,7 @@ export class SupervisorApiService {
 
   static async getSupervisorProfile() {
     try {
-      return await api('/supervisor/profile');
+      return await api('/api/supervisor/profile');
     } catch (error) {
       console.error('Failed to fetch supervisor profile:', error);
       return null;
@@ -286,7 +286,7 @@ export class SupervisorApiService {
 
   static async updateSupervisorProfile(profileData: any) {
     try {
-      return await api('/supervisor/profile', {
+      return await api('/api/supervisor/profile', {
         method: 'PUT',
         body: profileData
       });
@@ -299,7 +299,7 @@ export class SupervisorApiService {
   // Test connectivity
   static async testConnection() {
     try {
-      return await api('/supervisor/dashboard/stats');
+      return await api('/api/supervisor/dashboard/stats');
     } catch (error) {
       console.error('Connection test failed:', error);
       return null;
@@ -319,7 +319,7 @@ export class SupervisorApiService {
       if (filters?.limit) params.append('limit', filters.limit.toString());
       
       const queryString = params.toString() ? `?${params.toString()}` : '';
-      return await api(`/supervisor/notifications${queryString}`);
+      return await api(`/api/supervisor/notifications${queryString}`);
     } catch (error) {
       console.error('Failed to fetch notifications:', error);
       // Return empty array if notifications endpoint is not implemented
@@ -329,7 +329,7 @@ export class SupervisorApiService {
 
   static async markNotificationAsRead(notificationId: string) {
     try {
-      return await api(`/supervisor/notifications/${notificationId}/read`, {
+      return await api(`/api/supervisor/notifications/${notificationId}/read`, {
         method: 'PUT'
       });
     } catch (error) {
@@ -340,7 +340,7 @@ export class SupervisorApiService {
 
   static async sendMessageToIntern(internId: string, message: string, subject?: string) {
     try {
-      return await api(`/supervisor/interns/${internId}/message`, {
+      return await api(`/api/supervisor/interns/${internId}/message`, {
         method: 'POST',
         body: { message, subject }
       });

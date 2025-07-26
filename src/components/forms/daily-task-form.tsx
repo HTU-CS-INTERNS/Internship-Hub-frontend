@@ -25,8 +25,7 @@ import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import type { DailyTask, AttachmentData } from '@/types';
 import { useRouter } from 'next/navigation';
-import { createTask, updateTask } from '@/lib/services/task.service';
-
+import { createTask, updateTaskStatus } from '@/lib/services/task.service';
 const dailyTaskSchema = z.object({
   date: z.date({ required_error: 'Task date is required.' }),
   description: z.string().min(10, { message: 'Description must be at least 10 characters.' }).max(1000, {message: 'Description too long (max 1000).' }),

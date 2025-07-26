@@ -68,20 +68,20 @@ const InternshipSubmissionForm: React.FC = () => {
         const existingSubmission = await StudentApiService.getMyInternshipSubmission();
         
         if (existingSubmission) {
-          setSubmission(existingSubmission);
+          setSubmission(existingSubmission as InternshipSubmission);
           // If there's an existing submission, populate the form
+          const submission = existingSubmission as InternshipSubmission;
           setFormData({
-            company_name: existingSubmission.company_name || '',
-            company_address: existingSubmission.company_address || '',
-            supervisor_name: existingSubmission.supervisor_name || '',
-            supervisor_email: existingSubmission.supervisor_email || '',
-            start_date: existingSubmission.start_date ? existingSubmission.start_date.split('T')[0] : '',
-            end_date: existingSubmission.end_date ? existingSubmission.end_date.split('T')[0] : '',
-            location: existingSubmission.location || ''
+            company_name: submission.company_name || '',
+            company_address: submission.company_address || '',
+            supervisor_name: submission.supervisor_name || '',
+            supervisor_email: submission.supervisor_email || '',
+            start_date: submission.start_date ? submission.start_date.split('T')[0] : '',
+            end_date: submission.end_date ? submission.end_date.split('T')[0] : '',
+            location: submission.location || ''
           });
-          
           // Only allow editing if rejected or no submission exists
-          setIsEditing(existingSubmission.status === 'REJECTED' || !existingSubmission.status);
+          setIsEditing(submission.status === 'REJECTED' || !submission.status);
         } else {
           // No existing submission, enable editing
           setIsEditing(true);

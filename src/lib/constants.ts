@@ -51,7 +51,6 @@ export const USER_ROLES: Record<string, string> = {
 
 export const NAV_LINKS: NavItem[] = [
   // Main Section
-  { href: '/dashboard', label: 'Dashboard', icon: Home, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD', 'ADMIN'], section: "Main", mobile: true },
   {
     href: '/student/dashboard',
     label: 'My Dashboard',
@@ -126,22 +125,22 @@ export const NAV_LINKS: NavItem[] = [
     section: "Tools",
     mobile: true
   },
-  { 
-    href: '/schedule', 
-    label: 'My Schedule', 
-    icon: CalendarDays, 
-    roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], 
-    section: "Tools", 
-    mobile: false 
-  },
-  { 
-    href: '/communication', 
-    label: 'Feedback Hub', 
-    icon: MessageSquare, 
-    roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD', 'ADMIN'], 
-    section: "Tools", 
-    mobile: true 
-  },
+  // { 
+  //   href: '/schedule', 
+  //   label: 'My Schedule', 
+  //   icon: CalendarDays, 
+  //   roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], 
+  //   section: "Tools", 
+  //   mobile: false 
+  // },
+  // { 
+  //   href: '/communication', 
+  //   label: 'Feedback Hub', 
+  //   icon: MessageSquare, 
+  //   roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD', 'ADMIN'], 
+  //   section: "Tools", 
+  //   mobile: true 
+  // },
   {
     href: '/student/evaluations',
     label: 'Evaluations',
@@ -161,7 +160,7 @@ export const NAV_LINKS: NavItem[] = [
 
   // Management for other roles
   {
-    href: '/industrial-supervisor/interns', 
+    href: '/supervisor/interns', 
     label: 'My Interns',
     icon: Briefcase,
     roles: ['SUPERVISOR'],

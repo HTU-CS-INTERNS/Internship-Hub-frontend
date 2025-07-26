@@ -212,7 +212,7 @@ export class AdminApiService {
   // Internship Management
   static async getPendingInternships() {
     try {
-      return await api('/api/admin/internships/pending');
+      return await api('/api/internships/pending');
     } catch (error) {
       console.error('Failed to fetch pending internships:', error);
       return [];

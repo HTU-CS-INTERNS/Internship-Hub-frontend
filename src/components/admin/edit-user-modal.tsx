@@ -19,8 +19,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
-import { AdminUserService } from '@/lib/services/admin/user.service';
+import { AdminApiService } from '@/lib/services/adminApi';
 import { toast } from 'sonner';
+
+type UserRole = 'student' | 'lecturer' | 'company_supervisor' | 'admin';
 
 interface User {
   id: number;
@@ -28,7 +30,7 @@ interface User {
   first_name: string;
   last_name: string;
   phone_number?: string;
-  role: string;
+  role: UserRole;
   is_active: boolean;
 }
 
@@ -44,7 +46,7 @@ const USER_ROLES = [
   { value: 'lecturer', label: 'Lecturer' },
   { value: 'company_supervisor', label: 'Company Supervisor' },
   { value: 'admin', label: 'Admin' },
-];
+] as const;
 
 export function EditUserModal({ user, open, onOpenChange, onUserUpdated }: EditUserModalProps) {
   const [loading, setLoading] = useState(false);
@@ -54,19 +56,20 @@ export function EditUserModal({ user, open, onOpenChange, onUserUpdated }: EditU
     first_name: '',
     last_name: '',
     phone_number: '',
-    role: '',
+    role: '' as UserRole,
     is_active: true,
   });
 
+  // Reset form when user changes
   useEffect(() => {
     if (user) {
       setFormData({
-        email: user.email || '',
-        password: '', // Don't prefill password
-        first_name: user.first_name || '',
-        last_name: user.last_name || '',
+        email: user.email,
+        password: '', // Never prefill password
+        first_name: user.first_name,
+        last_name: user.last_name,
         phone_number: user.phone_number || '',
-        role: user.role || '',
+        role: user.role,
         is_active: user.is_active,
       });
     }
@@ -77,6 +80,7 @@ export function EditUserModal({ user, open, onOpenChange, onUserUpdated }: EditU
     
     if (!user) return;
     
+    // Validate required fields
     if (!formData.email || !formData.first_name || !formData.last_name || !formData.role) {
       toast.error('Please fill in all required fields');
       return;
@@ -85,37 +89,45 @@ export function EditUserModal({ user, open, onOpenChange, onUserUpdated }: EditU
     try {
       setLoading(true);
       
-      // Only include password if it's provided
-      const updateData: any = { ...formData };
-      if (!updateData.password) {
-        delete updateData.password;
-      }
+      // Prepare update payload
+      const updateData = {
+        email: formData.email,
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        phone_number: formData.phone_number,
+        role: formData.role,
+        is_active: formData.is_active,
+        ...(formData.password && { password: formData.password }), // Only include password if changed
+      };
       
-      await AdminUserService.update(user.id, updateData);
+      await AdminApiService.updateUser(user.id.toString(), updateData);
       toast.success('User updated successfully');
       onOpenChange(false);
       onUserUpdated();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating user:', error);
-      toast.error('Failed to update user');
+      toast.error(error.message || 'Failed to update user');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleInputChange = (field: string, value: string | boolean) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setFormData(prev => ({ ...prev, [id.replace('edit_', '')]: value }));
   };
 
   if (!user) return null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(open) => {
+      if (!loading) onOpenChange(open);
+    }}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Edit User</DialogTitle>
           <DialogDescription>
-            Update user information. Leave password empty to keep current password.
+            Update user information. Password field can be left blank to keep the current password.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -125,9 +137,10 @@ export function EditUserModal({ user, open, onOpenChange, onUserUpdated }: EditU
               <Input
                 id="edit_first_name"
                 value={formData.first_name}
-                onChange={(e) => handleInputChange('first_name', e.target.value)}
+                onChange={handleInputChange}
                 placeholder="Enter first name"
                 required
+                disabled={loading}
               />
             </div>
             <div className="space-y-2">
@@ -135,9 +148,10 @@ export function EditUserModal({ user, open, onOpenChange, onUserUpdated }: EditU
               <Input
                 id="edit_last_name"
                 value={formData.last_name}
-                onChange={(e) => handleInputChange('last_name', e.target.value)}
+                onChange={handleInputChange}
                 placeholder="Enter last name"
                 required
+                disabled={loading}
               />
             </div>
           </div>
@@ -148,21 +162,26 @@ export function EditUserModal({ user, open, onOpenChange, onUserUpdated }: EditU
               id="edit_email"
               type="email"
               value={formData.email}
-              onChange={(e) => handleInputChange('email', e.target.value)}
+              onChange={handleInputChange}
               placeholder="Enter email address"
               required
+              disabled={loading}
             />
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="edit_password">New Password (optional)</Label>
+            <Label htmlFor="edit_password">New Password</Label>
             <Input
               id="edit_password"
               type="password"
               value={formData.password}
-              onChange={(e) => handleInputChange('password', e.target.value)}
-              placeholder="Enter new password (leave empty to keep current)"
+              onChange={handleInputChange}
+              placeholder="Leave blank to keep current"
+              disabled={loading}
             />
+            <p className="text-xs text-muted-foreground">
+              Only enter a value if you want to change the password
+            </p>
           </div>
           
           <div className="space-y-2">
@@ -170,14 +189,19 @@ export function EditUserModal({ user, open, onOpenChange, onUserUpdated }: EditU
             <Input
               id="edit_phone_number"
               value={formData.phone_number}
-              onChange={(e) => handleInputChange('phone_number', e.target.value)}
+              onChange={handleInputChange}
               placeholder="Enter phone number"
+              disabled={loading}
             />
           </div>
           
           <div className="space-y-2">
             <Label htmlFor="edit_role">Role *</Label>
-            <Select value={formData.role} onValueChange={(value) => handleInputChange('role', value)}>
+            <Select 
+              value={formData.role} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, role: value as UserRole }))}
+              disabled={loading}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select user role" />
               </SelectTrigger>
@@ -192,10 +216,11 @@ export function EditUserModal({ user, open, onOpenChange, onUserUpdated }: EditU
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="edit_is_active">Status</Label>
+            <Label>Status</Label>
             <Select 
               value={formData.is_active ? 'active' : 'inactive'} 
-              onValueChange={(value) => handleInputChange('is_active', value === 'active')}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, is_active: value === 'active' }))}
+              disabled={loading}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -207,13 +232,18 @@ export function EditUserModal({ user, open, onOpenChange, onUserUpdated }: EditU
             </Select>
           </div>
           
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <div className="flex justify-end gap-2 pt-4">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => onOpenChange(false)}
+              disabled={loading}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Update User
+              Save Changes
             </Button>
           </div>
         </form>

@@ -20,11 +20,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Plus, Loader2 } from 'lucide-react';
-import { AdminUserService } from '@/lib/services/admin/user.service';
+import { AdminApiService } from '@/lib/services/adminApi';
 import { toast } from 'sonner';
 
 interface AddUserModalProps {
   onUserAdded: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 const USER_ROLES = [
@@ -34,8 +36,12 @@ const USER_ROLES = [
   { value: 'admin', label: 'Admin' },
 ];
 
-export function AddUserModal({ onUserAdded }: AddUserModalProps) {
-  const [open, setOpen] = useState(false);
+export function AddUserModal({ 
+  onUserAdded, 
+  open: propsOpen, 
+  onOpenChange 
+}: AddUserModalProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
@@ -45,6 +51,11 @@ export function AddUserModal({ onUserAdded }: AddUserModalProps) {
     phone_number: '',
     role: '',
   });
+
+  // Use controlled open state if props are provided
+  const isControlled = propsOpen !== undefined;
+  const open = isControlled ? propsOpen : internalOpen;
+  const setOpen = isControlled ? onOpenChange || (() => {}) : setInternalOpen;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,7 +67,7 @@ export function AddUserModal({ onUserAdded }: AddUserModalProps) {
 
     try {
       setLoading(true);
-      await AdminUserService.create(formData);
+      await AdminApiService.createUser(formData);
       toast.success('User created successfully');
       setOpen(false);
       setFormData({
@@ -68,9 +79,9 @@ export function AddUserModal({ onUserAdded }: AddUserModalProps) {
         role: '',
       });
       onUserAdded();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating user:', error);
-      toast.error('Failed to create user');
+      toast.error(error.message || 'Failed to create user');
     } finally {
       setLoading(false);
     }
@@ -83,10 +94,12 @@ export function AddUserModal({ onUserAdded }: AddUserModalProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Add User
-        </Button>
+        <div> {/* Added wrapper div */}
+          <Button className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Add User
+          </Button>
+        </div>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
@@ -155,7 +168,11 @@ export function AddUserModal({ onUserAdded }: AddUserModalProps) {
           
           <div className="space-y-2">
             <Label htmlFor="role">Role *</Label>
-            <Select value={formData.role} onValueChange={(value) => handleInputChange('role', value)}>
+            <Select 
+              value={formData.role} 
+              onValueChange={(value) => handleInputChange('role', value)}
+              required
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select user role" />
               </SelectTrigger>
@@ -170,7 +187,12 @@ export function AddUserModal({ onUserAdded }: AddUserModalProps) {
           </div>
           
           <div className="flex justify-end space-x-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => setOpen(false)}
+              disabled={loading}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={loading}>
