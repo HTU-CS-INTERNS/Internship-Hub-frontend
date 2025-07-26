@@ -212,7 +212,7 @@ export class AdminApiService {
   // Internship Management
   static async getPendingInternships() {
     try {
-      return await api('/api/internships/pending');
+      return await api('/api/admin/internships/pending');
     } catch (error) {
       console.error('Failed to fetch pending internships:', error);
       return [];
@@ -221,7 +221,7 @@ export class AdminApiService {
 
   static async approveInternship(submissionId: string, latitude: number, longitude: number, comments?: string) {
     try {
-      return await api(`/api/internships/pending/${submissionId}/review`, {
+      return await api(`/api/admin/internships/pending/${submissionId}/review`, {
         method: 'PUT',
         body: { 
           status: 'APPROVED',
@@ -238,7 +238,7 @@ export class AdminApiService {
 
   static async rejectInternship(submissionId: string, reason: string) {
     try {
-      return await api(`/api/internships/pending/${submissionId}/review`, {
+      return await api(`/api/admin/internships/pending/${submissionId}/review`, {
         method: 'PUT',
         body: { 
           status: 'REJECTED',
