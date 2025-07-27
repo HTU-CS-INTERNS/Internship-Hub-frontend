@@ -1,48 +1,43 @@
 
+'use client';
+
+import * as React from 'react';
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
+import { seedLocalStorage } from '@/lib/services/seed.service';
 
-const APP_NAME = "InternHub - HTU";
-const APP_DESCRIPTION = "Streamlining Internship Management for Ho Technical University Students, Lecturers, and Companies.";
+// Since this is the root layout, metadata can be defined here.
+// However, if we need client-side logic like `useEffect` for seeding,
+// we need to handle it carefully. A common pattern is to have a client
+// component inside a server component layout.
 
-export const metadata: Metadata = {
-  applicationName: APP_NAME,
+const AppMetadata: Metadata = {
+  applicationName: "InternHub - HTU",
   title: {
-    default: APP_NAME,
-    template: `%s - ${APP_NAME}`,
+    default: "InternHub - HTU",
+    template: `%s - InternHub - HTU`,
   },
-  description: APP_DESCRIPTION,
+  description: "Streamlining Internship Management for Ho Technical University Students, Lecturers, and Companies.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: APP_NAME,
-    // startUpImage: [], // You can add startup images here
+    title: "InternHub - HTU",
   },
   formatDetection: {
     telephone: false,
   },
-  // Open Graph metadata
-  // openGraph: {
-  //   type: "website",
-  //   siteName: APP_NAME,
-  //   title: {
-  //     default: APP_NAME,
-  //     template: `%s - ${APP_NAME}`,
-  //   },
-  //   description: APP_DESCRIPTION,
-  // },
-  // Twitter metadata
-  // twitter: {
-  //   card: "summary",
-  //   title: {
-  //     default: APP_NAME,
-  //     template: `%s - ${APP_NAME}`,
-  //   },
-  //   description: APP_DESCRIPTION,
-  // },
 };
+
+// A client component to handle the seeding logic
+function LocalStorageSeeder() {
+  React.useEffect(() => {
+    seedLocalStorage();
+  }, []);
+  return null; // This component doesn't render anything
+}
+
 
 export default function RootLayout({
   children,
@@ -52,7 +47,6 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Standard PWA meta tags are handled by Next.js Metadata API using the manifest */}
         <meta name="theme-color" content="hsl(215, 50%, 25%)" />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
 
@@ -62,6 +56,7 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased min-h-screen flex flex-col">
+        <LocalStorageSeeder />
         {children}
         <Toaster />
       </body>
