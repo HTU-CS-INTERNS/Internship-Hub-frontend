@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { UserProfileData } from "@/types";
@@ -71,16 +72,37 @@ class ApiClient {
 
     // Authentication methods
     async login(credentials: { email: string; password: string }): Promise<{ user: UserProfileData; access_token: string }> {
-        const response = await this.request<{ user: UserProfileData; access_token: string }>('api/auth/login', {
-            method: 'POST',
-            body: credentials,
-        });
+        // --- LOCALSTORAGE MOCK LOGIN ---
+        console.log("Attempting local login for:", credentials.email);
+        const usersRaw = typeof window !== "undefined" ? localStorage.getItem('internshipHub_users') : null;
+        if (!usersRaw) {
+            throw new Error("No local user data found. Backend might be required if not seeded.");
+        }
+        const users: UserProfileData[] = JSON.parse(usersRaw);
+        const user = users.find(u => u.email === credentials.email);
+
+        if (!user) {
+            throw new Error("Invalid credentials. User not found.");
+        }
+
+        if (user.password !== credentials.password) {
+            throw new Error("Invalid credentials. Password does not match.");
+        }
+
+        if (user.status === 'PENDING_ACTIVATION') {
+            throw new Error("Account not activated. Please verify your account first.");
+        }
+
+        // Simulate successful login response
+        const mockToken = `local-token-${user.id}-${Date.now()}`;
         
         // Store the token
-        if (typeof window !== "undefined" && response.access_token) {
-            localStorage.setItem('authToken', response.access_token);
+        if (typeof window !== "undefined") {
+            localStorage.setItem('authToken', mockToken);
         }
         
+        const response = { user, access_token: mockToken };
+        console.log("Local login successful for:", user.email);
         return response;
     }
 
