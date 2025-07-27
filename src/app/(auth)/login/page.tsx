@@ -1,4 +1,3 @@
-
 import { LoginForm } from '@/components/auth/login-form';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -36,27 +35,9 @@ export default function LoginPage() {
           
           <div className="mt-auto pt-6 text-center text-sm space-y-2">
             <div>
-              <span className="text-primary-foreground/80">New to InternHub? </span>
+              <span className="text-primary-foreground/80">New user? </span>
               <Button variant="link" asChild className="p-0 h-auto text-primary-foreground hover:text-primary-foreground/90 underline">
-                <Link href="/welcome/get-started">Discover the features</Link>
-              </Button>
-            </div>
-            <div>
-              <span className="text-primary-foreground/80">Student verification: </span>
-              <Button variant="link" asChild className="p-0 h-auto text-primary-foreground hover:text-primary-foreground/90 underline">
-                <Link href="/student-verification">Verify your account</Link>
-              </Button>
-            </div>
-            <div>
-              <span className="text-primary-foreground/80">Supervisor account: </span>
-              <Button variant="link" asChild className="p-0 h-auto text-primary-foreground hover:text-primary-foreground/90 underline">
-                <Link href="/supervisor-verification">Activate account</Link>
-              </Button>
-            </div>
-            <div>
-              <span className="text-primary-foreground/80">Lecturer account: </span>
-              <Button variant="link" asChild className="p-0 h-auto text-primary-foreground hover:text-primary-foreground/90 underline">
-                <Link href="/lecturer-verification">Activate account</Link>
+                <Link href="/student-verification">Verify your Account</Link>
               </Button>
             </div>
             <p className="text-xs text-primary-foreground/70 mt-6">&copy; {new Date().getFullYear()} InternHub - HTU</p>

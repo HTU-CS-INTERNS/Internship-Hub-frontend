@@ -12,7 +12,7 @@ const TASKS_STORAGE_KEY_PREFIX = 'internshipHub_tasks_';
 const REPORTS_STORAGE_KEY_PREFIX = 'internshipHub_reports_';
 const CHECKINS_STORAGE_KEY_PREFIX = 'internshipHub_checkins_';
 const ABUSE_REPORTS_STORAGE_KEY = 'internshipHub_abuseReports';
-const SEED_FLAG_KEY = 'internshipHub_seeded';
+const SEED_FLAG_KEY = 'internshipHub_seeded_v2'; // Increment version to re-seed if needed
 
 // --- SEED DATA DEFINITIONS ---
 
@@ -31,25 +31,26 @@ const seedDepartments: Department[] = [
   { id: 'D006', name: 'Cybersecurity', facultyId: 'F003' },
 ];
 
+// Admin: admin@example.com / AdminPassword1!
 const seedUsers: UserProfileData[] = [
   // Admin
-  { id: 'admin1', first_name: 'Admin', last_name: 'User', email: 'admin@example.com', role: 'ADMIN', status: 'ACTIVE', phone_number: '+1234567890' },
+  { id: 'admin1', first_name: 'Admin', last_name: 'User', email: 'admin@example.com', role: 'ADMIN', status: 'ACTIVE', phone_number: '+1234567890', password: 'AdminPassword1!' },
   
   // HOD
-  { id: 'hod1', first_name: 'Prof. Alan', last_name: 'Turing', email: 'hod.it@example.com', role: 'HOD', status: 'ACTIVE', faculty_id: 'F003', department_id: 'D005', phone_number: '+1234567891' },
+  { id: 'hod1', first_name: 'Prof. Alan', last_name: 'Turing', email: 'hod.it@example.com', role: 'HOD', status: 'ACTIVE', faculty_id: 'F003', department_id: 'D005', phone_number: '+1234567891', password: 'Password123!' },
   
   // Lecturers
-  { id: 'lecturer1', first_name: 'Dr. Elara', last_name: 'Vance', email: 'elara.vance@example.com', role: 'LECTURER', status: 'ACTIVE', faculty_id: 'F003', department_id: 'D005', phone_number: '+1234567892' },
-  { id: 'lecturer2', first_name: 'Dr. Ian', last_name: 'Malcolm', email: 'ian.malcolm@example.com', role: 'LECTURER', status: 'ACTIVE', faculty_id: 'F001', department_id: 'D002', phone_number: '+1234567893' },
+  { id: 'lecturer1', first_name: 'Dr. Elara', last_name: 'Vance', email: 'elara.vance@example.com', role: 'LECTURER', status: 'ACTIVE', faculty_id: 'F003', department_id: 'D005', phone_number: '+1234567892', password: 'Password123!' },
+  { id: 'lecturer2', first_name: 'Dr. Ian', last_name: 'Malcolm', email: 'ian.malcolm@example.com', role: 'LECTURER', status: 'ACTIVE', faculty_id: 'F001', department_id: 'D002', phone_number: '+1234567893', password: 'Password123!' },
   
   // Supervisors
-  { id: 'supervisor1', first_name: 'John', last_name: 'Smith', email: 'john.smith@innovatech.example.com', role: 'SUPERVISOR', status: 'ACTIVE', company_name: 'Innovatech Solutions Inc.', phone_number: '+1234567894' },
-  { id: 'supervisor2', first_name: 'Carol', last_name: 'Danvers', email: 'carol.danvers@stark.example.com', role: 'SUPERVISOR', status: 'ACTIVE', company_name: 'Stark Industries', phone_number: '+1234567895' },
+  { id: 'supervisor1', first_name: 'John', last_name: 'Smith', email: 'john.smith@innovatech.example.com', role: 'SUPERVISOR', status: 'ACTIVE', company_name: 'Innovatech Solutions Inc.', phone_number: '+1234567894', password: 'Password123!' },
+  { id: 'supervisor2', first_name: 'Carol', last_name: 'Danvers', email: 'carol.danvers@stark.example.com', role: 'SUPERVISOR', status: 'ACTIVE', company_name: 'Stark Industries', phone_number: '+1234567895', password: 'Password123!' },
 
   // Students
-  { id: 'student1', first_name: 'Alice', last_name: 'Wonderland', email: 'alice.w@example.com', role: 'STUDENT', status: 'ACTIVE', faculty_id: 'F003', department_id: 'D005', phone_number: '+1234567896' },
-  { id: 'student2', first_name: 'Bob', last_name: 'Builder', email: 'bob.b@example.com', role: 'STUDENT', status: 'ACTIVE', faculty_id: 'F001', department_id: 'D002', phone_number: '+1234567897' },
-  { id: 'student3', first_name: 'Charlie', last_name: 'Brown', email: 'charlie.b@example.com', role: 'STUDENT', status: 'PENDING_ACTIVATION', faculty_id: 'F002', department_id: 'D003', phone_number: '+1234567898' },
+  { id: 'student1', first_name: 'Alice', last_name: 'Wonderland', email: 'alice.w@example.com', role: 'STUDENT', status: 'ACTIVE', faculty_id: 'F003', department_id: 'D005', phone_number: '+1234567896', password: 'Password123!' },
+  { id: 'student2', first_name: 'Bob', last_name: 'Builder', email: 'bob.b@example.com', role: 'STUDENT', status: 'ACTIVE', faculty_id: 'F001', department_id: 'D002', phone_number: '+1234567897', password: 'Password123!' },
+  { id: 'student3', first_name: 'Charlie', last_name: 'Brown', email: 'charlie.b@example.com', role: 'STUDENT', status: 'PENDING_ACTIVATION', faculty_id: 'F002', department_id: 'D003', phone_number: '+1234567898', password: 'Password123!' },
 ];
 
 const seedPlacements: HODApprovalQueueItem[] = [
