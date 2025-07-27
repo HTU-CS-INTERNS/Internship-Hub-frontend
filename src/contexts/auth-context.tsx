@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -40,10 +41,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const token = typeof window !== "undefined" ? localStorage.getItem('authToken') : null;
       console.log('AuthContext: Token found:', !!token);
       
+      const isPublicPage = ['/login', '/register', '/student-verification', '/supervisor-verification', '/lecturer-verification'].includes(pathname) || pathname.startsWith('/onboarding') || pathname.startsWith('/welcome') || pathname === '/';
+      
       if (!token) {
         console.log('AuthContext: No token found, checking if public page...');
         setIsLoading(false);
-        const isPublicPage = ['/', '/login', '/register'].includes(pathname) || pathname.startsWith('/onboarding') || pathname.startsWith('/welcome');
         console.log('AuthContext: Is public page:', isPublicPage, 'for path:', pathname);
         if (!isPublicPage) {
             console.log('AuthContext: Not a public page, redirecting to login...');
@@ -52,50 +54,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      // If we have a token, we are likely logged in. Let's try to get user data.
       try {
         console.log('AuthContext: Attempting to verify user with /auth/me...');
         const userData = await api<UserProfileData>('/auth/me'); 
         console.log('AuthContext: User data received:', userData);
         
-        if (userData) {
+        if (userData && userData.email) {
           const normalizedRole = normalizeRole(userData.role);
           const userWithNormalizedRole = { ...userData, role: normalizedRole };
           setUser(userWithNormalizedRole);
           localStorage.setItem('user', JSON.stringify(userWithNormalizedRole));
           localStorage.setItem('userRole', normalizedRole);
-          localStorage.setItem('userName', `${userData.first_name} ${userData.last_name}`);
+          localStorage.setItem('userName', `${userData.first_name || ''} ${userData.last_name || ''}`);
           localStorage.setItem('userEmail', userData.email);
           console.log('AuthContext: User authenticated successfully, original role:', userData.role, 'normalized role:', normalizedRole);
         } else {
-            throw new Error("User not found for token");
+            // This case might happen if token is invalid or expired
+            console.log('AuthContext: No user data from API, logging out.');
+            handleLogout();
         }
       } catch (error) {
-        console.error('AuthContext: Authentication failed:', error);
-        
-        // Check if it's a network error (backend not running)
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        if (errorMessage.includes('fetch') || errorMessage.includes('Failed to fetch') || errorMessage.includes('Network request failed')) {
-          console.log('AuthContext: Network error detected, backend might be down. Keeping user logged in for now.');
-          // Try to get user data from localStorage as fallback
-          const storedUser = localStorage.getItem('user');
-          if (storedUser) {
-            try {
-              const userData = JSON.parse(storedUser);
-              const normalizedRole = normalizeRole(userData.role);
-              const userWithNormalizedRole = { ...userData, role: normalizedRole };
-              setUser(userWithNormalizedRole);
-              console.log('AuthContext: Using stored user data as fallback, original role:', userData.role, 'normalized role:', normalizedRole);
-            } catch (parseError) {
-              console.error('AuthContext: Failed to parse stored user data:', parseError);
-              handleLogout();
-            }
-          } else {
-            console.log('AuthContext: No stored user data available, logging out');
-            handleLogout();
+        console.error('AuthContext: Authentication with API failed:', error);
+        // Fallback to localStorage if API fails (e.g., backend is down)
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          try {
+            const userData = JSON.parse(storedUser);
+            setUser(userData);
+             console.log('AuthContext: Using stored user data as fallback.');
+          } catch (parseError) {
+             console.error('AuthContext: Failed to parse stored user data:', parseError);
+             handleLogout();
           }
         } else {
-          // For other errors (like invalid token), logout immediately
-          console.log('AuthContext: Non-network error, logging out immediately');
+          console.log('AuthContext: No stored user data available, logging out');
           handleLogout();
         }
       } finally {
@@ -110,8 +103,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return <AppLoadingScreen />;
   }
 
-  const isPublicPage = ['/', '/login', '/register'].includes(pathname) || pathname.startsWith('/onboarding') || pathname.startsWith('/welcome');
+  const isPublicPage = ['/login', '/register', '/student-verification', '/supervisor-verification', '/lecturer-verification'].includes(pathname) || pathname.startsWith('/onboarding') || pathname.startsWith('/welcome') || pathname === '/';
   if (!user && !isLoading && !isPublicPage) {
+      // If we are done loading, not on a public page, and have no user, show loading screen while we redirect.
       return <AppLoadingScreen />;
   }
 
@@ -130,7 +124,6 @@ export function useAuth() {
   return context;
 }
 
-// Role normalization function to handle backend/frontend role differences
 function normalizeRole(role: string): UserRole {
   const roleMap: Record<string, UserRole> = {
     'admin': 'ADMIN',
@@ -141,6 +134,5 @@ function normalizeRole(role: string): UserRole {
     'hod': 'HOD'
   };
   
-  // Return normalized role or fallback to uppercase version
   return roleMap[role.toLowerCase()] || role.toUpperCase() as UserRole;
 }

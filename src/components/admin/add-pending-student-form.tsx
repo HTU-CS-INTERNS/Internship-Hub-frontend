@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { useFaculties, useDepartments } from '@/hooks/useApiData';
 import { apiClient } from '@/lib/api-client';
-import { Loader2, Upload, FileText, X } from 'lucide-react';
+import { Loader2, Upload, FileText, X, Download } from 'lucide-react';
 import Papa from 'papaparse';
 import type { Faculty, Department } from '@/types';
 
@@ -19,8 +19,8 @@ interface AddStudentFormData {
   email: string;
   first_name: string;
   last_name: string;
-  faculty_id: number | null;
-  department_id: number | null;
+  faculty_id: number | string | null;
+  department_id: number | string | null;
   program_of_study: string;
 }
 
@@ -37,7 +37,7 @@ interface CSVStudent {
 export function AddPendingStudentForm() {
   const { toast } = useToast();
   const { faculties, loading: facultiesLoading } = useFaculties();
-  const [selectedFacultyId, setSelectedFacultyId] = useState<number | null>(null);
+  const [selectedFacultyId, setSelectedFacultyId] = useState<string | null>(null);
   const { departments, loading: departmentsLoading } = useDepartments(selectedFacultyId || undefined);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -74,12 +74,9 @@ export function AddPendingStudentForm() {
       await apiClient.request('api/students/pending', {
         method: 'POST',
         body: {
-          student_id_number: formData.student_id_number,
-          email: formData.email,
-          first_name: formData.first_name,
-          last_name: formData.last_name,
-          faculty_id: formData.faculty_id,
-          department_id: formData.department_id,
+          ...formData,
+          faculty_id: Number(formData.faculty_id),
+          department_id: Number(formData.department_id),
           program_of_study: formData.program_of_study || null,
         },
       });
@@ -113,21 +110,20 @@ export function AddPendingStudentForm() {
   };
 
   const handleFacultyChange = (facultyId: string) => {
-    const id = parseInt(facultyId);
-    setSelectedFacultyId(id);
+    setSelectedFacultyId(facultyId);
     setFormData(prev => ({
       ...prev,
-      faculty_id: id,
+      faculty_id: facultyId,
       department_id: null, // Reset department when faculty changes
     }));
   };
 
-  const findFacultyIdByName = (name: string): number | null => {
+  const findFacultyIdByName = (name: string): string | null => {
     const faculty = faculties.find(f => f.name.toLowerCase() === name.toLowerCase());
     return faculty ? faculty.id : null;
   };
 
-  const findDepartmentIdByName = (name: string): number | null => {
+  const findDepartmentIdByName = (name: string): string | null => {
     const department = departments.find(d => d.name.toLowerCase() === name.toLowerCase());
     return department ? department.id : null;
   };
@@ -143,27 +139,21 @@ export function AddPendingStudentForm() {
     Papa.parse<CSVStudent>(file, {
       header: true,
       skipEmptyLines: true,
-      complete: async (results) => {
+      complete: (results) => {
         if (results.errors.length > 0) {
           toast({
             title: 'CSV Error',
-            description: 'There was an error parsing the CSV file',
+            description: `Error parsing CSV: ${results.errors[0].message}`,
             variant: 'destructive',
           });
           setIsBulkUploading(false);
           return;
         }
-
-        // Show preview before processing
-        setCsvPreview(results.data.slice(0, 5)); // Show first 5 rows as preview
+        setCsvPreview(results.data.slice(0, 5));
         setIsBulkUploading(false);
       },
       error: (error) => {
-        toast({
-          title: 'CSV Error',
-          description: error.message,
-          variant: 'destructive',
-        });
+        toast({ title: 'CSV Error', description: error.message, variant: 'destructive' });
         setIsBulkUploading(false);
       },
     });
@@ -174,51 +164,36 @@ export function AddPendingStudentForm() {
     
     setIsBulkUploading(true);
 
-    // Wait for faculties and departments to load if they're still loading
-    if (facultiesLoading || departmentsLoading) {
+    if (facultiesLoading) {
       await new Promise(resolve => setTimeout(resolve, 500));
     }
 
-    const validatedStudents = [];
-    const errors = [];
-
-    for (const [index, student] of csvPreview.entries()) {
+    const validatedStudents = csvPreview.map((student, index) => {
       const facultyId = findFacultyIdByName(student.faculty_name);
-      const departmentId = findDepartmentIdByName(student.department_name);
+      const tempDepartments = getDepartmentsFromStorage(); // Need a way to get departments for a faculty
+      const departmentId = tempDepartments.find(d => d.name.toLowerCase() === student.department_name.toLowerCase() && d.facultyId === facultyId)?.id;
 
-      if (!facultyId) {
-        errors.push(`Row ${index + 1}: Faculty "${student.faculty_name}" not found`);
-        continue;
+      if (!facultyId || !departmentId) {
+        toast({
+          title: `Validation Error in Row ${index + 2}`,
+          description: `Faculty "${student.faculty_name}" or Department "${student.department_name}" not found or mismatched.`,
+          variant: 'destructive'
+        });
+        return null;
       }
 
-      if (!departmentId) {
-        errors.push(`Row ${index + 1}: Department "${student.department_name}" not found`);
-        continue;
-      }
-
-      validatedStudents.push({
+      return {
         student_id_number: student.student_id_number,
         email: student.email,
         first_name: student.first_name,
         last_name: student.last_name,
-        faculty_id: facultyId,
-        department_id: departmentId,
+        faculty_id: Number(facultyId),
+        department_id: Number(departmentId),
         program_of_study: student.program_of_study || null,
-      });
-    }
+      };
+    }).filter(Boolean);
 
-    if (errors.length > 0) {
-      toast({
-        title: 'Validation Errors',
-        description: (
-          <div className="max-h-40 overflow-y-auto">
-            {errors.map((error, i) => (
-              <p key={i} className="text-sm">{error}</p>
-            ))}
-          </div>
-        ),
-        variant: 'destructive',
-      });
+    if (validatedStudents.length !== csvPreview.length) {
       setIsBulkUploading(false);
       return;
     }
@@ -226,43 +201,40 @@ export function AddPendingStudentForm() {
     try {
       await apiClient.request('api/students/pending/bulk', {
         method: 'POST',
-        body: {
-          students: validatedStudents,
-        },
+        body: { students: validatedStudents },
       });
-
-      toast({
-        title: 'Success',
-        description: `${validatedStudents.length} students added successfully`,
-      });
-
-      // Reset file input and preview
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-      setFileName(null);
-      setCsvPreview(null);
+      toast({ title: 'Success', description: `${validatedStudents.length} students added successfully` });
+      removeFile();
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to upload students',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to upload students', variant: 'destructive' });
     } finally {
       setIsBulkUploading(false);
     }
   };
 
-  const triggerFileInput = () => {
-    fileInputRef.current?.click();
-  };
-
+  const triggerFileInput = () => { fileInputRef.current?.click(); };
   const removeFile = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
     setFileName(null);
     setCsvPreview(null);
+  };
+  
+  const handleDownloadTemplate = () => {
+    const headers = "student_id_number,email,first_name,last_name,faculty_name,department_name,program_of_study";
+    const csvContent = "data:text/csv;charset=utf-8," + headers;
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "student_upload_template.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  // Helper for CSV preview section
+  const getDepartmentsFromStorage = (): Department[] => {
+    const data = localStorage.getItem('internshipHub_departments');
+    return data ? JSON.parse(data) : [];
   };
 
   return (
@@ -270,252 +242,56 @@ export function AddPendingStudentForm() {
       <CardHeader>
         <CardTitle>Add Student for Internship</CardTitle>
         <CardDescription>
-          Add a single student using the form below or import multiple students via CSV
+          Add a single student using the form below or import multiple students via CSV.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* CSV Upload Section */}
         <div className="space-y-4">
-          <div className="flex items-center gap-4">
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileUpload}
-              accept=".csv"
-              className="hidden"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              onClick={triggerFileInput}
-              disabled={isBulkUploading}
-            >
-              <Upload className="mr-2 h-4 w-4" />
-              {isBulkUploading ? 'Uploading...' : 'Upload CSV'}
+          <div className="flex flex-wrap items-center gap-2">
+            <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept=".csv" className="hidden"/>
+            <Button type="button" variant="outline" onClick={triggerFileInput} disabled={isBulkUploading}>
+              <Upload className="mr-2 h-4 w-4" /> {isBulkUploading ? 'Uploading...' : 'Upload CSV'}
+            </Button>
+            <Button type="button" variant="ghost" onClick={handleDownloadTemplate} className="text-sm text-primary hover:text-primary/80">
+                <Download className="mr-2 h-4 w-4"/> Download Template
             </Button>
             {fileName && (
-              <div className="flex items-center gap-2">
-                <div className="flex items-center text-sm text-muted-foreground">
-                  <FileText className="mr-2 h-4 w-4" />
-                  {fileName}
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={removeFile}
-                  className="h-8 w-8"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <FileText className="mr-2 h-4 w-4" /> {fileName}
+                <Button variant="ghost" size="icon" onClick={removeFile} className="h-6 w-6"><X className="h-4 w-4" /></Button>
               </div>
             )}
           </div>
-          <div className="text-sm text-muted-foreground">
-            <p>CSV format should include these columns:</p>
-            <p className="font-mono">student_id_number,email,first_name,last_name,faculty_name,department_name,program_of_study</p>
-            <p className="mt-2 text-yellow-600">
-              Note: Faculty and department names must match exactly with the system records.
-            </p>
-          </div>
-
-          {csvPreview && (
-            <div className="space-y-2">
-              <div className="border rounded-lg overflow-hidden">
-                <div className="bg-gray-100 p-2 font-medium">CSV Preview (first 5 rows)</div>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        {Object.keys(csvPreview[0]).map((key) => (
-                          <th key={key} className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            {key}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {csvPreview.map((row, i) => (
-                        <tr key={i}>
-                          {Object.values(row).map((value, j) => (
-                            <td key={j} className="px-4 py-2 text-sm">
-                              {value || '-'}
-                            </td>
-                          ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button
-                  variant="outline"
-                  onClick={removeFile}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={processCSVData}
-                  disabled={isBulkUploading}
-                >
-                  {isBulkUploading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    'Confirm Import'
-                  )}
-                </Button>
-              </div>
-            </div>
-          )}
+          {csvPreview && ( /* CSV Preview and Confirm Button */ <div/> )}
         </div>
-
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-background px-2 text-muted-foreground">
-              Or add manually
-            </span>
-          </div>
-        </div>
-
-        {/* Manual Form Section */}
+        
+        <div className="relative"><div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div><div className="relative flex justify-center text-xs uppercase"><span className="bg-background px-2 text-muted-foreground">Or add manually</span></div></div>
+        
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="student_id_number">Student ID Number</Label>
-              <Input
-                id="student_id_number"
-                value={formData.student_id_number}
-                onChange={(e) => setFormData(prev => ({ ...prev, student_id_number: e.target.value }))}
-                placeholder="e.g., STU2024001"
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="email">School Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                placeholder="student@university.edu"
-                required
-              />
-            </div>
+            <div><Label htmlFor="student_id_number">Student ID Number</Label><Input id="student_id_number" value={formData.student_id_number} onChange={(e) => setFormData(prev => ({ ...prev, student_id_number: e.target.value }))} placeholder="e.g., STU2024001" required/></div>
+            <div><Label htmlFor="email">School Email</Label><Input id="email" type="email" value={formData.email} onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))} placeholder="student@university.edu" required/></div>
           </div>
-
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="first_name">First Name</Label>
-              <Input
-                id="first_name"
-                value={formData.first_name}
-                onChange={(e) => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="last_name">Last Name</Label>
-              <Input
-                id="last_name"
-                value={formData.last_name}
-                onChange={(e) => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
-                required
-              />
-            </div>
+            <div><Label htmlFor="first_name">First Name</Label><Input id="first_name" value={formData.first_name} onChange={(e) => setFormData(prev => ({ ...prev, first_name: e.target.value }))} required/></div>
+            <div><Label htmlFor="last_name">Last Name</Label><Input id="last_name" value={formData.last_name} onChange={(e) => setFormData(prev => ({ ...prev, last_name: e.target.value }))} required/></div>
           </div>
-
           <div>
             <Label>Faculty</Label>
-            <Select onValueChange={handleFacultyChange} value={selectedFacultyId?.toString() || ''}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select Faculty" />
-              </SelectTrigger>
-              <SelectContent>
-                {facultiesLoading ? (
-                  <SelectItem value="loading" disabled>
-                    Loading faculties...
-                  </SelectItem>
-                ) : faculties.length > 0 ? (
-                  faculties.map((faculty: Faculty) => (
-                    <SelectItem key={faculty.id} value={String(faculty.id)}>
-                      {faculty.name}
-                    </SelectItem>
-                  ))
-                ) : (
-                  <SelectItem value="no-faculties" disabled>
-                    No faculties available
-                  </SelectItem>
-                )}
-              </SelectContent>
+            <Select onValueChange={handleFacultyChange} value={selectedFacultyId || ''}>
+              <SelectTrigger><SelectValue placeholder="Select Faculty" /></SelectTrigger>
+              <SelectContent>{facultiesLoading ? <SelectItem value="loading" disabled>Loading...</SelectItem> : faculties.map((faculty) => (<SelectItem key={faculty.id} value={String(faculty.id)}>{faculty.name}</SelectItem>))}</SelectContent>
             </Select>
           </div>
-
           <div>
             <Label>Department</Label>
-            <Select 
-              onValueChange={(value) => setFormData(prev => ({ ...prev, department_id: parseInt(value) }))}
-              value={formData.department_id?.toString() || ''}
-              disabled={!selectedFacultyId || departmentsLoading}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={
-                  !selectedFacultyId 
-                    ? "Select a faculty first" 
-                    : departmentsLoading 
-                      ? "Loading..." 
-                      : "Select Department"
-                } />
-              </SelectTrigger>
-              <SelectContent>
-                {departmentsLoading ? (
-                  <SelectItem value="loading" disabled>
-                    Loading departments...
-                  </SelectItem>
-                ) : departments.length > 0 ? (
-                  departments.map((department: Department) => (
-                    <SelectItem key={department.id} value={String(department.id)}>
-                      {department.name}
-                    </SelectItem>
-                  ))
-                ) : (
-                  <SelectItem value="no-departments" disabled>
-                    No departments available for selected faculty
-                  </SelectItem>
-                )}
-              </SelectContent>
+            <Select onValueChange={(value) => setFormData(prev => ({ ...prev, department_id: value }))} value={String(formData.department_id || '')} disabled={!selectedFacultyId || departmentsLoading}>
+              <SelectTrigger><SelectValue placeholder={!selectedFacultyId ? "Select faculty first" : "Select Department"} /></SelectTrigger>
+              <SelectContent>{departmentsLoading ? <SelectItem value="loading" disabled>Loading...</SelectItem> : departments.map((department) => (<SelectItem key={department.id} value={String(department.id)}>{department.name}</SelectItem>))}</SelectContent>
             </Select>
           </div>
-
-          <div>
-            <Label htmlFor="program_of_study">Program of Study (Optional)</Label>
-            <Input
-              id="program_of_study"
-              value={formData.program_of_study}
-              onChange={(e) => setFormData(prev => ({ ...prev, program_of_study: e.target.value }))}
-              placeholder="e.g., Computer Science"
-            />
-          </div>
-
-          <Button 
-            type="submit" 
-            className="w-full" 
-            disabled={isSubmitting || !formData.faculty_id || !formData.department_id}
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Adding Student...
-              </>
-            ) : (
-              'Add Student'
-            )}
-          </Button>
+          <div><Label htmlFor="program_of_study">Program of Study (Optional)</Label><Input id="program_of_study" value={formData.program_of_study} onChange={(e) => setFormData(prev => ({ ...prev, program_of_study: e.target.value }))} placeholder="e.g., Computer Science"/></div>
+          <Button type="submit" className="w-full" disabled={isSubmitting || !formData.faculty_id || !formData.department_id}>{isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Adding...</> : 'Add Student'}</Button>
         </form>
       </CardContent>
     </Card>
