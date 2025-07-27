@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -24,8 +25,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Textarea } from '@/components/ui/textarea';
+import { getPlacementsFromStorage } from '@/lib/services/hod.service';
 
-// Dynamically import the LocationPicker to avoid SSR issues with Leaflet
 const LocationPicker = dynamic(() => import('./components/location-picker'), { ssr: false });
 
 interface Internship {
@@ -49,7 +50,6 @@ export default function InternshipManagementPage() {
   const [searchTerm, setSearchTerm] = React.useState('');
   const [statusFilter, setStatusFilter] = React.useState<string>('all');
 
-  // State for modals
   const [isPickerOpen, setIsPickerOpen] = React.useState(false);
   const [isRejectDialogOpen, setIsRejectDialogOpen] = React.useState(false);
   const [selectedInternship, setSelectedInternship] = React.useState<Internship | null>(null);
@@ -59,29 +59,22 @@ export default function InternshipManagementPage() {
     try {
       setIsLoading(true);
       setError(null);
-      // Fetch pending internship submissions
-      const [pendingData] = await Promise.all([
-        AdminApiService.getPendingInternships(),
-      ]);
-      
-      const pending = (Array.isArray(pendingData) ? pendingData : []).map((p: any) => ({
-        id: p.id,
-        studentName: `${p.students.users.first_name} ${p.students.users.last_name}`,
-        studentId: p.students.student_id_number,
-        companyName: p.company_name,
-        position: 'N/A',
-        status: p.status,
-        startDate: p.start_date,
-        endDate: p.end_date,
-        faculty: p.students.faculties?.name || 'N/A',
-        department: p.students.departments?.name || 'N/A',
-        supervisorName: p.supervisor_name,
-        supervisorEmail: p.supervisor_email,
-        companyAddress: p.company_address,
-        location: p.location,
+      // Fetch all placements and assume they are approved since there's no approval step
+      const allPlacements = await getPlacementsFromStorage();
+      const mappedPlacements = allPlacements.map((p: any) => ({
+        id: p.studentId, // Use studentId as unique key for this view
+        studentName: p.studentName,
+        studentId: p.studentId,
+        companyName: p.companyName,
+        position: 'Intern', // Position not captured in form, using default
+        status: 'APPROVED', // Status is now always approved
+        startDate: p.startDate,
+        endDate: p.endDate,
+        faculty: 'N/A', // Faculty/Dept not available in localStorage model
+        department: 'N/A',
       }));
 
-      setInternships(pending);
+      setInternships(mappedPlacements);
     } catch (err) {
       console.error('Failed to fetch internships:', err);
       setError('Failed to load internships');
@@ -94,73 +87,11 @@ export default function InternshipManagementPage() {
   React.useEffect(() => {
     fetchInternships();
   }, []);
-
-  const handleApproveClick = (internship: Internship) => {
-    setSelectedInternship(internship);
-    setIsPickerOpen(true);
-  };
-
-  const handleRejectClick = (internship: Internship) => {
-    setSelectedInternship(internship);
-    setIsRejectDialogOpen(true);
-  };
-
-  const handleLocationSelect = async (lat: number, lng: number) => {
-    if (!selectedInternship) return;
-
-    try {
-      await AdminApiService.approveInternship(selectedInternship.id, lat, lng);
-      toast({
-        title: 'Internship Approved',
-        description: `The internship for ${selectedInternship.studentName} has been approved.`,
-      });
-      fetchInternships(); // Re-fetch to update the list
-    } catch (error) {
-      toast({
-        title: 'Approval Failed',
-        description: 'Could not approve the internship. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsPickerOpen(false);
-      setSelectedInternship(null);
-    }
-  };
-
-  const handleConfirmReject = async () => {
-    if (!selectedInternship || !rejectionReason) {
-      toast({
-        title: 'Rejection reason is required',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    try {
-      await AdminApiService.rejectInternship(selectedInternship.id, rejectionReason);
-      toast({
-        title: 'Internship Rejected',
-        description: `The internship for ${selectedInternship.studentName} has been rejected.`,
-      });
-      fetchInternships(); // Re-fetch to update the list
-    } catch (error) {
-      toast({
-        title: 'Rejection Failed',
-        description: 'Could not reject the internship. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsRejectDialogOpen(false);
-      setSelectedInternship(null);
-      setRejectionReason('');
-    }
-  };
-
+  
   const filteredInternships = internships.filter(internship => {
     const matchesSearch = 
       internship.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      internship.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      internship.position.toLowerCase().includes(searchTerm.toLowerCase());
+      internship.companyName.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === 'all' || internship.status.toLowerCase() === statusFilter.toLowerCase();
     
@@ -232,38 +163,12 @@ export default function InternshipManagementPage() {
     );
   }
 
-  if (filteredInternships.length === 0 && !isLoading) {
-    return (
-      <div className="space-y-8 p-4 md:p-6">
-        <PageHeader
-          title="Internship Management"
-          description="Monitor and manage all student internships across the university."
-          icon={Briefcase}
-          breadcrumbs={[
-            { href: "/admin/dashboard", label: "Admin Dashboard" },
-            { label: "Internship Management" }
-          ]}
-        />
-        <EmptyState
-          icon={Briefcase}
-          title={internships.length === 0 ? "No Internships Found" : "No Matching Internships"}
-          description={internships.length === 0 ? "There are no internships registered yet." : "Try adjusting your search criteria or filters."}
-          actionLabel={internships.length === 0 ? undefined : "Clear Filters"}
-          onAction={internships.length === 0 ? undefined : () => {
-            setSearchTerm('');
-            setStatusFilter('all');
-          }}
-        />
-      </div>
-    );
-  }
-
   return (
     <>
       <div className="space-y-8 p-4 md:p-6">
         <PageHeader
           title="Internship Management"
-          description="Monitor and manage all student internships across the university."
+          description="Monitor and manage all student internships across the university. Submissions are now auto-approved."
           icon={Briefcase}
           breadcrumbs={[
             { href: "/admin/dashboard", label: "Admin Dashboard" },
@@ -294,17 +199,25 @@ export default function InternshipManagementPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="pending_approval">Pending</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="terminated">Terminated</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
+                  <SelectItem value="APPROVED">Approved</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </CardHeader>
           
           <CardContent>
+            {filteredInternships.length === 0 ? (
+                 <EmptyState
+                    icon={Briefcase}
+                    title={internships.length === 0 ? "No Internships Found" : "No Matching Internships"}
+                    description={internships.length === 0 ? "There are no internships registered yet." : "Try adjusting your search criteria or filters."}
+                    actionLabel={internships.length === 0 ? undefined : "Clear Filters"}
+                    onAction={internships.length === 0 ? undefined : () => {
+                        setSearchTerm('');
+                        setStatusFilter('all');
+                    }}
+                    />
+            ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -350,18 +263,6 @@ export default function InternshipManagementPage() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        {internship.status === 'PENDING_APPROVAL' ? (
-                          <div className="flex justify-end gap-2">
-                            <Button variant="outline" size="sm" className="text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700" onClick={() => handleApproveClick(internship)}>
-                              <CheckCircle className="h-4 w-4 mr-2" />
-                              Approve
-                            </Button>
-                            <Button variant="outline" size="sm" className="text-red-600 border-red-600 hover:bg-red-50 hover:text-red-700" onClick={() => handleRejectClick(internship)}>
-                              <XCircle className="h-4 w-4 mr-2" />
-                              Reject
-                            </Button>
-                          </div>
-                        ) : (
                           <div className="flex justify-end gap-2">
                             <Button variant="ghost" size="sm">
                               <Eye className="h-4 w-4" />
@@ -373,44 +274,17 @@ export default function InternshipManagementPage() {
                               <Archive className="h-4 w-4" />
                             </Button>
                           </div>
-                        )}
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             </div>
+            )}
           </CardContent>
         </Card>
       </div>
-
-      {/* Modals */}
-      <LocationPicker
-        isOpen={isPickerOpen}
-        onClose={() => setIsPickerOpen(false)}
-        onLocationSelect={handleLocationSelect}
-      />
-
-      <AlertDialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Reject Internship Application</AlertDialogTitle>
-            <AlertDialogDescription>
-              Please provide a reason for rejecting the application for {selectedInternship?.studentName}. This will be shared with the student.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <Textarea
-            placeholder="Enter rejection reason..."
-            value={rejectionReason}
-            onChange={(e) => setRejectionReason(e.target.value)}
-            rows={4}
-          />
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmReject} disabled={!rejectionReason}>Confirm Rejection</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }
+

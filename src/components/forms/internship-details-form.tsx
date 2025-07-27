@@ -23,7 +23,7 @@ import { cn } from '@/lib/utils';
 import { format, parseISO, isValid } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import type { InternshipDetails, InternshipStatus } from '@/types';
-import { submitPlacementForApproval } from '@/lib/services/hod.service'; // Import the new service
+import { submitPlacementForApproval } from '@/lib/services/hod.service'; // This service now saves to localStorage
 
 const internshipDetailsSchema = z.object({
   companyName: z.string().min(2, { message: 'Company name is required (min 2 chars).' }).max(100, { message: 'Company name too long (max 100).' }),
@@ -101,28 +101,30 @@ export default function InternshipDetailsForm({ defaultValues, onSuccess, isResu
       ...values,
       startDate: format(values.startDate, 'yyyy-MM-dd'),
       endDate: format(values.endDate, 'yyyy-MM-dd'),
-      status: 'PENDING_APPROVAL', // Service will set this
-      rejectionReason: values.status === 'REJECTED' ? values.rejectionReason : undefined,
+      status: 'APPROVED', // Status is now automatically APPROVED
+      rejectionReason: undefined, // No rejection flow
     };
     
     try {
+      // This service now saves to localStorage instead of a pending queue
       await submitPlacementForApproval(submissionDataForService, studentId, studentName);
       
+      // Since it's auto-approved, we can set onboarding complete
       if (typeof window !== "undefined") {
-        localStorage.removeItem('onboardingComplete'); 
+        localStorage.setItem('onboardingComplete', 'true'); 
       }
 
       toast({
-        title: isResubmitting ? 'Internship Details Resubmitted!' : 'Internship Details Submitted!',
-        description: 'Your internship information has been sent for HOD approval.',
+        title: 'Internship Details Saved!',
+        description: 'Your internship information has been saved to your profile.',
         variant: "default",
       });
-      onSuccess?.(submissionDataForService); // Pass the data (now with PENDING_APPROVAL status) back to parent
+      onSuccess?.(submissionDataForService); 
     } catch (error) {
-      console.error("Error submitting placement for approval:", error);
+      console.error("Error saving internship details:", error);
       toast({
         title: "Submission Error",
-        description: "Could not submit your internship details. Please try again.",
+        description: "Could not save your internship details. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -182,7 +184,7 @@ export default function InternshipDetailsForm({ defaultValues, onSuccess, isResu
                 <FormControl>
                   <Input type="email" placeholder="supervisor@company.com" {...field} className="rounded-lg" />
                 </FormControl>
-                <FormDescription>This email may be used to invite your supervisor once approved by HOD.</FormDescription>
+                <FormDescription>This email may be used to invite your supervisor.</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -272,7 +274,7 @@ export default function InternshipDetailsForm({ defaultValues, onSuccess, isResu
         <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <Button type="submit" className="w-full sm:w-auto rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isLoading}>
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            {isResubmitting ? 'Resubmit for HOD Approval' : 'Submit for HOD Approval'}
+            {isResubmitting ? 'Update Internship Details' : 'Save Internship Details'}
             </Button>
              <Button
                 type="button"
