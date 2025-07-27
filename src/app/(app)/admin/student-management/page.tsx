@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -31,15 +32,15 @@ interface PendingStudent {
   program_of_study?: string;
   is_verified: boolean;
   created_at: string;
-  faculties: {
+  faculties?: {
     id: number;
     name: string;
   };
-  departments: {
+  departments?: {
     id: number;
     name: string;
   };
-  admin: {
+  admin?: {
     id: number;
     first_name: string;
     last_name: string;
@@ -57,15 +58,10 @@ function PendingStudentsList() {
     try {
       setLoading(true);
       setError(null);
-      // Try AdminApiService first, fallback to direct API call
-      try {
-        const data = await AdminApiService.getPendingStudents();
-        setPendingStudents(Array.isArray(data) ? data : []);
-      } catch (adminApiError) {
-        console.log('AdminApiService failed, trying direct API call...');
-        const data = await apiClient.request<PendingStudent[]>('api/students/pending');
-        setPendingStudents(data);
-      }
+      
+      const data = await AdminApiService.getPendingStudents();
+      setPendingStudents(Array.isArray(data) ? data : []);
+
     } catch (error) {
       console.error('Failed to fetch pending students:', error);
       setError('Failed to load pending students');
@@ -128,15 +124,15 @@ function PendingStudentsList() {
                       {student.first_name} {student.last_name}
                     </TableCell>
                     <TableCell>{student.email}</TableCell>
-                    <TableCell>{student.faculties.name}</TableCell>
-                    <TableCell>{student.departments.name}</TableCell>
+                    <TableCell>{student.faculties?.name || 'N/A'}</TableCell>
+                    <TableCell>{student.departments?.name || 'N/A'}</TableCell>
                     <TableCell>
                       <Badge variant={student.is_verified ? 'default' : 'secondary'}>
                         {student.is_verified ? 'Verified' : 'Pending'}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {student.admin.first_name} {student.admin.last_name}
+                      {student.admin ? `${student.admin.first_name} ${student.admin.last_name}` : 'N/A'}
                     </TableCell>
                     <TableCell>
                       {new Date(student.created_at).toLocaleDateString()}
