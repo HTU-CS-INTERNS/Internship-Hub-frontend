@@ -28,11 +28,9 @@ export default function EditTaskPage() {
         try {
           const fetchedTask = await getTaskById(taskId);
           if (fetchedTask) {
-            // Ensure attachments are handled correctly; service currently stores names
-            // For editing, we might want to show current attachments but not repopulate File input
             setTask({
               ...fetchedTask,
-              attachments: [], // File input cannot be pre-filled with actual File objects easily from names
+              attachments: fetchedTask.attachments || [], 
             });
           } else {
             setError('Task not found.');
@@ -89,12 +87,9 @@ export default function EditTaskPage() {
     );
   }
   
-  // Prepare defaultValues for the form, ensuring date is a Date object
   const formDefaultValues = {
     ...task,
     date: task.date ? new Date(task.date) : new Date(),
-    // attachments are intentionally not passed as File objects to defaultValues
-    // The form handles new file uploads. Existing string attachment names could be displayed separately if needed.
   };
 
 
@@ -122,16 +117,6 @@ export default function EditTaskPage() {
             taskIdToEdit={taskId}
             onSuccess={handleSuccess} 
           />
-          {/* Display existing attachments as strings if needed, as File inputs can't be pre-filled */}
-          {task.attachments && task.attachments.length > 0 && !formDefaultValues.attachments?.length && (
-             <div className="mt-4 text-sm">
-                <p className="font-medium text-foreground">Current attachments (read-only):</p>
-                <ul className="list-disc list-inside text-muted-foreground">
-                    {task.attachments.map(att => <li key={att}>{att}</li>)}
-                </ul>
-                <p className="text-xs text-muted-foreground">To change attachments, please upload new files. Old ones will be replaced.</p>
-             </div>
-          )}
         </CardContent>
       </Card>
     </div>

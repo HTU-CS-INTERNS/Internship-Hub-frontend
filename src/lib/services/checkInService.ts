@@ -3,142 +3,100 @@
 
 import type { CheckIn } from '@/types';
 import { formatISO } from 'date-fns';
-import { apiClient } from '../api-client';
+
+const CHECKINS_STORAGE_KEY_PREFIX = 'internshipHub_checkins_';
+
+function getStorageKey(studentId: string): string {
+    return `${CHECKINS_STORAGE_KEY_PREFIX}${studentId}`;
+}
+
+const getCheckInsFromStorage = (studentId: string): CheckIn[] => {
+  if (typeof window === "undefined") return [];
+  const key = getStorageKey(studentId);
+  const data = localStorage.getItem(key);
+  return data ? JSON.parse(data) : [];
+};
+
+const setCheckInsInStorage = (studentId: string, checkins: CheckIn[]): void => {
+  if (typeof window === "undefined") return;
+  const key = getStorageKey(studentId);
+  localStorage.setItem(key, JSON.stringify(checkins));
+};
+
 
 export type CheckInCreatePayload = Omit<CheckIn, 'id' | 'student_id' | 'check_in_timestamp' | 'created_at' | 'supervisor_verification_status' | 'supervisor_comments'> & {
-  photo_url?: string; // This will be the data URI or placeholder name from the form
+  photo_url?: string;
 };
 
 // Student: Create a new check-in
 export const createCheckInForStudent = async (
   checkInData: CheckInCreatePayload
 ): Promise<CheckIn> => {
-  try {
-    const now = new Date();
-    const payload = {
-      check_in_timestamp: formatISO(now),
-      latitude: checkInData.latitude,
-      longitude: checkInData.longitude,
-      address_resolved: checkInData.address_resolved,
-      manual_reason: checkInData.manual_reason,
-      is_gps_verified: checkInData.is_gps_verified,
-      is_outside_geofence: checkInData.is_outside_geofence,
-      photo_url: checkInData.photo_url,
-    };
+  const studentId = typeof window !== "undefined" ? localStorage.getItem('userEmail') || 'unknown_student' : 'unknown_student';
+  const allCheckins = getCheckInsFromStorage(studentId);
+  const now = new Date();
+  
+  const newCheckIn: CheckIn = {
+    id: `checkin_${Date.now()}`,
+    student_id: studentId,
+    check_in_timestamp: formatISO(now),
+    created_at: formatISO(now),
+    supervisor_verification_status: 'PENDING',
+    ...checkInData
+  };
 
-    // For check-ins, we might need to implement this endpoint in the backend
-    // For now, we'll use a generic request
-    const response = await apiClient.request<any>('api/check-ins', {
-      method: 'POST',
-      body: payload,
-    });
-
-    return {
-      id: response.id.toString(),
-      student_id: response.student_id?.toString() || '',
-      check_in_timestamp: response.check_in_timestamp,
-      created_at: response.created_at,
-      latitude: response.latitude,
-      longitude: response.longitude,
-      address_resolved: response.address_resolved,
-      manual_reason: response.manual_reason,
-      is_gps_verified: response.is_gps_verified,
-      is_outside_geofence: response.is_outside_geofence,
-      photo_url: response.photo_url,
-      supervisor_verification_status: response.supervisor_verification_status || 'PENDING',
-      supervisor_comments: response.supervisor_comments,
-    };
-  } catch (error) {
-    console.error('Error creating check-in:', error);
-    throw error;
-  }
+  allCheckins.unshift(newCheckIn); // Add to the top
+  setCheckInsInStorage(studentId, allCheckins);
+  
+  await new Promise(resolve => setTimeout(resolve, 300));
+  return newCheckIn;
 };
 
 // Student: Get their check-in history
 export const getCheckInsByStudentId = async (studentId: string): Promise<CheckIn[]> => {
-  try {
-    const response = await apiClient.request<any[]>(`api/check-ins?student_id=${studentId}`);
-    
-    return response.map((checkIn: any) => ({
-      id: checkIn.id.toString(),
-      student_id: checkIn.student_id?.toString() || '',
-      check_in_timestamp: checkIn.check_in_timestamp,
-      created_at: checkIn.created_at,
-      latitude: checkIn.latitude,
-      longitude: checkIn.longitude,
-      address_resolved: checkIn.address_resolved,
-      manual_reason: checkIn.manual_reason,
-      is_gps_verified: checkIn.is_gps_verified,
-      is_outside_geofence: checkIn.is_outside_geofence,
-      photo_url: checkIn.photo_url,
-      supervisor_verification_status: checkIn.supervisor_verification_status || 'PENDING',
-      supervisor_comments: checkIn.supervisor_comments,
-    })).sort((a, b) => new Date(b.check_in_timestamp).getTime() - new Date(a.check_in_timestamp).getTime());
-  } catch (error) {
-    console.error('Error fetching check-ins for student:', error);
-    return [];
-  }
+  const checkins = getCheckInsFromStorage(studentId);
+  // Simulate async operation
+  await new Promise(resolve => setTimeout(resolve, 100));
+  return checkins.sort((a, b) => new Date(b.check_in_timestamp).getTime() - new Date(a.check_in_timestamp).getTime());
 };
 
 // Supervisor: Get check-ins for their assigned interns (status PENDING)
 export const getCheckInsForSupervisorReview = async (supervisorId: string): Promise<CheckIn[]> => {
-  try {
-    const response = await apiClient.request<any[]>(`api/check-ins?status=PENDING&supervisor_id=${supervisorId}`);
-    
-    return response.map((checkIn: any) => ({
-      id: checkIn.id.toString(),
-      student_id: checkIn.student_id?.toString() || '',
-      check_in_timestamp: checkIn.check_in_timestamp,
-      created_at: checkIn.created_at,
-      latitude: checkIn.latitude,
-      longitude: checkIn.longitude,
-      address_resolved: checkIn.address_resolved,
-      manual_reason: checkIn.manual_reason,
-      is_gps_verified: checkIn.is_gps_verified,
-      is_outside_geofence: checkIn.is_outside_geofence,
-      photo_url: checkIn.photo_url,
-      supervisor_verification_status: checkIn.supervisor_verification_status || 'PENDING',
-      supervisor_comments: checkIn.supervisor_comments,
-    })).sort((a, b) => new Date(a.check_in_timestamp).getTime() - new Date(b.check_in_timestamp).getTime());
-  } catch (error) {
-    console.error('Error fetching check-ins for supervisor review:', error);
-    return [];
+  // This is a complex mock. For now, we return all check-ins for demo purposes.
+  // In a real app, this would be a backend query.
+  const allCheckins: CheckIn[] = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith(CHECKINS_STORAGE_KEY_PREFIX)) {
+      const studentCheckins = JSON.parse(localStorage.getItem(key) || '[]');
+      allCheckins.push(...studentCheckins);
+    }
   }
+  await new Promise(resolve => setTimeout(resolve, 100));
+  return allCheckins.filter(c => c.supervisor_verification_status === 'PENDING')
+                    .sort((a, b) => new Date(a.check_in_timestamp).getTime() - new Date(b.check_in_timestamp).getTime());
 };
 
 // Supervisor: Update check-in status (VERIFIED or FLAGGED)
 export const updateCheckInStatusBySupervisor = async (
   checkInId: string,
-  supervisorId: string, 
   newStatus: 'VERIFIED' | 'FLAGGED',
   comments?: string
 ): Promise<CheckIn | null> => {
-  try {
-    const response = await apiClient.request<any>(`api/check-ins/${checkInId}`, {
-      method: 'PUT',
-      body: {
-        supervisor_verification_status: newStatus,
-        supervisor_comments: comments,
-      },
-    });
-
-    return {
-      id: response.id.toString(),
-      student_id: response.student_id?.toString() || '',
-      check_in_timestamp: response.check_in_timestamp,
-      created_at: response.created_at,
-      latitude: response.latitude,
-      longitude: response.longitude,
-      address_resolved: response.address_resolved,
-      manual_reason: response.manual_reason,
-      is_gps_verified: response.is_gps_verified,
-      is_outside_geofence: response.is_outside_geofence,
-      photo_url: response.photo_url,
-      supervisor_verification_status: response.supervisor_verification_status,
-      supervisor_comments: response.supervisor_comments,
-    };
-  } catch (error) {
-    console.error('Error updating check-in status:', error);
-    return null;
+  if (typeof window === "undefined") return null;
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith(CHECKINS_STORAGE_KEY_PREFIX)) {
+      let studentCheckins: CheckIn[] = JSON.parse(localStorage.getItem(key) || '[]');
+      const checkInIndex = studentCheckins.findIndex(c => c.id === checkInId);
+      if (checkInIndex > -1) {
+        studentCheckins[checkInIndex].supervisor_verification_status = newStatus;
+        studentCheckins[checkInIndex].supervisor_comments = comments;
+        localStorage.setItem(key, JSON.stringify(studentCheckins));
+        await new Promise(resolve => setTimeout(resolve, 100));
+        return studentCheckins[checkInIndex];
+      }
+    }
   }
+  return null;
 };

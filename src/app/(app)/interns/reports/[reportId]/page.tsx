@@ -65,10 +65,6 @@ export default function SupervisorReportReviewPage() {
       setIntern(foundIntern);
     }
 
-    if (!foundReport || !foundIntern && (typeof window !== "undefined")){ 
-        // router.push('/interns'); // Temporarily disabled for potential page refresh issues
-    }
-
   }, [reportId, internIdQuery, router]);
 
   const handleSubmitFeedback = async (newStatus: 'APPROVED' | 'REJECTED') => {
@@ -206,11 +202,11 @@ export default function SupervisorReportReviewPage() {
                         <div>
                         <h3 className="text-base font-semibold text-foreground mb-2 flex items-center"><Paperclip className="mr-2 h-5 w-5 text-primary" />Attachments</h3>
                         <ul className="list-none space-y-2">
-                            {report.attachments.map((file, index) => (
+                            {report.attachments.map((att, index) => (
                             <li key={index}>
                                 <Button variant="link" className="p-0 h-auto text-base text-accent hover:text-accent/80 font-normal" asChild>
-                                <a href={`/placeholder-download/${file}`} target="_blank" rel="noopener noreferrer" data-ai-hint="document file">
-                                    <Paperclip className="mr-1 h-4 w-4" /> {file}
+                                <a href={att.dataUri} target="_blank" rel="noopener noreferrer" download={att.name} data-ai-hint="document file">
+                                    <Paperclip className="mr-1 h-4 w-4" /> {att.name}
                                 </a>
                                 </Button>
                             </li>
@@ -283,5 +279,3 @@ export default function SupervisorReportReviewPage() {
     </div>
   );
 }
-
-    

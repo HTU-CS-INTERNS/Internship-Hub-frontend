@@ -14,7 +14,6 @@ import { cn } from '@/lib/utils';
 import NextImage from 'next/image'; // Renamed to avoid conflict with Lucide's Image icon
 import { getReportById } from '@/lib/services/report.service';
 import { useParams, useRouter } from 'next/navigation';
-import { DUMMY_REPORTS } from '@/lib/constants'; // Corrected import
 
 
 const statusColors: Record<DailyReport['status'], string> = {
@@ -28,24 +27,26 @@ type ExtendedDailyReport = DailyReport & {
   title?: string; 
   challengesFaced?: string; 
   securePhotoUrl?: string;
-  // supervisorComments is already in DailyReport from types.ts if you updated it
 };
 
-export default function ReportDetailPage({ params }: { params: { reportId: string } }) {
+export default function ReportDetailPage() {
   const router = useRouter();
+  const params = useParams();
+  const reportId = params.reportId as string;
   const [report, setReport] = React.useState<ExtendedDailyReport | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
     async function loadReport() {
-      const foundReport = await getReportById(params.reportId);
+      if (!reportId) return;
+      const foundReport = await getReportById(reportId);
       if (foundReport) {
         setReport(foundReport as ExtendedDailyReport);
       }
       setIsLoading(false);
     }
     loadReport();
-  }, [params.reportId]);
+  }, [reportId]);
 
   if (isLoading) {
     return (
@@ -64,7 +65,7 @@ export default function ReportDetailPage({ params }: { params: { reportId: strin
             icon={FileText}
             breadcrumbs={[
                 { href: "/dashboard", label: "Dashboard" },
-                { href: "/reports", label: "Work Reports" },
+                { href: "/student/reports", label: "Work Reports" },
                 { label: "Error" }
             ]}
             />
@@ -72,9 +73,9 @@ export default function ReportDetailPage({ params }: { params: { reportId: strin
             <CardContent className="p-10 text-center">
             <AlertTriangle className="mx-auto h-12 w-12 text-destructive mb-4" />
             <p className="text-xl font-semibold text-destructive-foreground">Could not find the requested report.</p>
-            <p className="text-muted-foreground mt-2">The report ID '{params.reportId}' might be invalid or the report has been removed.</p>
+            <p className="text-muted-foreground mt-2">The report ID '{reportId}' might be invalid or the report has been removed.</p>
             <Button asChild className="mt-6">
-                <Link href="/reports">Go Back to Reports List</Link>
+                <Link href="/student/reports">Go Back to Reports List</Link>
             </Button>
             </CardContent>
         </Card>
@@ -92,12 +93,12 @@ export default function ReportDetailPage({ params }: { params: { reportId: strin
         icon={FileText}
         breadcrumbs={[
           { href: "/dashboard", label: "Dashboard" },
-          { href: "/reports", label: "Work Reports" },
+          { href: "/student/reports", label: "Work Reports" },
           { label: report.title ? `Report: ${report.title.substring(0,30)}${report.title.length > 30 ? "..." : ""}` : `Report - ${report.id}` }
         ]}
         actions={
           report.status === 'PENDING' && ( // Or SUBMITTED, depending on your workflow
-            <Link href={`/reports/edit/${report.id}`} passHref>
+            <Link href={`/student/reports/edit/${report.id}`} passHref>
               <Button className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg">
                 <Edit3 className="mr-2 h-4 w-4" /> Edit Report
               </Button>
@@ -124,7 +125,6 @@ export default function ReportDetailPage({ params }: { params: { reportId: strin
                 <h3 className="text-sm font-semibold text-foreground mb-1 flex items-center"><Calendar className="mr-2 h-4 w-4 text-primary" />Date</h3>
                 <p className="text-muted-foreground">{format(parseISO(report.date), "PPP")}</p>
             </div>
-             {/* Add other top-level info here if needed, like student name if this page was generic */}
           </div>
           
           <Separator />
@@ -144,7 +144,6 @@ export default function ReportDetailPage({ params }: { params: { reportId: strin
           <div>
             <h3 className="text-lg font-semibold text-foreground mb-2 flex items-center"><ThumbsUp className="mr-2 h-5 w-5 text-primary" />Key Learnings / Outcomes</h3>
             <p className="text-muted-foreground whitespace-pre-line leading-relaxed">{report.learningObjectives}</p> 
-            {/* Ensure `learningObjectives` is the primary field as per types, or `outcomes` also if distinct */}
              {report.outcomes && report.outcomes !== report.learningObjectives && (
                  <div className="mt-2">
                     <h4 className="text-md font-medium text-foreground">Specific Outcomes:</h4>
@@ -166,11 +165,11 @@ export default function ReportDetailPage({ params }: { params: { reportId: strin
             <div>
               <h3 className="text-lg font-semibold text-foreground mb-2 flex items-center"><Paperclip className="mr-2 h-5 w-5 text-primary" />Attachments</h3>
               <ul className="list-none space-y-2">
-                {report.attachments.map((file, index) => (
+                {report.attachments.map((att, index) => (
                   <li key={index}>
                     <Button variant="link" className="p-0 h-auto text-base text-accent hover:text-accent/80 font-normal" asChild>
-                      <a href={`/placeholder-download/${file}`} target="_blank" rel="noopener noreferrer" data-ai-hint="document file">
-                        <Paperclip className="mr-1 h-4 w-4" /> {file}
+                      <a href={att.dataUri} target="_blank" rel="noopener noreferrer" download={att.name} data-ai-hint="document file">
+                        <Paperclip className="mr-1 h-4 w-4" /> {att.name}
                       </a>
                     </Button>
                   </li>
@@ -190,10 +189,10 @@ export default function ReportDetailPage({ params }: { params: { reportId: strin
             </div>
             </>
           )}
+
         </CardContent>
       </Card>
     </div>
   );
 }
 
-    
