@@ -1,5 +1,8 @@
-import api from '@/lib/api';
-import type { UserProfileData } from '@/types';
+
+'use client';
+
+import type { UserProfileData, DailyTask, DailyReport } from '@/types';
+import { apiClient } from '../api-client';
 
 // API service for student-related data
 export class StudentApiService {
@@ -7,9 +10,15 @@ export class StudentApiService {
   // Get current user's student profile
   static async getStudentProfile(): Promise<UserProfileData | null> {
     try {
-      return await api<UserProfileData>('/auth/me');
+      // Switched from API to localStorage to support offline-first demo
+      const userRaw = typeof window !== "undefined" ? localStorage.getItem('user') : null;
+      if (!userRaw) {
+        console.warn('No user found in localStorage for getStudentProfile.');
+        return null;
+      }
+      return JSON.parse(userRaw) as UserProfileData;
     } catch (error) {
-      console.error('Failed to fetch student profile:', error);
+      console.error('Failed to fetch student profile from localStorage:', error);
       return null;
     }
   }
@@ -17,7 +26,7 @@ export class StudentApiService {
   // Get student's internship details (using the actual backend endpoint)
   static async getInternshipDetails() {
     try {
-      const internships = await api<any[]>('/api/internships/me');
+      const internships = await apiClient.request<any[]>('/api/internships/me');
       return internships?.[0] || null; // Return first internship or null
     } catch (error) {
       console.error('Failed to fetch internship details:', error);
@@ -28,7 +37,7 @@ export class StudentApiService {
   // Get student's internship by ID
   static async getInternshipById(internshipId: number) {
     try {
-      return await api(`/api/internships/${internshipId}`);
+      return await apiClient.request(`/api/internships/${internshipId}`);
     } catch (error) {
       console.error('Failed to fetch internship by ID:', error);
       return null;
@@ -36,65 +45,40 @@ export class StudentApiService {
   }
 
   // Get student's tasks (from daily-tasks endpoint)
-  static async getTasks(internshipId?: number, taskDate?: string) {
+  static async getTasks(internshipId?: number, taskDate?: string): Promise<DailyTask[]> {
     try {
-      if (!internshipId) {
-        // Get internship first using the correct method
-        const internship = await this.getMyInternship() as any;
-        if (!internship?.id) {
-          console.log('No active internship found for tasks');
-          return [];
-        }
-        // Parse internship ID properly
-        const parsedId = typeof internship.id === 'string' ? parseInt(internship.id, 10) : Number(internship.id);
-        
-        // Validate the parsed ID
-        if (isNaN(parsedId) || parsedId <= 0) {
-          console.warn('Invalid internship ID from getMyInternship:', internship.id);
-          return [];
-        }
-        
-        internshipId = parsedId;
+      const studentId = typeof window !== "undefined" ? localStorage.getItem('userEmail') : null;
+      if (!studentId) return [];
+
+      const allTasksRaw = localStorage.getItem(`internshipHub_tasks_${studentId}`);
+      const allTasks = allTasksRaw ? JSON.parse(allTasksRaw) : [];
+
+      if (taskDate) {
+        return allTasks.filter((task: DailyTask) => task.date === taskDate);
       }
-      
-      const params = taskDate ? `?task_date=${taskDate}` : '';
-      return await api(`/api/internships/${internshipId}/daily-tasks${params}`);
+      return allTasks;
     } catch (error) {
-      console.error('Failed to fetch tasks:', error);
+      console.error('Failed to fetch tasks from localStorage:', error);
       return [];
     }
   }
 
   // Get student's reports (from daily-reports endpoint)
-  static async getReports(internshipId?: number, reportDate?: string, status?: string) {
-    try {
-      if (!internshipId) {
-        // Get internship first using the correct method
-        const internship = await this.getMyInternship() as any;
-        if (!internship?.id) {
-          console.log('No active internship found for reports');
-          return [];
-        }
-        // Parse internship ID properly
-        const parsedId = typeof internship.id === 'string' ? parseInt(internship.id, 10) : Number(internship.id);
-        
-        // Validate the parsed ID
-        if (isNaN(parsedId) || parsedId <= 0) {
-          console.warn('Invalid internship ID from getMyInternship:', internship.id);
-          return [];
-        }
-        
-        internshipId = parsedId;
+  static async getReports(internshipId?: number, reportDate?: string, status?: string): Promise<DailyReport[]> {
+     try {
+      const studentId = typeof window !== "undefined" ? localStorage.getItem('userEmail') : null;
+      if (!studentId) return [];
+      const allReportsRaw = localStorage.getItem(`internshipHub_reports_${studentId}`);
+      let reports: DailyReport[] = allReportsRaw ? JSON.parse(allReportsRaw) : [];
+      if (reportDate) {
+        reports = reports.filter(report => report.date === reportDate);
       }
-      
-      const params = new URLSearchParams();
-      if (reportDate) params.append('report_date', reportDate);
-      if (status) params.append('status', status);
-      const queryString = params.toString() ? `?${params.toString()}` : '';
-      
-      return await api(`/api/internships/${internshipId}/daily-reports${queryString}`);
+      if (status) {
+        reports = reports.filter(report => report.status === status);
+      }
+      return reports;
     } catch (error) {
-      console.error('Failed to fetch reports:', error);
+      console.error('Failed to fetch reports from localStorage:', error);
       return [];
     }
   }
@@ -102,7 +86,7 @@ export class StudentApiService {
   // Get specific task by ID
   static async getTaskById(internshipId: number, taskId: number) {
     try {
-      return await api(`/api/internships/${internshipId}/daily-tasks/${taskId}`);
+      return await apiClient.request(`/api/internships/${internshipId}/daily-tasks/${taskId}`);
     } catch (error) {
       console.error('Failed to fetch task by ID:', error);
       return null;
@@ -112,7 +96,7 @@ export class StudentApiService {
   // Get specific report by ID
   static async getReportById(internshipId: number, reportId: number) {
     try {
-      return await api(`/api/internships/${internshipId}/daily-reports/${reportId}`);
+      return await apiClient.request(`/api/internships/${internshipId}/daily-reports/${reportId}`);
     } catch (error) {
       console.error('Failed to fetch report by ID:', error);
       return null;
@@ -185,7 +169,7 @@ export class StudentApiService {
   // Get student's activity data
   static async getActivityData(period: 'week' | 'month' | 'all' = 'month') {
     try {
-      return await api(`/students/activity?period=${period}`);
+      return await apiClient.request(`/students/activity?period=${period}`);
     } catch (error) {
       console.error('Failed to fetch activity data:', error);
       return [];
@@ -195,7 +179,7 @@ export class StudentApiService {
   // Get student's dashboard metrics
   static async getDashboardMetrics() {
     try {
-      return await api('/students/dashboard/metrics');
+      return await apiClient.request('/students/dashboard/metrics');
     } catch (error) {
       console.error('Failed to fetch dashboard metrics:', error);
       return null;
@@ -205,7 +189,7 @@ export class StudentApiService {
   // Get company information for student's internship
   static async getCompanyInfo() {
     try {
-      return await api('/students/company');
+      return await apiClient.request('/students/company');
     } catch (error) {
       console.error('Failed to fetch company info:', error);
       return null;
@@ -215,7 +199,7 @@ export class StudentApiService {
   // Submit check-in
   static async submitCheckIn(latitude: number, longitude: number) {
     try {
-      return await api('/students/check-in', {
+      return await apiClient.request('/students/check-in', {
         method: 'POST',
         body: { latitude, longitude, timestamp: new Date().toISOString() }
       });
@@ -228,7 +212,7 @@ export class StudentApiService {
   // Submit check-out
   static async submitCheckOut(latitude: number, longitude: number) {
     try {
-      return await api('/students/check-out', {
+      return await apiClient.request('/students/check-out', {
         method: 'POST',
         body: { latitude, longitude, timestamp: new Date().toISOString() }
       });
@@ -241,7 +225,7 @@ export class StudentApiService {
   // Create new task
   static async createTask(taskData: any) {
     try {
-      return await api('/students/tasks', {
+      return await apiClient.request('/students/tasks', {
         method: 'POST',
         body: taskData
       });
@@ -254,7 +238,7 @@ export class StudentApiService {
   // Update task
   static async updateTask(taskId: string, taskData: any) {
     try {
-      return await api(`/students/tasks/${taskId}`, {
+      return await apiClient.request(`/students/tasks/${taskId}`, {
         method: 'PUT',
         body: taskData
       });
@@ -267,7 +251,7 @@ export class StudentApiService {
   // Create new report
   static async createReport(reportData: any) {
     try {
-      return await api('/students/reports', {
+      return await apiClient.request('/students/reports', {
         method: 'POST',
         body: reportData
       });
@@ -280,7 +264,7 @@ export class StudentApiService {
   // Upload document
   static async uploadDocument(formData: FormData) {
     try {
-      return await api('/students/documents/upload', {
+      return await apiClient.request('/students/documents/upload', {
         method: 'POST',
         body: formData,
         headers: {} // Let browser set multipart headers
@@ -294,7 +278,7 @@ export class StudentApiService {
   // Update student profile
   static async updateProfile(profileData: any) {
     try {
-      return await api('/students/profile', {
+      return await apiClient.request('/students/profile', {
         method: 'PUT',
         body: profileData
       });
@@ -307,7 +291,7 @@ export class StudentApiService {
   // Update report
   static async updateReport(reportId: string, reportData: any) {
     try {
-      return await api(`/students/reports/${reportId}`, {
+      return await apiClient.request(`/students/reports/${reportId}`, {
         method: 'PUT',
         body: reportData
       });
@@ -320,7 +304,7 @@ export class StudentApiService {
   // Delete document
   static async deleteDocument(documentId: string) {
     try {
-      return await api(`/students/documents/${documentId}`, {
+      return await apiClient.request(`/students/documents/${documentId}`, {
         method: 'DELETE'
       });
     } catch (error) {
@@ -332,7 +316,7 @@ export class StudentApiService {
   // Submit attendance (for manual attendance tracking)
   static async submitAttendance(attendanceData: any) {
     try {
-      return await api('/students/attendance', {
+      return await apiClient.request('/students/attendance', {
         method: 'POST',
         body: attendanceData
       });
@@ -345,7 +329,7 @@ export class StudentApiService {
   // Update skill progress
   static async updateSkillProgress(skillId: string, progressData: any) {
     try {
-      return await api(`/students/skills/${skillId}/progress`, {
+      return await apiClient.request(`/students/skills/${skillId}/progress`, {
         method: 'PUT',
         body: progressData
       });
@@ -358,7 +342,7 @@ export class StudentApiService {
   // Update milestone progress
   static async updateMilestoneProgress(milestoneId: string, progressData: any) {
     try {
-      return await api(`/students/milestones/${milestoneId}/progress`, {
+      return await apiClient.request(`/students/milestones/${milestoneId}/progress`, {
         method: 'PUT',
         body: progressData
       });
@@ -371,9 +355,14 @@ export class StudentApiService {
   // Get my active internship details (single internship)
   static async getMyInternship() {
     try {
-      return await api('/api/students/me/active-internship');
+      const studentId = typeof window !== "undefined" ? localStorage.getItem('userEmail') : null;
+      if (!studentId) return null;
+      const placementsRaw = localStorage.getItem('hodCompanyApprovalQueue');
+      if (!placementsRaw) return null;
+      const allPlacements = JSON.parse(placementsRaw);
+      return allPlacements.find((p: any) => p.studentId === studentId && p.status === 'APPROVED') || null;
     } catch (error) {
-      console.error('Failed to fetch internship details:', error);
+      console.error('Failed to fetch internship details from localStorage:', error);
       throw error;
     }
   }
@@ -381,9 +370,14 @@ export class StudentApiService {
   // Get my internship submission
   static async getMyInternshipSubmission() {
     try {
-      return await api('/api/internships/my-submission');
+        const studentId = typeof window !== "undefined" ? localStorage.getItem('userEmail') : null;
+        if (!studentId) return null;
+        const placementsRaw = localStorage.getItem('hodCompanyApprovalQueue');
+        if (!placementsRaw) return null;
+        const allPlacements = JSON.parse(placementsRaw);
+        return allPlacements.find((p: any) => p.studentId === studentId) || null;
     } catch (error) {
-      console.error('Failed to fetch internship submission:', error);
+      console.error('Failed to fetch internship submission from localStorage:', error);
       return null;
     }
   }
@@ -391,7 +385,7 @@ export class StudentApiService {
   // Submit an internship for approval
   static async submitInternshipForApproval(submissionData: any) {
     try {
-      return await api('/api/internships/submit', {
+      return await apiClient.request('/api/internships/submit', {
         method: 'POST',
         body: submissionData,
       });
@@ -404,7 +398,7 @@ export class StudentApiService {
   // Perform check-in
   static async checkIn(latitude: number, longitude: number) {
     try {
-      return await api('/api/students/me/check-in', {
+      return await apiClient.request('/api/students/me/check-in', {
         method: 'POST',
         body: { latitude, longitude },
       });
