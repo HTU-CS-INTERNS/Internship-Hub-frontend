@@ -18,7 +18,7 @@ const setPlacementsInStorage = (placements: HODApprovalQueueItem[]): void => {
   localStorage.setItem(HOD_APPROVAL_QUEUE_KEY, JSON.stringify(placements));
 };
 
-export async function submitPlacementForApproval(
+export async function savePlacement(
   details: InternshipDetails,
   studentId: string,
   studentName: string

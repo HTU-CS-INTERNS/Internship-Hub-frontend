@@ -1,247 +1,132 @@
-'use client';
+
+'use client'; 
 
 import type { DailyTask, AttachmentData } from '@/types';
-import { apiClient } from '../api-client';
 
-// Helper to convert File to AttachmentData
-async function fileToAttachmentData(file: File): Promise<AttachmentData> {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve({
-            name: file.name,
-            type: file.type,
-            size: file.size,
-            dataUri: reader.result as string,
-        });
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-    });
+// Use a consistent key for localStorage
+const TASKS_STORAGE_KEY_PREFIX = 'internshipHub_tasks_';
+
+function getStorageKey(studentId: string): string {
+    return `${TASKS_STORAGE_KEY_PREFIX}${studentId}`;
 }
 
-export async function createTask(
-    taskData: Omit<DailyTask, 'id' | 'studentId' | 'status' | 'date'> & { 
-        date: string; 
-        attachments?: AttachmentData[] 
-    }
-): Promise<DailyTask> {
+// Function to safely get data from localStorage
+const getTasksFromStorage = (studentId: string): DailyTask[] => {
+  if (typeof window === "undefined") return [];
+  const key = getStorageKey(studentId);
+  const data = localStorage.getItem(key);
+  if (data) {
     try {
-        // First, get the user's internship with proper error handling
-        const internship = await apiClient.getMyInternship();
-        
-        if (!internship || !internship.id) {
-            throw new Error('No active internship found or internship ID is missing');
-        }
-
-        // Convert internship ID to number with validation
-        const internshipId = parseInt(internship.id.toString(), 10);
-        if (isNaN(internshipId)) {
-            throw new Error(`Invalid internship ID format: ${internship.id}`);
-        }
-
-        // Prepare payload with null checks
-        const payload = {
-            task_date: taskData.date || new Date().toISOString().split('T')[0], // Default to today if missing
-            description: taskData.description || '',
-            expected_outcome: taskData.outcomes || '',
-            learning_objective: taskData.learningObjectives || '',
-            department_outcome_link: taskData.departmentOutcomeLink || null,
-            attachments: taskData.attachments || [],
-        };
-
-        console.debug('Creating task with:', { 
-            internshipId,
-            payload 
-        });
-
-        const response = await apiClient.createDailyTask(internshipId, payload);
-
-        if (!response || !response.id) {
-            throw new Error('Invalid response from server when creating task');
-        }
-
-        return {
-            id: response.id.toString(),
-            studentId: internship.student_id?.toString() || '',
-            description: response.description || payload.description,
-            date: response.task_date || payload.task_date,
-            status: response.status || 'PENDING',
-            outcomes: response.expected_outcome || payload.expected_outcome,
-            learningObjectives: response.learning_objective || payload.learning_objective,
-            attachments: response.attachments || payload.attachments,
-            departmentOutcomeLink: response.department_outcome_link || payload.department_outcome_link,
-        };
-    } catch (error) {
-        console.error('Failed to create task:', error);
-        throw new Error(
-            error instanceof Error 
-                ? error.message 
-                : 'An unknown error occurred while creating the task'
-        );
+      return JSON.parse(data);
+    } catch (e) {
+      console.error("Failed to parse tasks from localStorage", e);
+      return [];
     }
+  }
+  return [];
+};
+
+// Function to safely set data to localStorage
+const setTasksInStorage = (studentId: string, tasks: DailyTask[]): void => {
+  if (typeof window === "undefined") return;
+  const key = getStorageKey(studentId);
+  try {
+    localStorage.setItem(key, JSON.stringify(tasks));
+  } catch(e) {
+    console.error("Failed to save tasks to localStorage", e);
+  }
+};
+
+export async function createTask(
+  taskData: Omit<DailyTask, 'id' | 'studentId' | 'status'>
+): Promise<DailyTask> {
+  const studentId = typeof window !== "undefined" ? localStorage.getItem('userEmail') || 'unknown_student' : 'unknown_student';
+  const allTasks = getTasksFromStorage(studentId);
+  
+  const newTask: DailyTask = {
+    ...taskData,
+    id: `task_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+    studentId,
+    status: 'SUBMITTED', // Default status on creation
+  };
+
+  allTasks.unshift(newTask); // Add to the beginning of the list
+  setTasksInStorage(studentId, allTasks);
+  
+  await new Promise(resolve => setTimeout(resolve, 300));
+  return newTask;
 }
 
 export async function updateTask(
-    taskId: string,
-    taskData: Partial<Omit<DailyTask, 'id' | 'studentId'>>
-): Promise<DailyTask> {
-    try {
-        const internship = await apiClient.getMyInternship();
-        if (!internship) {
-            throw new Error('No active internship found for current user');
-        }
-
-        // Convert IDs to numbers
-        const internshipId = Number(internship.id);
-        const numericTaskId = Number(taskId);
-        
-        if (isNaN(internshipId) || isNaN(numericTaskId)) {
-            throw new Error(`Invalid IDs - internship: ${internship.id}, task: ${taskId}`);
-        }
-
-        const payload = {
-            task_date: taskData.date,
-            description: taskData.description,
-            expected_outcome: taskData.outcomes,
-            learning_objective: taskData.learningObjectives,
-            department_outcome_link: taskData.departmentOutcomeLink || null,
-            status: taskData.status,
-            attachments: taskData.attachments || [],
-        };
-
-        console.log('Updating task with payload:', {
-            internshipId,
-            taskId: numericTaskId,
-            payload
-        });
-
-        const response = await apiClient.updateDailyTask(internshipId, numericTaskId, payload);
-
-        return {
-            id: String(response.id),
-            studentId: String(internship.student_id || ''),
-            description: response.description,
-            date: response.task_date,
-            status: response.status || 'PENDING',
-            outcomes: response.expected_outcome || '',
-            learningObjectives: response.learning_objective || '',
-            attachments: response.attachments || [],
-            departmentOutcomeLink: response.department_outcome_link || '',
-        };
-    } catch (error) {
-        console.error('Error updating task:', error);
-        throw new Error(`Failed to update task: ${error instanceof Error ? error.message : String(error)}`);
+    taskId: string, 
+    updateData: Partial<Omit<DailyTask, 'id' | 'studentId'>>
+): Promise<DailyTask | null> {
+    const studentId = typeof window !== "undefined" ? localStorage.getItem('userEmail') || 'unknown_student' : 'unknown_student';
+    const allTasks = getTasksFromStorage(studentId);
+    
+    const taskIndex = allTasks.findIndex(t => t.id === taskId);
+    
+    if (taskIndex > -1) {
+        // Merge existing data with new data
+        const updatedTask = { ...allTasks[taskIndex], ...updateData };
+        allTasks[taskIndex] = updatedTask;
+        setTasksInStorage(studentId, allTasks);
+        await new Promise(resolve => setTimeout(resolve, 200));
+        return updatedTask;
     }
+    
+    return null; // Task not found
 }
 
+// This function now gets tasks for the currently logged-in student (or a specified one)
 export async function getTasksForStudent(studentId?: string): Promise<DailyTask[]> {
-    try {
-        const internship = await apiClient.getMyInternship();
-        if (!internship) {
-            console.warn('No active internship found for current user');
-            return [];
-        }
-
-        const internshipId = Number(internship.id);
-        if (isNaN(internshipId)) {
-            throw new Error(`Invalid internship ID: ${internship.id}`);
-        }
-
-        const response = await apiClient.getDailyTasks(internshipId);
-
-        return response.map((task: any) => ({
-            id: String(task.id),
-            studentId: String(internship.student_id || ''),
-            description: task.description,
-            date: task.task_date,
-            status: task.status || 'PENDING',
-            outcomes: task.expected_outcome || '',
-            learningObjectives: task.learning_objective || '',
-            attachments: task.attachments || [],
-            departmentOutcomeLink: task.department_outcome_link || '',
-        }));
-    } catch (error) {
-        console.error('Error fetching tasks:', error);
-        return [];
-    }
+  const id = studentId || (typeof window !== "undefined" ? localStorage.getItem('userEmail') || 'unknown_student' : 'unknown_student');
+  const tasks = getTasksFromStorage(id);
+  // Simulate async operation
+  await new Promise(resolve => setTimeout(resolve, 200));
+  return tasks;
 }
 
 export async function updateTaskStatus(
-    taskId: string, 
-    status: 'pending' | 'approved' | 'rejected'
-): Promise<void> {
-    try {
-        const internship = await apiClient.getMyInternship();
-        if (!internship) {
-            throw new Error('No active internship found for current user');
-        }
+  taskId: string,
+  newStatus: 'PENDING' | 'SUBMITTED' | 'APPROVED' | 'REJECTED',
+  comments?: string,
+  updatedBy: 'supervisor' | 'lecturer' = 'supervisor'
+): Promise<DailyTask | null> {
+  const studentId = typeof window !== "undefined" ? localStorage.getItem('userEmail') || 'unknown_student' : 'unknown_student';
+  const allTasks = getTasksFromStorage(studentId);
+  
+  const taskIndex = allTasks.findIndex(t => t.id === taskId);
 
-        const internshipId = Number(internship.id);
-        const numericTaskId = Number(taskId);
-        
-        if (isNaN(internshipId) || isNaN(numericTaskId)) {
-            throw new Error(`Invalid IDs - internship: ${internship.id}, task: ${taskId}`);
-        }
-
-        await apiClient.updateDailyTask(internshipId, numericTaskId, { status });
-    } catch (error) {
-        console.error('Error updating task status:', error);
-        throw new Error(`Failed to update task status: ${error instanceof Error ? error.message : String(error)}`);
+  if (taskIndex > -1) {
+    allTasks[taskIndex].status = newStatus;
+    if (updatedBy === 'supervisor') {
+        allTasks[taskIndex].supervisorComments = comments;
+    } else {
+        allTasks[taskIndex].lecturerComments = comments;
     }
+    setTasksInStorage(studentId, allTasks);
+    await new Promise(resolve => setTimeout(resolve, 200));
+    return allTasks[taskIndex];
+  }
+
+  return null;
 }
 
 export async function getTaskById(taskId: string): Promise<DailyTask | null> {
-    try {
-        const internship = await apiClient.getMyInternship();
-        if (!internship) {
-            return null;
-        }
-
-        const internshipId = Number(internship.id);
-        const numericTaskId = Number(taskId);
-        
-        if (isNaN(internshipId) || isNaN(numericTaskId)) {
-            console.error(`Invalid IDs - internship: ${internship.id}, task: ${taskId}`);
-            return null;
-        }
-
-        const response = await apiClient.getDailyTask(internshipId, numericTaskId);
-
-        return {
-            id: String(response.id),
-            studentId: String(internship.student_id || ''),
-            description: response.description,
-            date: response.task_date,
-            status: response.status || 'PENDING',
-            outcomes: response.expected_outcome || '',
-            learningObjectives: response.learning_objective || '',
-            attachments: response.attachments || [],
-            departmentOutcomeLink: response.department_outcome_link || '',
-        };
-    } catch (error) {
-        console.error('Error fetching task by ID:', error);
-        return null;
-    }
+    // Note: This is inefficient for a large number of students.
+    // In a real app, you'd fetch this from the backend.
+    // For localStorage, we need to guess the studentId or have it passed.
+    const studentId = typeof window !== "undefined" ? localStorage.getItem('userEmail') || 'unknown_student' : 'unknown_student';
+    const tasks = getTasksFromStorage(studentId);
+    const foundTask = tasks.find(task => task.id === taskId) || null;
+    await new Promise(resolve => setTimeout(resolve, 100));
+    return foundTask;
 }
 
-export async function getTasksForSupervisor(): Promise<DailyTask[]> {
-    try {
-        // Implementation depends on your backend API
-        // This should use a different endpoint than student tasks
-        const response = await apiClient.getSupervisorTasks();
-        
-        return response.map((task: any) => ({
-            id: String(task.id),
-            studentId: String(task.student_id || ''),
-            description: task.description,
-            date: task.task_date,
-            status: task.status || 'PENDING',
-            outcomes: task.expected_outcome || '',
-            learningObjectives: task.learning_objective || '',
-            attachments: task.attachments || [],
-            departmentOutcomeLink: task.department_outcome_link || '',
-        }));
-    } catch (error) {
-        console.error('Error fetching supervisor tasks:', error);
-        return [];
-    }
+// Mock function for supervisor/lecturer to fetch tasks for a specific student
+export async function getTasksByStudentId(studentId: string): Promise<DailyTask[]> {
+  const tasks = getTasksFromStorage(studentId);
+  await new Promise(resolve => setTimeout(resolve, 200));
+  return tasks;
 }

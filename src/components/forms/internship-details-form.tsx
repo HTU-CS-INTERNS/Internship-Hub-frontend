@@ -23,7 +23,7 @@ import { cn } from '@/lib/utils';
 import { format, parseISO, isValid } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import type { InternshipDetails, InternshipStatus } from '@/types';
-import { submitPlacementForApproval } from '@/lib/services/hod.service'; // This service now saves to localStorage
+import { savePlacement } from '@/lib/services/hod.service'; // Updated service import name
 
 const internshipDetailsSchema = z.object({
   companyName: z.string().min(2, { message: 'Company name is required (min 2 chars).' }).max(100, { message: 'Company name too long (max 100).' }),
@@ -106,8 +106,8 @@ export default function InternshipDetailsForm({ defaultValues, onSuccess, isResu
     };
     
     try {
-      // This service now saves to localStorage instead of a pending queue
-      await submitPlacementForApproval(submissionDataForService, studentId, studentName);
+      // This service now saves to localStorage directly.
+      await savePlacement(submissionDataForService, studentId, studentName);
       
       // Since it's auto-approved, we can set onboarding complete
       if (typeof window !== "undefined") {
@@ -116,7 +116,7 @@ export default function InternshipDetailsForm({ defaultValues, onSuccess, isResu
 
       toast({
         title: 'Internship Details Saved!',
-        description: 'Your internship information has been saved to your profile.',
+        description: 'Your internship information has been successfully saved to your profile.',
         variant: "default",
       });
       onSuccess?.(submissionDataForService); 
