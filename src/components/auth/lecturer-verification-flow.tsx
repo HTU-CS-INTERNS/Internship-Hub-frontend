@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -7,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { apiClient } from '@/lib/api-client';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, RefreshCw } from 'lucide-react';
 
 interface VerificationStep1Props {
   onOtpSent: (email: string) => void;
@@ -95,7 +96,33 @@ function VerificationStep2({ email, onVerificationComplete }: VerificationStep2P
   const [officeLocation, setOfficeLocation] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isResending, setIsResending] = useState(false);
   const { toast } = useToast();
+
+  const handleResendOtp = async () => {
+    setIsResending(true);
+    try {
+      const response = await apiClient.sendLecturerOtp(email);
+      toast({
+        title: 'OTP Resent',
+        description: response.message,
+      });
+      if (response.otp) {
+        toast({
+          title: 'Development Mode',
+          description: `New OTP: ${response.otp}`,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to resend OTP',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsResending(false);
+    }
+  };
 
   const handleVerification = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -174,6 +201,12 @@ function VerificationStep2({ email, onVerificationComplete }: VerificationStep2P
               maxLength={6}
               required
             />
+          </div>
+          
+          <div className="text-right">
+              <Button type="button" variant="link" onClick={handleResendOtp} disabled={isResending} className="p-0 h-auto text-sm">
+                {isResending ? <><RefreshCw className="mr-1 h-3 w-3 animate-spin"/> Resending...</> : 'Resend Code'}
+              </Button>
           </div>
 
           <div>
