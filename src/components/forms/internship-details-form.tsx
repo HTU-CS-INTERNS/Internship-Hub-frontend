@@ -22,7 +22,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format, parseISO, isValid } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-import type { InternshipDetails, InternshipStatus } from '@/types';
+import type { InternshipDetails, InternshipStatus, UserProfileData } from '@/types';
 import { savePlacement } from '@/lib/services/hod.service'; // Updated service import name
 
 const internshipDetailsSchema = z.object({
@@ -101,15 +101,36 @@ export default function InternshipDetailsForm({ defaultValues, onSuccess, isResu
       ...values,
       startDate: format(values.startDate, 'yyyy-MM-dd'),
       endDate: format(values.endDate, 'yyyy-MM-dd'),
-      status: 'APPROVED', // Status is now automatically APPROVED
-      rejectionReason: undefined, // No rejection flow
+      status: 'APPROVED', 
+      rejectionReason: undefined, 
     };
     
     try {
-      // This service now saves to localStorage directly.
       await savePlacement(submissionDataForService, studentId, studentName);
+
+      const usersRaw = localStorage.getItem('internshipHub_users');
+      let allUsers: UserProfileData[] = usersRaw ? JSON.parse(usersRaw) : [];
+      const supervisorExists = allUsers.some(u => u.email === values.supervisorEmail);
+
+      if (!supervisorExists) {
+        const [firstName, ...lastNameParts] = values.supervisorName.split(' ');
+        const newSupervisor: UserProfileData = {
+            id: `supervisor_${Date.now()}`,
+            email: values.supervisorEmail,
+            role: 'SUPERVISOR',
+            first_name: firstName,
+            last_name: lastNameParts.join(' ') || 'Supervisor',
+            status: 'PENDING_ACTIVATION',
+            company_name: values.companyName,
+        };
+        allUsers.push(newSupervisor);
+        localStorage.setItem('internshipHub_users', JSON.stringify(allUsers));
+        toast({
+            title: "Supervisor Account Created",
+            description: `An account for ${values.supervisorName} has been created and is pending activation.`
+        });
+      }
       
-      // Since it's auto-approved, we can set onboarding complete
       if (typeof window !== "undefined") {
         localStorage.setItem('onboardingComplete', 'true'); 
       }
@@ -184,7 +205,7 @@ export default function InternshipDetailsForm({ defaultValues, onSuccess, isResu
                 <FormControl>
                   <Input type="email" placeholder="supervisor@company.com" {...field} className="rounded-lg" />
                 </FormControl>
-                <FormDescription>This email may be used to invite your supervisor.</FormDescription>
+                <FormDescription>An account will be created for your supervisor.</FormDescription>
                 <FormMessage />
               </FormItem>
             )}

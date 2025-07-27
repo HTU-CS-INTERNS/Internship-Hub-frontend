@@ -23,6 +23,7 @@ import {
 import { Plus, Loader2 } from 'lucide-react';
 import { AdminApiService } from '@/lib/services/adminApi';
 import { useToast } from '@/hooks/use-toast';
+import type { UserRole } from '@/types';
 
 interface AddUserModalProps {
   onUserAdded: () => void;
@@ -30,11 +31,12 @@ interface AddUserModalProps {
   onOpenChange?: (open: boolean) => void;
 }
 
-const USER_ROLES = [
-  { value: 'student', label: 'Student' },
-  { value: 'lecturer', label: 'Lecturer' },
-  { value: 'company_supervisor', label: 'Company Supervisor' },
-  { value: 'admin', label: 'Admin' },
+const USER_ROLES: {value: UserRole; label: string}[] = [
+  { value: 'STUDENT', label: 'Student' },
+  { value: 'LECTURER', label: 'Lecturer' },
+  { value: 'SUPERVISOR', label: 'Industrial Supervisor' },
+  { value: 'ADMIN', label: 'Administrator' },
+  { value: 'HOD', label: 'Head of Department' },
 ];
 
 export function AddUserModal({ 
@@ -54,7 +56,6 @@ export function AddUserModal({
     role: '',
   });
 
-  // Use controlled open state if props are provided
   const isControlled = propsOpen !== undefined;
   const open = isControlled ? propsOpen : internalOpen;
   const setOpen = isControlled ? onOpenChange || (() => {}) : setInternalOpen;
@@ -107,7 +108,7 @@ export function AddUserModal({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <div> {/* Added wrapper div */}
+        <div> 
           <Button className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
             Add User

@@ -2,6 +2,7 @@
 'use client';
 
 import api from '@/lib/api';
+import type { UserProfileData } from '@/types';
 
 // API service for admin-related data
 export class AdminApiService {
@@ -9,22 +10,16 @@ export class AdminApiService {
   // Dashboard Stats
   static async getDashboardStats() {
     try {
-      // First, try to fetch from the API
-      return await api('/api/admin/dashboard/stats');
-    } catch (error) {
-      console.warn('API fetch for admin dashboard stats failed, falling back to localStorage.', error);
-      
-      // Fallback to localStorage if the API call fails
       const usersRaw = localStorage.getItem('internshipHub_users') || '[]';
       const placementsRaw = localStorage.getItem('hodCompanyApprovalQueue') || '[]';
       const facultiesRaw = localStorage.getItem('internshipHub_faculties') || '[]';
       
-      const users = JSON.parse(usersRaw);
+      const users: UserProfileData[] = JSON.parse(usersRaw);
       const placements = JSON.parse(placementsRaw);
       const faculties = JSON.parse(facultiesRaw);
 
-      const totalInterns = users.filter((u: any) => u.role === 'STUDENT').length;
-      const totalLecturers = users.filter((u: any) => u.role === 'LECTURER').length;
+      const totalInterns = users.filter(u => u.role === 'STUDENT').length;
+      const totalLecturers = users.filter(u => u.role === 'LECTURER').length;
       const activeInternships = placements.filter((p: any) => p.status === 'APPROVED').length;
       
       // A simple mock for companies based on unique names in placements
@@ -33,7 +28,7 @@ export class AdminApiService {
       // Mock for unassigned interns
       // This is a simplification; a real system would have explicit assignment data.
       const assignedInternIds = new Set(placements.map((p: any) => p.studentId));
-      const unassignedInterns = users.filter((u: any) => u.role === 'STUDENT' && !assignedInternIds.has(u.email)).length;
+      const unassignedInterns = users.filter(u => u.role === 'STUDENT' && !assignedInternIds.has(u.email)).length;
       
       return {
         totalFaculties: faculties.length,
@@ -44,66 +39,64 @@ export class AdminApiService {
         avgLecturerWorkload: totalLecturers > 0 ? activeInternships / totalLecturers : 0,
         totalCompanies,
       };
+    } catch (error) {
+      console.warn('Could not generate admin dashboard stats from localStorage.', error);
+      return {
+        totalFaculties: 0,
+        totalInterns: 0,
+        activeInternships: 0,
+        unassignedInterns: 0,
+        totalLecturers: 0,
+        avgLecturerWorkload: 0,
+        totalCompanies: 0,
+      };
     }
   }
 
   // User Management
-  static async getAllUsers(filters?: {
-    role?: string;
-    status?: string;
-    search?: string;
-    page?: number;
-    limit?: number;
-  }) {
-    try {
-      const params = new URLSearchParams();
-      if (filters?.role) params.append('role', filters.role);
-      if (filters?.status) params.append('status', filters.status);
-      if (filters?.search) params.append('search', filters.search);
-      if (filters?.page) params.append('page', filters.page.toString());
-      if (filters?.limit) params.append('limit', filters.limit.toString());
-      
-      const queryString = params.toString() ? `?${params.toString()}` : '';
-      return await api(`/api/admin/users${queryString}`);
-    } catch (error) {
-      console.error('Failed to fetch users:', error);
-      return [];
-    }
+  static async getAllUsers(filters?: any): Promise<{ users: UserProfileData[], total: number }> {
+    const usersRaw = localStorage.getItem('internshipHub_users');
+    const allUsers: UserProfileData[] = usersRaw ? JSON.parse(usersRaw) : [];
+    return { users: allUsers, total: allUsers.length };
   }
 
-  static async updateUser(userId: string, userData: any) {
-    try {
-      return await api(`/api/admin/users/${userId}`, {
-        method: 'PUT',
-        body: userData
-      });
-    } catch (error) {
-      console.error('Failed to update user:', error);
-      throw error;
-    }
+  static async updateUser(userId: string, userData: any): Promise<UserProfileData> {
+    const usersRaw = localStorage.getItem('internshipHub_users');
+    let allUsers: UserProfileData[] = usersRaw ? JSON.parse(usersRaw) : [];
+    const userIndex = allUsers.findIndex(u => u.id === userId);
+    if (userIndex === -1) throw new Error("User not found");
+    
+    allUsers[userIndex] = { ...allUsers[userIndex], ...userData, id: userId };
+    localStorage.setItem('internshipHub_users', JSON.stringify(allUsers));
+    return allUsers[userIndex];
   }
 
-  static async deleteUser(userId: string) {
-    try {
-      return await api(`/api/admin/users/${userId}`, {
-        method: 'DELETE'
-      });
-    } catch (error) {
-      console.error('Failed to delete user:', error);
-      throw error;
-    }
+  static async deleteUser(userId: string): Promise<{ success: boolean }> {
+    const usersRaw = localStorage.getItem('internshipHub_users');
+    let allUsers: UserProfileData[] = usersRaw ? JSON.parse(usersRaw) : [];
+    const filteredUsers = allUsers.filter(u => u.id !== userId);
+    if (allUsers.length === filteredUsers.length) throw new Error("User not found");
+    
+    localStorage.setItem('internshipHub_users', JSON.stringify(filteredUsers));
+    return { success: true };
   }
 
-  static async createUser(userData: any) {
-    try {
-      return await api('/api/admin/users', {
-        method: 'POST',
-        body: userData
-      });
-    } catch (error) {
-      console.error('Failed to create user:', error);
-      throw error;
+  static async createUser(userData: any): Promise<UserProfileData> {
+    const usersRaw = localStorage.getItem('internshipHub_users');
+    let allUsers: UserProfileData[] = usersRaw ? JSON.parse(usersRaw) : [];
+    
+    if (allUsers.some(u => u.email === userData.email)) {
+        throw new Error("User with this email already exists.");
     }
+
+    const newUser: UserProfileData = {
+        id: `user_${Date.now()}`,
+        status: 'ACTIVE',
+        ...userData
+    };
+    allUsers.push(newUser);
+    localStorage.setItem('internshipHub_users', JSON.stringify(allUsers));
+    return newUser;
   }
 
   // University Structure Management

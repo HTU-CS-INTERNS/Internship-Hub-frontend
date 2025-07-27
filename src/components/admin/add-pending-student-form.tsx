@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useRef, ChangeEvent } from 'react';
@@ -441,8 +442,8 @@ export function AddPendingStudentForm() {
                     Loading faculties...
                   </SelectItem>
                 ) : faculties.length > 0 ? (
-                  faculties.map((faculty) => (
-                    <SelectItem key={faculty.id} value={faculty.id.toString()}>
+                  faculties.map((faculty: Faculty) => (
+                    <SelectItem key={faculty.id} value={String(faculty.id)}>
                       {faculty.name}
                     </SelectItem>
                   ))
@@ -477,8 +478,8 @@ export function AddPendingStudentForm() {
                     Loading departments...
                   </SelectItem>
                 ) : departments.length > 0 ? (
-                  departments.map((department) => (
-                    <SelectItem key={department.id} value={department.id.toString()}>
+                  departments.map((department: Department) => (
+                    <SelectItem key={department.id} value={String(department.id)}>
                       {department.name}
                     </SelectItem>
                   ))
