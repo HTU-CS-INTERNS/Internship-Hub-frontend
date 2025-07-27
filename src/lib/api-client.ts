@@ -70,10 +70,67 @@ class ApiClient {
         }
     }
 
-    // Authentication methods
+    private async _sendOtp(email: string, role: 'STUDENT' | 'LECTURER' | 'SUPERVISOR'): Promise<{ message: string; otp?: string }> {
+        const usersRaw = localStorage.getItem('internshipHub_users');
+        if (!usersRaw) throw new Error('Local user database not found.');
+        
+        const users: UserProfileData[] = JSON.parse(usersRaw);
+        const user = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.role === role);
+
+        if (!user) {
+            throw new Error(`No pending ${role.toLowerCase()} found with this email.`);
+        }
+        if (user.status === 'ACTIVE') {
+            throw new Error('This account is already active. Please log in.');
+        }
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        
+        // Store OTP temporarily for verification
+        localStorage.setItem(`otp_${email}`, otp);
+        
+        return {
+            message: `An OTP has been sent to ${email}.`,
+            otp: otp, // For testing purposes
+        };
+    }
+
+    private async _verifyOtpAndUpdate(data: { email: string; otp_code: string; password: string }, roleToVerify: 'STUDENT' | 'LECTURER' | 'SUPERVISOR', additionalData?: any): Promise<{ message: string; user: any }> {
+        const storedOtp = localStorage.getItem(`otp_${data.email}`);
+        if (!storedOtp || storedOtp !== data.otp_code) {
+            throw new Error('Invalid OTP code.');
+        }
+
+        const usersRaw = localStorage.getItem('internshipHub_users');
+        if (!usersRaw) throw new Error('Local user database not found.');
+        
+        let users: UserProfileData[] = JSON.parse(usersRaw);
+        const userIndex = users.findIndex(u => u.email.toLowerCase() === data.email.toLowerCase() && u.role === roleToVerify);
+
+        if (userIndex === -1) {
+            throw new Error(`User with email ${data.email} not found.`);
+        }
+
+        // Update user status and password
+        users[userIndex] = {
+            ...users[userIndex],
+            ...additionalData,
+            status: 'ACTIVE',
+            password: data.password // In a real app, this should be hashed
+        };
+
+        localStorage.setItem('internshipHub_users', JSON.stringify(users));
+        localStorage.removeItem(`otp_${data.email}`); // Clean up OTP
+
+        return {
+            message: 'Account activated successfully!',
+            user: users[userIndex],
+        };
+    }
+
+    // --- Public Methods ---
+
     async login(credentials: { email: string; password: string }): Promise<{ user: UserProfileData; access_token: string }> {
-        // --- LOCALSTORAGE MOCK LOGIN ---
-        console.log("Attempting local login for:", credentials.email);
         const usersRaw = typeof window !== "undefined" ? localStorage.getItem('internshipHub_users') : null;
         if (!usersRaw) {
             throw new Error("No local user data found. Backend might be required if not seeded.");
@@ -84,81 +141,119 @@ class ApiClient {
         if (!user) {
             throw new Error("Invalid credentials. User not found.");
         }
-
         if (user.password !== credentials.password) {
             throw new Error("Invalid credentials. Password does not match.");
         }
-
         if (user.status === 'PENDING_ACTIVATION') {
             throw new Error("Account not activated. Please verify your account first.");
         }
-
-        // Simulate successful login response
         const mockToken = `local-token-${user.id}-${Date.now()}`;
-        
-        // Store the token
         if (typeof window !== "undefined") {
             localStorage.setItem('authToken', mockToken);
         }
-        
-        const response = { user, access_token: mockToken };
-        console.log("Local login successful for:", user.email);
-        return response;
+        return { user, access_token: mockToken };
     }
-
-    async signup(userData: {
-        email: string;
-        password: string;
-        role: string;
-        first_name: string;
-        last_name: string;
-    }): Promise<{ user: UserProfileData; access_token: string }> {
-        const response = await this.request<{ user: UserProfileData; access_token: string }>('api/auth/signup', {
-            method: 'POST',
-            body: userData,
-        });
-        
-        // Store the token
-        if (typeof window !== "undefined" && response.access_token) {
-            localStorage.setItem('authToken', response.access_token);
-        }
-        
-        return response;
+    
+    async signup(userData: any): Promise<{ user: UserProfileData; access_token: string }> {
+         // This is now handled by the verification flow, but we keep it for potential future use
+         throw new Error("Direct signup is disabled. Please use the verification flow.");
     }
-
+    
     async getCurrentUser(): Promise<UserProfileData> {
-        return this.request<UserProfileData>('api/users/me');
+        const userRaw = localStorage.getItem('user');
+        if (!userRaw) throw new Error("Not authenticated");
+        return JSON.parse(userRaw);
     }
-
+    
     async logout(): Promise<void> {
         if (typeof window !== "undefined") {
             localStorage.removeItem('authToken');
         }
     }
+    
+    // --- Verification Flows ---
+
+    async sendStudentOtp(email: string): Promise<{ message: string; otp?: string }> {
+        return this._sendOtp(email, 'STUDENT');
+    }
+
+    async verifyStudentOtp(data: { email: string; otp_code: string; password: string }): Promise<{ message: string; user: any }> {
+        return this._verifyOtpAndUpdate(data, 'STUDENT');
+    }
+
+    async sendSupervisorOtp(email: string): Promise<{ message: string; email: string; otp?: string }> {
+        const result = await this._sendOtp(email, 'SUPERVISOR');
+        return { ...result, email };
+    }
+
+    async verifySupervisorOtp(data: { email: string; otp_code: string; password: string; job_title?: string; phone_number?: string; }): Promise<{ message: string; user: any }> {
+        const { email, otp_code, password, ...additionalData } = data;
+        return this._verifyOtpAndUpdate({ email, otp_code, password }, 'SUPERVISOR', additionalData);
+    }
+
+    async sendLecturerOtp(email: string): Promise<{ message: string; email: string; otp?: string }> {
+        const result = await this._sendOtp(email, 'LECTURER');
+        return { ...result, email };
+    }
+
+    async verifyLecturerOtp(data: { email: string; otp_code: string; password: string; staff_id?: string; phone_number?: string; office_location?: string; }): Promise<{ message: string; user: any }> {
+        const { email, otp_code, password, ...additionalData } = data;
+        return this._verifyOtpAndUpdate({ email, otp_code, password }, 'LECTURER', additionalData);
+    }
+
+    // --- Admin methods ---
+
+    async addPendingStudent(data: any): Promise<any> {
+        const usersRaw = localStorage.getItem('internshipHub_users') || '[]';
+        const users: UserProfileData[] = JSON.parse(usersRaw);
+        if (users.some(u => u.email === data.email || u.id === data.student_id_number)) {
+            throw new Error("A student with this email or ID already exists.");
+        }
+        const newUser: UserProfileData = {
+            id: data.student_id_number,
+            email: data.email,
+            first_name: data.first_name,
+            last_name: data.last_name,
+            role: 'STUDENT',
+            status: 'PENDING_ACTIVATION',
+            faculty_id: data.faculty_id,
+            department_id: data.department_id,
+            password: `temp_${Date.now()}` // Temporary password
+        };
+        users.push(newUser);
+        localStorage.setItem('internshipHub_users', JSON.stringify(users));
+        return newUser;
+    }
+    
+    async getPendingStudents(): Promise<any[]> {
+        const usersRaw = localStorage.getItem('internshipHub_users');
+        if (!usersRaw) return [];
+        const users: UserProfileData[] = JSON.parse(usersRaw);
+        return users.filter(u => u.role === 'STUDENT' && u.status === 'PENDING_ACTIVATION');
+    }
 
     // Faculty methods
     async getFaculties(): Promise<any[]> {
-        return this.request<any[]>('api/faculties');
+         const facultiesRaw = localStorage.getItem('internshipHub_faculties');
+         return facultiesRaw ? JSON.parse(facultiesRaw) : [];
     }
 
     async createFaculty(data: { name: string }): Promise<any> {
-        return this.request('api/faculties', {
-            method: 'POST',
-            body: data,
-        });
+       // Mock implementation
     }
 
     // Department methods
     async getDepartments(facultyId?: number): Promise<any[]> {
-        const query = facultyId ? `?faculty_id=${facultyId}` : '';
-        return this.request<any[]>(`api/departments${query}`);
+        const departmentsRaw = localStorage.getItem('internshipHub_departments');
+        const allDepts = departmentsRaw ? JSON.parse(departmentsRaw) : [];
+        if(facultyId) {
+            return allDepts.filter((d: any) => d.facultyId == facultyId);
+        }
+        return allDepts;
     }
 
     async createDepartment(data: { name: string; faculty_id: number }): Promise<any> {
-        return this.request('api/departments', {
-            method: 'POST',
-            body: data,
-        });
+        // Mock implementation
     }
 
     // Company methods
@@ -308,84 +403,6 @@ class ApiClient {
             method: 'PUT',
             body: data,
         });
-    }
-
-    // Student verification methods
-    async sendStudentOtp(email: string): Promise<{ message: string; otp?: string }> {
-        return this.request('api/student-verification/send-otp', {
-            method: 'POST',
-            body: { email },
-        });
-    }
-
-    async verifyStudentOtp(data: { email: string; otp_code: string; password: string }): Promise<{ message: string; user: any }> {
-        return this.request('api/student-verification/verify-otp', {
-            method: 'POST',
-            body: data,
-        });
-    }
-
-    // Supervisor verification methods
-    async sendSupervisorOtp(email: string): Promise<{ message: string; email: string; otp?: string }> {
-        return this.request('api/supervisor-verification/send-otp', {
-            method: 'POST',
-            body: { email },
-        });
-    }
-
-    async verifySupervisorOtp(data: { 
-        email: string; 
-        otp_code: string; 
-        password: string;
-        job_title?: string;
-        phone_number?: string;
-    }): Promise<{ message: string; user: any }> {
-        return this.request('api/supervisor-verification/verify-otp', {
-            method: 'POST',
-            body: data,
-        });
-    }
-
-    // Lecturer verification methods
-    async sendLecturerOtp(email: string): Promise<{ message: string; email: string; otp?: string }> {
-        return this.request('api/lecturer-verification/send-otp', {
-            method: 'POST',
-            body: { email },
-        });
-    }
-
-    async verifyLecturerOtp(data: { 
-        email: string; 
-        otp_code: string; 
-        password: string;
-        staff_id?: string;
-        phone_number?: string;
-        office_location?: string;
-    }): Promise<{ message: string; user: any }> {
-        return this.request('api/lecturer-verification/verify-otp', {
-            method: 'POST',
-            body: data,
-        });
-    }
-
-    // Admin methods for pending students
-    async addPendingStudent(data: {
-        student_id_number: string;
-        email: string;
-        first_name: string;
-        last_name: string;
-        faculty_id: number;
-        department_id: number;
-        program_of_study?: string;
-    }): Promise<any> {
-        return this.request('api/students/pending', {
-            method: 'POST',
-            body: data,
-        });
-    }
-
-    async getPendingStudents(): Promise<any[]> {
-        return this.request('api/students/pending');
     }
 }
 
