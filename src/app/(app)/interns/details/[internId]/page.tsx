@@ -11,7 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
 import type { DailyReport, InternEvaluation } from '@/types';
 import { DUMMY_INTERNS } from '@/app/(app)/interns/page'; 
-import { DUMMY_REPORTS as ALL_DUMMY_REPORTS } from '@/app/(app)/reports/page';
+import { DUMMY_REPORTS } from '@/lib/constants'; // Corrected import
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
@@ -68,7 +68,7 @@ export default function InternDetailPage() {
     const foundIntern = DUMMY_INTERNS.find(i => i.id === internId);
     if (foundIntern) {
       setIntern(foundIntern);
-      const reports = ALL_DUMMY_REPORTS.filter(report => {
+      const reports = DUMMY_REPORTS.filter(report => {
         if (internId === 'intern1') return report.studentId === 'stu1'; 
         return false;
       });
@@ -347,3 +347,5 @@ export default function InternDetailPage() {
     </div>
   );
 }
+
+    

@@ -1,3 +1,4 @@
+
 import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard,
@@ -29,7 +30,7 @@ import {
   School,
   ShieldAlert
 } from 'lucide-react';
-import type { UserRole, ScoringMetric, Faculty as AppFaculty, Department as AppDepartment } from '@/types'; 
+import type { UserRole, ScoringMetric, Faculty as AppFaculty, Department as AppDepartment, DailyTask, DailyReport } from '@/types'; 
 
 export interface NavItem {
   href: string;
@@ -279,3 +280,67 @@ export const SCORING_METRICS: ScoringMetric[] = [
   { id: 'professionalism', label: 'Professionalism', description: 'Conduct, attitude, and adherence to workplace ethics.' },
   { id: 'timeliness_initiative', label: 'Timeliness & Initiative', description: 'Punctuality, meeting deadlines, and proactiveness.' },
 ];
+
+export const DUMMY_REPORTS: (DailyReport & { title?: string; challengesFaced?: string; securePhotoUrl?: string; attachments?: any[]; supervisorComments?: string })[] = [
+  { 
+    id: 'report1', 
+    date: '2024-07-26', 
+    title: 'Weekly Auth Module Summary',
+    description: 'Weekly summary of authentication module progress. Focused on JWT implementation and secure endpoint testing. Reviewed security protocols and updated documentation.', 
+    outcomes: 'Module 70% complete. Security review passed.', 
+    learningObjectives: 'Advanced JWT, security best practices, technical documentation.', 
+    studentId: 'stu1', 
+    status: 'APPROVED',
+    challengesFaced: "Minor issues with token refresh logic, resolved by adjusting expiration strategy.",
+    attachments: [],
+    securePhotoUrl: 'https://placehold.co/600x400.png',
+    supervisorComments: "Good progress this week, Alice. The JWT implementation looks solid. Keep up the great work!"
+  },
+  { 
+    id: 'report2', 
+    date: '2024-07-27', 
+    title: 'Mid-Internship Presentation Prep',
+    description: 'Mid-internship review presentation preparation and content finalization for all key sections. Practiced delivery and timing.', 
+    outcomes: 'Presentation draft ready. Confident in delivery.', 
+    learningObjectives: 'Presentation skills, summarizing technical work for diverse audiences.', 
+    studentId: 'stu1', 
+    status: 'SUBMITTED',
+    challengesFaced: "Condensing all work into a short presentation was challenging.",
+    attachments: [],
+    supervisorComments: "Looking forward to seeing the presentation."
+  },
+  { 
+    id: 'report3', 
+    date: '2024-07-25', 
+    title: 'New Feature X Planning',
+    description: 'Initial setup and planning for the new feature X, including requirement gathering, user story creation, and timeline estimation.', 
+    outcomes: 'Project plan created. User stories documented.', 
+    learningObjectives: 'Agile planning, requirement elicitation techniques.', 
+    studentId: 'stu1', 
+    status: 'PENDING',
+    challengesFaced: "Ambiguity in initial requirements, clarified with product manager.",
+    securePhotoUrl: 'https://placehold.co/600x400.png'
+  },
+  { 
+    id: 'report4', 
+    date: '2024-07-24', 
+    title: 'Bug Fixing Sprint v1.2',
+    description: 'Bug fixing for version 1.2 release, addressing critical issues reported by QA. Focused on payment module bugs.', 
+    outcomes: 'Critical bugs in payment module resolved. Test coverage improved.', 
+    learningObjectives: 'Advanced debugging techniques, payment gateway integration nuances.', 
+    studentId: 'stu1', 
+    status: 'REJECTED',
+    challengesFaced: "One particularly elusive bug took significant time to trace and fix.",
+    supervisorComments: "Some non-critical bugs remain. Please address them and resubmit the affected module for testing."
+  },
+];
+
+
+export const DUMMY_TASKS: DailyTask[] = [
+  { id: 'task1', date: '2024-07-28', description: 'Develop user authentication module.', outcomes: 'Authentication flow completed.', learningObjectives: 'Learned JWT implementation.', studentId: 'stu1', status: 'APPROVED', departmentOutcomeLink: "DO1.2" },
+  { id: 'task2', date: '2024-07-29', description: 'Design database schema for posts.', outcomes: 'Schema designed and reviewed.', learningObjectives: 'Understanding of relational databases.', studentId: 'stu1', status: 'SUBMITTED' },
+  { id: 'task3', date: '2024-07-30', description: 'Write API documentation.', outcomes: 'Initial draft completed.', learningObjectives: 'API documentation best practices.', studentId: 'stu1', status: 'PENDING' },
+  { id: 'task4', date: '2024-07-27', description: 'Refactor old legacy code module for payments.', outcomes: 'Improved performance by 15%.', learningObjectives: 'Code refactoring strategies.', studentId: 'stu1', status: 'REJECTED' },
+];
+
+    

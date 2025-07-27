@@ -12,7 +12,7 @@ import type { DailyReport } from '@/types';
 import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { DUMMY_REPORTS as ALL_DUMMY_REPORTS } from '@/app/(app)/reports/page'; 
+import { DUMMY_REPORTS } from '@/lib/constants'; // Corrected import
 import { DUMMY_INTERNS } from '@/app/(app)/interns/page';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
@@ -41,7 +41,7 @@ export default function SupervisorReportReviewPage() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   React.useEffect(() => {
-    const foundReport = ALL_DUMMY_REPORTS.find(r => r.id === reportId) as DailyReport & { title?: string; challengesFaced?: string; learnings?: string; securePhotoUrl?: string };
+    const foundReport = DUMMY_REPORTS.find(r => r.id === reportId) as DailyReport & { title?: string; challengesFaced?: string; learnings?: string; securePhotoUrl?: string };
     const foundIntern = DUMMY_INTERNS.find(i => i.id === internIdQuery);
     
     if (foundReport) {
@@ -284,3 +284,4 @@ export default function SupervisorReportReviewPage() {
   );
 }
 
+    

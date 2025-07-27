@@ -13,6 +13,7 @@ import type { DailyReport } from '@/types';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile'; 
 import { useToast } from '@/hooks/use-toast';
+import { DUMMY_REPORTS } from '@/lib/constants'; // Corrected import
 import { format, parseISO } from 'date-fns';
 import { useAuth } from '@/contexts/auth-context';
 import { StudentApiService } from '@/lib/services/studentApi';

@@ -2,7 +2,7 @@
 'use client';
 import * as React from 'react';
 import PageHeader from '@/components/shared/page-header';
-import { FileText, Calendar, Edit3, MessageSquare, Paperclip, ThumbsUp, AlertTriangle, Image as ImageIconLucide, Loader2 } from 'lucide-react'; // Renamed ImageIcon to avoid conflict
+import { FileText, Calendar, Edit3, MessageSquare, Paperclip, ThumbsUp, AlertTriangle, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,9 +11,11 @@ import Link from 'next/link';
 import type { DailyReport } from '@/types';
 import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
-import NextImage from 'next/image'; 
-import { DUMMY_REPORTS } from '@/app/(app)/student/reports/page';
+import NextImage from 'next/image'; // Renamed to avoid conflict with Lucide's Image icon
+import { getReportById } from '@/lib/services/report.service';
 import { useParams, useRouter } from 'next/navigation';
+import { DUMMY_REPORTS } from '@/lib/constants'; // Corrected import
+
 
 const statusColors: Record<DailyReport['status'], string> = {
   PENDING: 'bg-[hsl(var(--accent)/0.1)] text-[hsl(var(--accent))] border-[hsl(var(--accent)/0.2)]',
@@ -22,20 +24,27 @@ const statusColors: Record<DailyReport['status'], string> = {
   REJECTED: 'bg-[hsl(var(--destructive)/0.1)] text-[hsl(var(--destructive))] border-[hsl(var(--destructive)/0.2)]',
 };
 
-// DailyReport already includes optional 'title', 'challengesFaced', 'securePhotoUrl' due to extending DailyTask
-// No need for ExtendedDailyReport if types are aligned.
+type ExtendedDailyReport = DailyReport & { 
+  title?: string; 
+  challengesFaced?: string; 
+  securePhotoUrl?: string;
+  // supervisorComments is already in DailyReport from types.ts if you updated it
+};
 
 export default function ReportDetailPage({ params }: { params: { reportId: string } }) {
   const router = useRouter();
-  const [report, setReport] = React.useState<DailyReport | null>(null); // Using DailyReport directly
+  const [report, setReport] = React.useState<ExtendedDailyReport | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
-    const foundReport = DUMMY_REPORTS.find(r => r.id === params.reportId); // DUMMY_REPORTS items should match DailyReport
-    if (foundReport) {
-      setReport(foundReport);
+    async function loadReport() {
+      const foundReport = await getReportById(params.reportId);
+      if (foundReport) {
+        setReport(foundReport as ExtendedDailyReport);
+      }
+      setIsLoading(false);
     }
-    setIsLoading(false);
+    loadReport();
   }, [params.reportId]);
 
   if (isLoading) {
@@ -55,7 +64,7 @@ export default function ReportDetailPage({ params }: { params: { reportId: strin
             icon={FileText}
             breadcrumbs={[
                 { href: "/dashboard", label: "Dashboard" },
-                { href: "/student/reports", label: "Work Reports" },
+                { href: "/reports", label: "Work Reports" },
                 { label: "Error" }
             ]}
             />
@@ -65,7 +74,7 @@ export default function ReportDetailPage({ params }: { params: { reportId: strin
             <p className="text-xl font-semibold text-destructive-foreground">Could not find the requested report.</p>
             <p className="text-muted-foreground mt-2">The report ID '{params.reportId}' might be invalid or the report has been removed.</p>
             <Button asChild className="mt-6">
-                <Link href="/student/reports">Go Back to Reports List</Link>
+                <Link href="/reports">Go Back to Reports List</Link>
             </Button>
             </CardContent>
         </Card>
@@ -83,12 +92,12 @@ export default function ReportDetailPage({ params }: { params: { reportId: strin
         icon={FileText}
         breadcrumbs={[
           { href: "/dashboard", label: "Dashboard" },
-          { href: "/student/reports", label: "Work Reports" },
+          { href: "/reports", label: "Work Reports" },
           { label: report.title ? `Report: ${report.title.substring(0,30)}${report.title.length > 30 ? "..." : ""}` : `Report - ${report.id}` }
         ]}
         actions={
-          report.status === 'PENDING' && ( 
-            <Link href={`/student/reports/edit/${report.id}`} passHref>
+          report.status === 'PENDING' && ( // Or SUBMITTED, depending on your workflow
+            <Link href={`/reports/edit/${report.id}`} passHref>
               <Button className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg">
                 <Edit3 className="mr-2 h-4 w-4" /> Edit Report
               </Button>
@@ -115,6 +124,7 @@ export default function ReportDetailPage({ params }: { params: { reportId: strin
                 <h3 className="text-sm font-semibold text-foreground mb-1 flex items-center"><Calendar className="mr-2 h-4 w-4 text-primary" />Date</h3>
                 <p className="text-muted-foreground">{format(parseISO(report.date), "PPP")}</p>
             </div>
+             {/* Add other top-level info here if needed, like student name if this page was generic */}
           </div>
           
           <Separator />
@@ -134,6 +144,7 @@ export default function ReportDetailPage({ params }: { params: { reportId: strin
           <div>
             <h3 className="text-lg font-semibold text-foreground mb-2 flex items-center"><ThumbsUp className="mr-2 h-5 w-5 text-primary" />Key Learnings / Outcomes</h3>
             <p className="text-muted-foreground whitespace-pre-line leading-relaxed">{report.learningObjectives}</p> 
+            {/* Ensure `learningObjectives` is the primary field as per types, or `outcomes` also if distinct */}
              {report.outcomes && report.outcomes !== report.learningObjectives && (
                  <div className="mt-2">
                     <h4 className="text-md font-medium text-foreground">Specific Outcomes:</h4>
@@ -144,7 +155,7 @@ export default function ReportDetailPage({ params }: { params: { reportId: strin
           
           {report.securePhotoUrl && (
             <div>
-                <h3 className="text-lg font-semibold text-foreground mb-2 flex items-center"><ImageIconLucide className="mr-2 h-5 w-5 text-primary" />Secure Photo</h3>
+                <h3 className="text-lg font-semibold text-foreground mb-2 flex items-center"><ImageIcon className="mr-2 h-5 w-5 text-primary" />Secure Photo</h3>
                 <div className="relative w-full max-w-md aspect-video rounded-lg overflow-hidden border shadow-sm" data-ai-hint="workplace photo">
                     <NextImage src={report.securePhotoUrl} alt="Securely captured photo" layout="fill" objectFit="cover" />
                 </div>
@@ -155,11 +166,11 @@ export default function ReportDetailPage({ params }: { params: { reportId: strin
             <div>
               <h3 className="text-lg font-semibold text-foreground mb-2 flex items-center"><Paperclip className="mr-2 h-5 w-5 text-primary" />Attachments</h3>
               <ul className="list-none space-y-2">
-                {report.attachments.map((att, index) => (
+                {report.attachments.map((file, index) => (
                   <li key={index}>
                     <Button variant="link" className="p-0 h-auto text-base text-accent hover:text-accent/80 font-normal" asChild>
-                      <a href={att.dataUri} target="_blank" rel="noopener noreferrer" download={att.name} data-ai-hint="document file">
-                        <Paperclip className="mr-1 h-4 w-4" /> {att.name} ({(att.size / 1024).toFixed(1)} KB)
+                      <a href={`/placeholder-download/${file}`} target="_blank" rel="noopener noreferrer" data-ai-hint="document file">
+                        <Paperclip className="mr-1 h-4 w-4" /> {file}
                       </a>
                     </Button>
                   </li>
@@ -184,4 +195,5 @@ export default function ReportDetailPage({ params }: { params: { reportId: strin
     </div>
   );
 }
+
     

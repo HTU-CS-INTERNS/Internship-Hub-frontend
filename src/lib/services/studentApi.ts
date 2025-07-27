@@ -10,7 +10,6 @@ export class StudentApiService {
   // Get current user's student profile
   static async getStudentProfile(): Promise<UserProfileData | null> {
     try {
-      // Switched from API to localStorage to support offline-first demo
       const userRaw = typeof window !== "undefined" ? localStorage.getItem('user') : null;
       if (!userRaw) {
         console.warn('No user found in localStorage for getStudentProfile.');
@@ -189,7 +188,29 @@ export class StudentApiService {
   // Get company information for student's internship
   static async getCompanyInfo() {
     try {
-      return await apiClient.request('/students/company');
+        const internship = await this.getMyInternship();
+        if (!internship) return null;
+
+        // Mock supervisor details since they aren't deeply nested in the placement object
+        const supervisor = {
+            name: internship.supervisorName,
+            title: 'Senior Engineer', // Placeholder
+            email: internship.supervisorEmail,
+            phone: '+1 (555) 123-4567', // Placeholder
+            avatarUrl: 'https://placehold.co/100x100.png'
+        };
+
+        const company = {
+            name: internship.companyName,
+            address: '123 Tech Park, Silicon Valley, CA', // Placeholder
+            logoUrl: `https://placehold.co/150x150.png?text=${internship.companyName.split(' ')[0]}`,
+            description: 'A leading company in its industry, committed to fostering innovation.',
+            website: 'https://example.com',
+            industry: 'Technology',
+            size: '200-500 employees'
+        };
+        
+        return { company, supervisor };
     } catch (error) {
       console.error('Failed to fetch company info:', error);
       return null;
@@ -385,12 +406,13 @@ export class StudentApiService {
   // Submit an internship for approval
   static async submitInternshipForApproval(submissionData: any) {
     try {
-      return await apiClient.request('/api/internships/submit', {
-        method: 'POST',
-        body: submissionData,
-      });
+      const { savePlacement } = await import('@/lib/services/hod.service');
+      const studentId = localStorage.getItem('userEmail') || 'unknown';
+      const studentName = localStorage.getItem('userName') || 'Unknown';
+      await savePlacement({ ...submissionData, status: 'APPROVED' }, studentId, studentName);
+      return { success: true, submission: { ...submissionData, status: 'APPROVED' }};
     } catch (error) {
-      console.error('Failed to submit internship for approval:', error);
+      console.error('Failed to submit internship for approval via localStorage:', error);
       throw error;
     }
   }
