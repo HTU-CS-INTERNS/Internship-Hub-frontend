@@ -3,19 +3,19 @@
 
 import type { InternshipDetails, HODApprovalQueueItem } from '@/types';
 
-const HOD_APPROVAL_QUEUE_KEY = 'hodCompanyApprovalQueue';
+const PLACEMENT_STORAGE_KEY = 'hodCompanyApprovalQueue';
 
 // Function to safely get data from localStorage
 const getPlacementsFromStorage = (): HODApprovalQueueItem[] => {
   if (typeof window === "undefined") return [];
-  const data = localStorage.getItem(HOD_APPROVAL_QUEUE_KEY);
+  const data = localStorage.getItem(PLACEMENT_STORAGE_KEY);
   return data ? JSON.parse(data) : [];
 };
 
 // Function to safely set data to localStorage
 const setPlacementsInStorage = (placements: HODApprovalQueueItem[]): void => {
   if (typeof window === "undefined") return;
-  localStorage.setItem(HOD_APPROVAL_QUEUE_KEY, JSON.stringify(placements));
+  localStorage.setItem(PLACEMENT_STORAGE_KEY, JSON.stringify(placements));
 };
 
 export async function savePlacement(

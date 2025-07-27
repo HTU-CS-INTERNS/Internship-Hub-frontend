@@ -8,10 +8,17 @@ import MobileHeader from '@/components/layout/mobile-header';
 import MobileBottomNav from '@/components/layout/mobile-bottom-nav';
 import { AuthProvider, useAuth } from '@/contexts/auth-context';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { seedLocalStorage } from '@/lib/services/seed.service';
 
 function AppLayoutContent({ children }: { children: React.ReactNode }) {
   const { user, role } = useAuth();
   const isMobileView = useIsMobile();
+  
+  React.useEffect(() => {
+    // Seed the local storage with initial data for demo purposes
+    seedLocalStorage();
+  }, []);
+
 
   if (!user || !role) {
     // This state is handled by the AuthProvider's loading/redirect logic
