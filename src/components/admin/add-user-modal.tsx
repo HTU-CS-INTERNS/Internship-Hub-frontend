@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -21,7 +22,7 @@ import {
 } from '@/components/ui/select';
 import { Plus, Loader2 } from 'lucide-react';
 import { AdminApiService } from '@/lib/services/adminApi';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 
 interface AddUserModalProps {
   onUserAdded: () => void;
@@ -41,6 +42,7 @@ export function AddUserModal({
   open: propsOpen, 
   onOpenChange 
 }: AddUserModalProps) {
+  const { toast } = useToast();
   const [internalOpen, setInternalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -61,14 +63,21 @@ export function AddUserModal({
     e.preventDefault();
     
     if (!formData.email || !formData.password || !formData.first_name || !formData.last_name || !formData.role) {
-      toast.error('Please fill in all required fields');
+      toast({
+        title: 'Error',
+        description: 'Please fill in all required fields',
+        variant: 'destructive',
+      });
       return;
     }
 
     try {
       setLoading(true);
       await AdminApiService.createUser(formData);
-      toast.success('User created successfully');
+      toast({
+        title: 'Success',
+        description: 'User created successfully',
+      });
       setOpen(false);
       setFormData({
         email: '',
@@ -81,7 +90,11 @@ export function AddUserModal({
       onUserAdded();
     } catch (error: any) {
       console.error('Error creating user:', error);
-      toast.error(error.message || 'Failed to create user');
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to create user',
+        variant: 'destructive'
+      });
     } finally {
       setLoading(false);
     }
@@ -171,7 +184,6 @@ export function AddUserModal({
             <Select 
               value={formData.role} 
               onValueChange={(value) => handleInputChange('role', value)}
-              required
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select user role" />

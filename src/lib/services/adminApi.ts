@@ -1,3 +1,6 @@
+
+'use client';
+
 import api from '@/lib/api';
 
 // API service for admin-related data
@@ -6,10 +9,41 @@ export class AdminApiService {
   // Dashboard Stats
   static async getDashboardStats() {
     try {
+      // First, try to fetch from the API
       return await api('/api/admin/dashboard/stats');
     } catch (error) {
-      console.error('Failed to fetch admin dashboard stats:', error);
-      return null;
+      console.warn('API fetch for admin dashboard stats failed, falling back to localStorage.', error);
+      
+      // Fallback to localStorage if the API call fails
+      const usersRaw = localStorage.getItem('internshipHub_users') || '[]';
+      const placementsRaw = localStorage.getItem('hodCompanyApprovalQueue') || '[]';
+      const facultiesRaw = localStorage.getItem('internshipHub_faculties') || '[]';
+      
+      const users = JSON.parse(usersRaw);
+      const placements = JSON.parse(placementsRaw);
+      const faculties = JSON.parse(facultiesRaw);
+
+      const totalInterns = users.filter((u: any) => u.role === 'STUDENT').length;
+      const totalLecturers = users.filter((u: any) => u.role === 'LECTURER').length;
+      const activeInternships = placements.filter((p: any) => p.status === 'APPROVED').length;
+      
+      // A simple mock for companies based on unique names in placements
+      const totalCompanies = new Set(placements.map((p: any) => p.companyName)).size;
+
+      // Mock for unassigned interns
+      // This is a simplification; a real system would have explicit assignment data.
+      const assignedInternIds = new Set(placements.map((p: any) => p.studentId));
+      const unassignedInterns = users.filter((u: any) => u.role === 'STUDENT' && !assignedInternIds.has(u.email)).length;
+      
+      return {
+        totalFaculties: faculties.length,
+        totalInterns,
+        activeInternships,
+        unassignedInterns,
+        totalLecturers,
+        avgLecturerWorkload: totalLecturers > 0 ? activeInternships / totalLecturers : 0,
+        totalCompanies,
+      };
     }
   }
 

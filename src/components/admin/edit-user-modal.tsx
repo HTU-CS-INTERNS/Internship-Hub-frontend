@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -20,7 +21,7 @@ import {
 } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
 import { AdminApiService } from '@/lib/services/adminApi';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 
 type UserRole = 'student' | 'lecturer' | 'company_supervisor' | 'admin';
 
@@ -36,7 +37,7 @@ interface User {
 
 interface EditUserModalProps {
   user: User | null;
-  open: boolean;
+  isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   onUserUpdated: () => void;
 }
@@ -48,7 +49,8 @@ const USER_ROLES = [
   { value: 'admin', label: 'Admin' },
 ] as const;
 
-export function EditUserModal({ user, open, onOpenChange, onUserUpdated }: EditUserModalProps) {
+export function EditUserModal({ user, isOpen, onOpenChange, onUserUpdated }: EditUserModalProps) {
+  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
@@ -82,7 +84,11 @@ export function EditUserModal({ user, open, onOpenChange, onUserUpdated }: EditU
     
     // Validate required fields
     if (!formData.email || !formData.first_name || !formData.last_name || !formData.role) {
-      toast.error('Please fill in all required fields');
+      toast({
+        title: 'Error',
+        description: 'Please fill in all required fields',
+        variant: 'destructive',
+      });
       return;
     }
 
@@ -101,12 +107,19 @@ export function EditUserModal({ user, open, onOpenChange, onUserUpdated }: EditU
       };
       
       await AdminApiService.updateUser(user.id.toString(), updateData);
-      toast.success('User updated successfully');
+      toast({
+        title: 'Success',
+        description: 'User updated successfully',
+      });
       onOpenChange(false);
       onUserUpdated();
     } catch (error: any) {
       console.error('Error updating user:', error);
-      toast.error(error.message || 'Failed to update user');
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update user',
+        variant: 'destructive'
+      });
     } finally {
       setLoading(false);
     }
@@ -120,7 +133,7 @@ export function EditUserModal({ user, open, onOpenChange, onUserUpdated }: EditU
   if (!user) return null;
 
   return (
-    <Dialog open={open} onOpenChange={(open) => {
+    <Dialog open={isOpen} onOpenChange={(open) => {
       if (!loading) onOpenChange(open);
     }}>
       <DialogContent className="sm:max-w-[425px]">
@@ -135,7 +148,7 @@ export function EditUserModal({ user, open, onOpenChange, onUserUpdated }: EditU
             <div className="space-y-2">
               <Label htmlFor="edit_first_name">First Name *</Label>
               <Input
-                id="edit_first_name"
+                id="first_name"
                 value={formData.first_name}
                 onChange={handleInputChange}
                 placeholder="Enter first name"
@@ -146,7 +159,7 @@ export function EditUserModal({ user, open, onOpenChange, onUserUpdated }: EditU
             <div className="space-y-2">
               <Label htmlFor="edit_last_name">Last Name *</Label>
               <Input
-                id="edit_last_name"
+                id="last_name"
                 value={formData.last_name}
                 onChange={handleInputChange}
                 placeholder="Enter last name"
@@ -159,7 +172,7 @@ export function EditUserModal({ user, open, onOpenChange, onUserUpdated }: EditU
           <div className="space-y-2">
             <Label htmlFor="edit_email">Email *</Label>
             <Input
-              id="edit_email"
+              id="email"
               type="email"
               value={formData.email}
               onChange={handleInputChange}
@@ -172,7 +185,7 @@ export function EditUserModal({ user, open, onOpenChange, onUserUpdated }: EditU
           <div className="space-y-2">
             <Label htmlFor="edit_password">New Password</Label>
             <Input
-              id="edit_password"
+              id="password"
               type="password"
               value={formData.password}
               onChange={handleInputChange}
@@ -187,7 +200,7 @@ export function EditUserModal({ user, open, onOpenChange, onUserUpdated }: EditU
           <div className="space-y-2">
             <Label htmlFor="edit_phone_number">Phone Number</Label>
             <Input
-              id="edit_phone_number"
+              id="phone_number"
               value={formData.phone_number}
               onChange={handleInputChange}
               placeholder="Enter phone number"

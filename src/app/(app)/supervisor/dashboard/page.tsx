@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import EmptyState from '@/components/shared/empty-state';
 import { SupervisorApiService } from '@/lib/services/supervisorApi';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 
 const getInitials = (name: string) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase() : 'U';
 
@@ -126,6 +126,7 @@ const SupervisorInternCardMobile: React.FC<{ intern: SupervisorIntern }> = ({ in
 );
 
 export default function SupervisorDashboardPage() {
+  const { toast } = useToast();
   const [supervisorStats, setSupervisorStats] = React.useState<SupervisorStats | null>(null);
   const [supervisedInterns, setSupervisedInterns] = React.useState<SupervisorIntern[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -198,7 +199,11 @@ export default function SupervisorDashboardPage() {
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
       setError('Failed to load dashboard data');
-      toast.error('Failed to load dashboard data');
+      toast({
+        title: 'Error',
+        description: 'Failed to load dashboard data',
+        variant: 'destructive'
+      });
     } finally {
       setIsLoading(false);
       setIsLoadingInterns(false);
