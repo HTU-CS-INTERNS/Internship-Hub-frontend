@@ -27,8 +27,8 @@ import type { UserRole } from '@/types';
 
 interface AddUserModalProps {
   onUserAdded: () => void;
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 const USER_ROLES: {value: UserRole; label: string}[] = [
@@ -41,11 +41,10 @@ const USER_ROLES: {value: UserRole; label: string}[] = [
 
 export function AddUserModal({ 
   onUserAdded, 
-  open: propsOpen, 
+  open, 
   onOpenChange 
 }: AddUserModalProps) {
   const { toast } = useToast();
-  const [internalOpen, setInternalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
@@ -55,10 +54,6 @@ export function AddUserModal({
     phone_number: '',
     role: '',
   });
-
-  const isControlled = propsOpen !== undefined;
-  const open = isControlled ? propsOpen : internalOpen;
-  const setOpen = isControlled ? onOpenChange || (() => {}) : setInternalOpen;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,7 +74,7 @@ export function AddUserModal({
         title: 'Success',
         description: 'User created successfully',
       });
-      setOpen(false);
+      onOpenChange(false);
       setFormData({
         email: '',
         password: '',
@@ -106,14 +101,12 @@ export function AddUserModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
-        <div> 
-          <Button className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            Add User
-          </Button>
-        </div>
+        <Button className="flex items-center gap-2">
+          <Plus className="h-4 w-4" />
+          Add User
+        </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
@@ -203,7 +196,7 @@ export function AddUserModal({
             <Button 
               type="button" 
               variant="outline" 
-              onClick={() => setOpen(false)}
+              onClick={() => onOpenChange(false)}
               disabled={loading}
             >
               Cancel

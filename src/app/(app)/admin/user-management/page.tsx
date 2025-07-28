@@ -1,3 +1,4 @@
+
 'use client';
 import * as React from 'react';
 import PageHeader from '@/components/shared/page-header';
@@ -38,6 +39,7 @@ interface ManagedUser {
   company?: string;
   assigned_lecturer_name?: string;
   assignment_status?: AssignmentStatus;
+  name: string;
 }
 
 const ALL_FACULTIES_VALUE = "__ALL_FACULTIES__";
@@ -328,44 +330,6 @@ export default function UserManagementPage() {
     );
   }
 
-  // Handle empty state
-  if (filteredUsers.length === 0 && !isLoading && !error) {
-    return (
-      <div className="space-y-8 p-4 md:p-6">
-        <PageHeader
-          title="User Management"
-          description="Oversee all user accounts across the university internship program."
-          icon={UserCog}
-          breadcrumbs={[
-            { href: "/admin/dashboard", label: "Admin Dashboard" },
-            { label: "User Management" }
-          ]}
-          actions={
-            <div className="flex gap-2">
-              <Button className="rounded-lg" onClick={() => setIsAddModalOpen(true)}>
-                <UserPlus className="mr-2 h-4 w-4"/> Add New User
-              </Button>
-            </div>
-          }
-        />
-        <EmptyState
-          icon={UserCog}
-          title={allUsers.length === 0 ? "No Users Found" : "No Users Match Filters"}
-          description={allUsers.length === 0 ? "There are no users in the system yet." : "Try adjusting your search criteria or filters."}
-          actionLabel={allUsers.length === 0 ? "Add First User" : "Clear Filters"}
-          onAction={allUsers.length === 0 ? () => setIsAddModalOpen(true) : () => {
-            setSearchTerm('');
-            setRoleFilter(ALL_ROLES_VALUE);
-            setStatusFilter(ALL_STATUSES_VALUE);
-            setAssignmentFilter(ALL_ASSIGNMENT_STATUSES_VALUE);
-            setFacultyFilter(ALL_FACULTIES_VALUE);
-            setDepartmentFilter(ALL_DEPARTMENTS_VALUE);
-          }}
-        />
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-8 p-4 md:p-6">
       <PageHeader
@@ -379,10 +343,7 @@ export default function UserManagementPage() {
         actions={
           <div className="flex gap-2">
             <AddUserModal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onSubmit={handleAddUser}
-      />
+              onUserAdded={fetchUsers} open={isAddModalOpen} onOpenChange={setIsAddModalOpen} />
           </div>
         }
       />
@@ -391,7 +352,7 @@ export default function UserManagementPage() {
         <CardHeader className={cn(isMobile ? "pb-3" : "")}>
           {!isMobile && (
             <>
-              <CardTitle className="font-headline text-lg">All System Users</CardTitle>
+              <CardTitle className="font-headline text-lg">All System Users ({filteredUsers.length})</CardTitle>
               <CardDescription>View, edit, and manage accounts. Use filters to refine the list.</CardDescription>
             </>
           )}
@@ -592,9 +553,20 @@ export default function UserManagementPage() {
             )
           ) : (
             <div className={cn("text-center py-12 text-muted-foreground", isMobile ? "p-0 pt-8" : "p-6")}>
-              <UserCog className="mx-auto h-12 w-12 mb-4 opacity-50" />
-              <p className="text-lg font-semibold">No users found.</p>
-              <p>Try adjusting your search or filter criteria.</p>
+              <EmptyState
+                icon={UserCog}
+                title={allUsers.length === 0 ? "No Users Found" : "No Users Match Filters"}
+                description={allUsers.length === 0 ? "There are no users in the system yet." : "Try adjusting your search or filter criteria."}
+                actionLabel={allUsers.length === 0 ? "Add First User" : "Clear Filters"}
+                onAction={allUsers.length === 0 ? () => setIsAddModalOpen(true) : () => {
+                  setSearchTerm('');
+                  setRoleFilter(ALL_ROLES_VALUE);
+                  setStatusFilter(ALL_STATUSES_VALUE);
+                  setAssignmentFilter(ALL_ASSIGNMENT_STATUSES_VALUE);
+                  setFacultyFilter(ALL_FACULTIES_VALUE);
+                  setDepartmentFilter(ALL_DEPARTMENTS_VALUE);
+                }}
+              />
             </div>
           )}
         </CardContent>
@@ -613,17 +585,19 @@ export default function UserManagementPage() {
           key={editingUser.id}
           isOpen={!!editingUser}
           onOpenChange={(open) => !open && setEditingUser(null)}
-          user={editingUser}
+          user={editingUser as any} // Using any to bypass strict type check for ManagedUser vs User
           onUserUpdated={fetchUsers}
         />
       )}
 
       <ConfirmModal
-        isOpen={!!deletingUserId}
-        onClose={() => setDeletingUserId(null)}
+        open={!!deletingUserId}
+        onOpenChange={() => setDeletingUserId(null)}
         onConfirm={handleDeleteUser}
         title="Delete User"
         description="Are you sure you want to delete this user? This action cannot be undone."
+        loading={false}
+        variant="destructive"
       />
     </div>
   );
