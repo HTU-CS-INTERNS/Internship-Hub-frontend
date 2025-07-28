@@ -1,7 +1,7 @@
 
 'use client';
 
-import type { InternshipDetails, HODApprovalQueueItem } from '@/types';
+import type { InternshipDetails, HODApprovalQueueItem, UserProfileData } from '@/types';
 
 const PLACEMENT_STORAGE_KEY = 'hodCompanyApprovalQueue';
 
@@ -30,34 +30,31 @@ export async function savePlacement(
     supervisorName: details.supervisorName,
     supervisorEmail: details.supervisorEmail,
     submissionDate: new Date().toISOString(),
-    // Since approval is removed, we mark it as approved immediately.
-    // The "HODApprovalQueue" now acts as a log of all placements.
-    status: 'APPROVED' as any, // Cast to allow storing approved status
+    status: 'APPROVED' as any,
     startDate: details.startDate,
     endDate: details.endDate,
+    location: details.location,
   };
 
   const allPlacements = getPlacementsFromStorage();
   
-  // To prevent duplicates, we can update if an entry for the student already exists
   const existingIndex = allPlacements.findIndex(p => p.studentId === studentId);
   if (existingIndex > -1) {
-    allPlacements[existingIndex] = newPlacement;
+    // Update existing placement
+    allPlacements[existingIndex] = { ...allPlacements[existingIndex], ...newPlacement };
   } else {
     allPlacements.push(newPlacement);
   }
   
   setPlacementsInStorage(allPlacements);
   
-  // Simulate async operation
   await new Promise(resolve => setTimeout(resolve, 300));
 }
+
 
 // This function now returns all placements, as there's no "pending" state.
 export async function getPendingPlacements(): Promise<HODApprovalQueueItem[]> {
   const allPlacements = getPlacementsFromStorage();
-  // Filter for items that *would have been* pending for consistency if needed elsewhere,
-  // but now this concept is removed. We return everything.
   return allPlacements;
 }
 
@@ -66,12 +63,10 @@ export async function getPendingPlacements(): Promise<HODApprovalQueueItem[]> {
 
 export async function approvePlacement(studentId: string): Promise<void> {
   console.warn("approvePlacement is deprecated. Placements are now auto-approved.");
-  // No action needed
 }
 
 export async function rejectPlacement(studentId: string, reason: string): Promise<void> {
   console.warn("rejectPlacement is deprecated. Placements are now auto-approved.");
-  // No action needed
 }
 
 // Expose the getter for other parts of the app that need to display placement data.

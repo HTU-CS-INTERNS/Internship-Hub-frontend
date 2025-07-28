@@ -20,6 +20,7 @@ export interface UserProfileData {
   avatar_url?: string;
   faculty_name?: string;
   department_name?: string;
+  password?: string; // Only for local mock data
 }
 
 export interface Faculty {
@@ -59,6 +60,7 @@ export interface HODApprovalQueueItem {
   status: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED'; // Extended for logging
   startDate: string;
   endDate: string;
+  location: string;
 }
 
 export interface AttachmentData {
@@ -150,3 +152,13 @@ export interface AbuseReport {
     dateReported: string; // ISO String
     status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED';
 }
+
+export type NavItem = {
+  href: string;
+  label: string;
+  icon: React.ElementType;
+  roles: UserRole[];
+  children?: NavItem[];
+  section?: string;
+  mobile?: boolean;
+};

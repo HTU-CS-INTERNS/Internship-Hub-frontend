@@ -23,7 +23,7 @@ import { cn } from '@/lib/utils';
 import { format, parseISO, isValid } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import type { InternshipDetails, InternshipStatus, UserProfileData } from '@/types';
-import { savePlacement } from '@/lib/services/hod.service'; // Updated service import name
+import { savePlacement } from '@/lib/services/hod.service';
 
 const internshipDetailsSchema = z.object({
   companyName: z.string().min(2, { message: 'Company name is required (min 2 chars).' }).max(100, { message: 'Company name too long (max 100).' }),
@@ -43,7 +43,7 @@ const internshipDetailsSchema = z.object({
 export type InternshipDetailsFormValues = z.infer<typeof internshipDetailsSchema>;
 
 interface InternshipDetailsFormProps {
-  defaultValues?: Partial<InternshipDetails>;
+  defaultValues?: Partial<InternshipDetails> | null;
   onSuccess?: (data: InternshipDetails) => void;
   isResubmitting?: boolean;
 }
@@ -301,14 +301,7 @@ export default function InternshipDetailsForm({ defaultValues, onSuccess, isResu
                 type="button"
                 variant="outline"
                 className="w-full sm:w-auto rounded-lg"
-                onClick={() => {
-                  const values = form.getValues();
-                  onSuccess?.({
-                    ...values,
-                    startDate: values.startDate ? format(values.startDate, 'yyyy-MM-dd') : '',
-                    endDate: values.endDate ? format(values.endDate, 'yyyy-MM-dd') : '',
-                  } as InternshipDetails);
-                }}
+                onClick={() => onSuccess?.(form.getValues() as InternshipDetails)}
                 disabled={isLoading}
               >
                 Cancel

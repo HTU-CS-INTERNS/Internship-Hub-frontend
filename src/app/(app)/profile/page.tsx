@@ -40,22 +40,40 @@ export default function ProfilePage() {
   
   const [internshipDetails, setInternshipDetails] = React.useState<InternshipDetails | null>(null);
 
+  const loadInternshipDetails = React.useCallback(() => {
+    if(user?.role === 'STUDENT') {
+        const detailsRaw = localStorage.getItem(`hodCompanyApprovalQueue`);
+        if (detailsRaw) {
+            const allPlacements = JSON.parse(detailsRaw);
+            const studentPlacement = allPlacements.find((p: any) => p.studentId === user.email);
+            if (studentPlacement) {
+                setInternshipDetails(studentPlacement);
+                if (studentPlacement.status !== 'APPROVED') {
+                    setIsEditingInternship(true);
+                }
+            } else {
+                 setInternshipDetails({ status: 'NOT_SUBMITTED' } as InternshipDetails);
+                 setIsEditingInternship(true); // No details found, open form
+            }
+        } else {
+             setInternshipDetails({ status: 'NOT_SUBMITTED' } as InternshipDetails);
+             setIsEditingInternship(true); // No storage item, open form
+        }
+    }
+  }, [user]);
+
   React.useEffect(() => {
     if (!isAuthLoading && !user) {
       router.push('/login');
     }
-    if(user?.role === 'STUDENT' && !internshipDetails) {
-        const detailsRaw = localStorage.getItem(`userInternshipDetails_${user.email}`);
-        if (detailsRaw) {
-            setInternshipDetails(JSON.parse(detailsRaw));
-        } else {
-             setInternshipDetails({ status: 'NOT_SUBMITTED' } as InternshipDetails);
-        }
+    if (user && !internshipDetails) {
+        loadInternshipDetails();
     }
-  }, [user, role, isAuthLoading, router, internshipDetails]);
+  }, [user, role, isAuthLoading, router, internshipDetails, loadInternshipDetails]);
 
   const handleProfileSaveSuccess = (updatedProfileData: Partial<UserProfileData>) => {
     setIsEditingProfile(false);
+    // Here you would typically refetch the user context or update it
   };
 
   const handleInternshipSaveSuccess = (updatedInternshipData: InternshipDetails) => {
@@ -66,6 +84,8 @@ export default function ProfilePage() {
     } else {
         localStorage.removeItem('onboardingComplete');
     }
+    // Reload details after saving
+    loadInternshipDetails();
   };
 
   if (isAuthLoading || !user || !role) {
