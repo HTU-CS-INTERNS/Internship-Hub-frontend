@@ -156,48 +156,6 @@ export default function SystemOversightPage() {
           </Button>
         }
       />
-
-      {/* Check-in Logs */}
-      <Card className="shadow-lg rounded-xl">
-        <CardHeader>
-          <CardTitle>Recent Check-in Logs</CardTitle>
-          <CardDescription>Latest student check-in activities.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {checkInLogs.length === 0 ? (
-            <EmptyState
-              icon={MapPin}
-              title="No Check-in Logs"
-              description="No recent student check-ins available."
-            />
-          ) : (
-            <div className="space-y-3">
-              {checkInLogs.slice(0, 10).map((log) => (
-                <div key={log.id} className="flex items-start space-x-3 p-3 rounded-lg bg-muted/50">
-                  <MapPin className="h-4 w-4 text-primary mt-1" />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2">
-                      <span className="font-medium text-sm">{log.student_id}</span>
-                      <Badge variant={log.is_gps_verified ? 'default' : 'secondary'} className="text-xs">
-                        {log.is_gps_verified ? 'GPS' : 'Manual'}
-                      </Badge>
-                      {log.is_outside_geofence && (
-                        <Badge variant="destructive" className="text-xs">Outside Geofence</Badge>
-                      )}
-                    </div>
-                    <p className="text-sm mt-1 text-muted-foreground">
-                      {log.address_resolved || log.manual_reason || 'No location details'}
-                    </p>
-                    <span className="text-xs text-muted-foreground">
-                        {format(parseISO(log.check_in_timestamp), "MMMM d, yyyy 'at' p")}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
       
       {/* System Health Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -215,44 +173,88 @@ export default function SystemOversightPage() {
         {/* Other health cards... */}
       </div>
 
-      {/* System Logs */}
-      <Card className="shadow-lg rounded-xl">
-        <CardHeader>
-          <CardTitle>Recent System Logs</CardTitle>
-          <CardDescription>Latest system events and notifications</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {systemLogs.length === 0 ? (
-            <EmptyState
-              icon={Database}
-              title="No System Logs"
-              description="No recent system logs available."
-            />
-          ) : (
-            <div className="space-y-3">
-              {systemLogs.slice(0, 10).map((log) => (
-                <div key={log.id} className="flex items-start space-x-3 p-3 rounded-lg bg-muted/50">
-                  {getLogIcon(log.level)}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2">
-                      <Badge className={getLogBadgeColor(log.level)}>
-                        {log.level.toUpperCase()}
-                      </Badge>
-                      <span className="text-sm text-muted-foreground">
-                        {new Date(log.timestamp).toLocaleString()}
-                      </span>
-                      <span className="text-sm text-muted-foreground">
-                        [{log.source}]
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Check-in Logs */}
+        <Card className="shadow-lg rounded-xl">
+          <CardHeader>
+            <CardTitle>Recent Check-in Logs</CardTitle>
+            <CardDescription>Latest student check-in activities.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {checkInLogs.length === 0 ? (
+              <EmptyState
+                icon={MapPin}
+                title="No Check-in Logs"
+                description="No recent student check-ins available."
+              />
+            ) : (
+              <div className="space-y-3">
+                {checkInLogs.slice(0, 10).map((log) => (
+                  <div key={log.id} className="flex items-start space-x-3 p-3 rounded-lg bg-muted/50">
+                    <MapPin className="h-4 w-4 text-primary mt-1" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-2">
+                        <span className="font-medium text-sm">{log.student_id}</span>
+                        <Badge variant={log.is_gps_verified ? 'default' : 'secondary'} className="text-xs">
+                          {log.is_gps_verified ? 'GPS' : 'Manual'}
+                        </Badge>
+                        {log.is_outside_geofence && (
+                          <Badge variant="destructive" className="text-xs">Outside Geofence</Badge>
+                        )}
+                      </div>
+                      <p className="text-sm mt-1 text-muted-foreground">
+                        {log.address_resolved || log.manual_reason || 'No location details'}
+                      </p>
+                      <span className="text-xs text-muted-foreground">
+                          {format(parseISO(log.check_in_timestamp), "MMMM d, yyyy 'at' p")}
                       </span>
                     </div>
-                    <p className="text-sm mt-1">{log.message}</p>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* System Logs */}
+        <Card className="shadow-lg rounded-xl">
+          <CardHeader>
+            <CardTitle>Recent System Logs</CardTitle>
+            <CardDescription>Latest system events and notifications</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {systemLogs.length === 0 ? (
+              <EmptyState
+                icon={Database}
+                title="No System Logs"
+                description="No recent system logs available."
+              />
+            ) : (
+              <div className="space-y-3">
+                {systemLogs.slice(0, 10).map((log) => (
+                  <div key={log.id} className="flex items-start space-x-3 p-3 rounded-lg bg-muted/50">
+                    {getLogIcon(log.level)}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-2">
+                        <Badge className={getLogBadgeColor(log.level)}>
+                          {log.level.toUpperCase()}
+                        </Badge>
+                        <span className="text-sm text-muted-foreground">
+                          {new Date(log.timestamp).toLocaleString()}
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          [{log.source}]
+                        </span>
+                      </div>
+                      <p className="text-sm mt-1">{log.message}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
