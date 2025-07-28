@@ -243,28 +243,21 @@ const StudentDashboard: React.FC = () => {
                     const totalReports = reports.length;
                     const approvedReports = reports.filter(r => r.status === 'APPROVED').length;
                     setReportStats({ total: totalReports, approved: approvedReports });
+                    
+                    const internship = await StudentApiService.getMyInternship() as Internship | null;
+                    setActiveInternship(internship);
 
-                    // If a submission exists and is APPROVED, fetch active internship and related data
-                    if (submission && submission.status === 'APPROVED') {
+                    if (internship) {
                         try {
-                            const internship = await StudentApiService.getMyInternship() as Internship | null;
-                            setActiveInternship(internship);
-
-                            if (internship && internship.id) {
-                                try {
-                                    // Fetch today's tasks
-                                    const tasks = await StudentApiService.getTasks(Number(internship.id), getTodayDateString()) as DailyTask[];
-                                    setDailyTasks(tasks || []);
-                                } catch (taskError) {
-                                    console.error('Error fetching tasks:', taskError);
-                                    setDailyTasks([]);
-                                }
-                            }
-                        } catch (internshipError) {
-                            console.error('Error fetching internship:', internshipError);
-                            setActiveInternship(null);
+                            const today_str = getTodayDateString();
+                            const tasks = await StudentApiService.getTasks(Number(internship.id), today_str) as DailyTask[];
+                            setDailyTasks(tasks || []);
+                        } catch (taskError) {
+                            console.error('Error fetching tasks:', taskError);
+                            setDailyTasks([]);
                         }
                     }
+
                 } else {
                     setError("Access Denied: User is not a student or not logged in.");
                 }
@@ -454,6 +447,8 @@ const StudentDashboard: React.FC = () => {
                     detail={<span>Approved: {reportStats.approved} <span className="text-green-600">({reportApprovalRate}%)</span></span>}
                     iconBgColor="bg-green-100 dark:bg-green-900/70"
                     iconColor="text-green-600 dark:text-green-300"
+                    actionLink="/student/reports"
+                    actionLabel="View Reports"
                 />
                 <DashboardStatsCard
                     title="Supervisor Rating"

@@ -34,9 +34,10 @@ export class StudentApiService {
       if (!studentId) return [];
 
       const allTasksRaw = localStorage.getItem(`internshipHub_tasks_${studentId}`);
-      const allTasks = allTasksRaw ? JSON.parse(allTasksRaw) : [];
+      let allTasks: DailyTask[] = allTasksRaw ? JSON.parse(allTasksRaw) : [];
 
       if (taskDate) {
+        // Ensure date comparison is consistent
         return allTasks.filter((task: DailyTask) => task.date === taskDate);
       }
       return allTasks;
@@ -82,7 +83,7 @@ export class StudentApiService {
 
         const company = {
             name: internship.companyName,
-            address: '123 Tech Park, Silicon Valley, CA',
+            address: internship.companyAddress, // Use dynamic address
             logoUrl: `https://placehold.co/150x150.png?text=${internship.companyName?.split(' ')[0] || 'Company'}`,
             description: 'A leading company in its industry, committed to fostering innovation.',
             website: 'https://example.com',
@@ -150,4 +151,8 @@ export class StudentApiService {
   static async getActivityData(period: 'week' | 'month' | 'all' = 'month') { return []; }
   static async getDashboardMetrics() { return null; }
   static async updateProfile(profileData: any) { return profileData; }
+  static async createReport(reportData: any) {
+    const { createReport } = await import('@/lib/services/report.service');
+    return createReport(reportData);
+  }
 }
