@@ -1,3 +1,4 @@
+
 'use client';
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
@@ -6,13 +7,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { MapPin, LocateFixed, AlertTriangle, CheckCircle, Camera, XCircle, Info, TrendingUp, Clock, CalendarCheck2, Loader2 } from 'lucide-react';
 import Image from 'next/image'; 
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, isSameDay, startOfMonth, endOfMonth, differenceInCalendarDays, isWeekend } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'; 
 import PageHeader from '@/components/shared/page-header';
 import { createCheckInForStudent, getCheckInsByStudentId } from '@/lib/services/checkInService';
-import type { CheckInCreatePayload } from '@/lib/services/checkInService'; 
+import type { CheckIn, CheckInCreatePayload } from '@/types';
 import { useRouter } from 'next/navigation';
+import { StudentApiService } from '@/lib/services/studentApi';
 
 type CheckinStep = 'initial' | 'gpsPrompt' | 'manualReason' | 'geofenceWarning' | 'success';
 
@@ -24,10 +26,34 @@ interface StoredCheckinData {
   isGpsVerified?: boolean;
 }
 
+interface AttendanceStats {
+    monthlyCheckins: number;
+    punctuality: number;
+    streak: number;
+}
+
+
+// Helper function to calculate distance between two coordinates
+function haversineDistance(coords1: {lat: number, lng: number}, coords2: {lat: number, lng: number}): number {
+  const R = 6371e3; // Earth's radius in meters
+  const φ1 = coords1.lat * Math.PI/180;
+  const φ2 = coords2.lat * Math.PI/180;
+  const Δφ = (coords2.lat-coords1.lat) * Math.PI/180;
+  const Δλ = (coords2.lng-coords1.lng) * Math.PI/180;
+
+  const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+          Math.cos(φ1) * Math.cos(φ2) *
+          Math.sin(Δλ/2) * Math.sin(Δλ/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+  return R * c; // Distance in meters
+}
+
 export default function CheckInPage() {
   const [step, setStep] = React.useState<CheckinStep>('initial');
   const [manualReason, setManualReason] = React.useState('');
   const [currentCheckin, setCurrentCheckin] = React.useState<StoredCheckinData | null>(null);
+  const [attendanceStats, setAttendanceStats] = React.useState<AttendanceStats>({ monthlyCheckins: 0, punctuality: 0, streak: 0 });
   const [securePhotoFile, setSecurePhotoFile] = React.useState<File | null>(null);
   const [securePhotoPreview, setSecurePhotoPreview] = React.useState<string | null>(null);
   const securePhotoInputRef = React.useRef<HTMLInputElement>(null);
@@ -37,22 +63,71 @@ export default function CheckInPage() {
   const router = useRouter();
 
   const getTodayDateString = React.useCallback(() => format(new Date(), 'yyyy-MM-dd'), []);
+  
+  const calculateStats = (checkIns: CheckIn[]): AttendanceStats => {
+        const now = new Date();
+        const monthStart = startOfMonth(now);
+        const monthEnd = endOfMonth(now);
+
+        const monthlyCheckins = checkIns.filter(ci => {
+            const checkinDate = parseISO(ci.check_in_timestamp);
+            return checkinDate >= monthStart && checkinDate <= monthEnd;
+        }).length;
+
+        const onTimeCheckins = checkIns.filter(ci => {
+            const checkinTime = parseISO(ci.check_in_timestamp);
+            return checkinTime.getHours() < 9; // On time if before 9 AM
+        }).length;
+        const punctuality = checkIns.length > 0 ? Math.round((onTimeCheckins / checkIns.length) * 100) : 0;
+
+        let streak = 0;
+        let currentStreak = 0;
+        if (checkIns.length > 0) {
+            const sortedDates = checkIns.map(ci => parseISO(ci.check_in_timestamp)).sort((a,b) => b.getTime() - a.getTime());
+            
+            if (isSameDay(sortedDates[0], new Date()) || isSameDay(sortedDates[0], new Date(new Date().setDate(new Date().getDate()-1)))) {
+                currentStreak = 1;
+            }
+
+            for (let i = 1; i < sortedDates.length; i++) {
+                const diff = differenceInCalendarDays(sortedDates[i-1], sortedDates[i]);
+                if (diff === 1) {
+                    currentStreak++;
+                } else if (diff > 1) {
+                    // check for weekends
+                    const day1 = sortedDates[i-1].getDay();
+                    const day2 = sortedDates[i].getDay();
+                    if(day1 === 1 && day2 === 5 && diff === 3) { // Monday and Friday
+                        currentStreak++;
+                    } else {
+                       break; 
+                    }
+                }
+            }
+        }
+        streak = currentStreak;
+
+        return { monthlyCheckins, punctuality, streak };
+  }
 
   const loadCheckinFromStorage = React.useCallback(async () => {
     setIsLoading(true);
     const studentId = typeof window !== "undefined" ? localStorage.getItem('userEmail') || 'unknown_student' : 'unknown_student';
-    const todayCheckIns = (await getCheckInsByStudentId(studentId)).filter(
-        ci => format(parseISO(ci.check_in_timestamp), 'yyyy-MM-dd') === getTodayDateString()
+    const allCheckins = await getCheckInsByStudentId(studentId);
+    
+    setAttendanceStats(calculateStats(allCheckins));
+    
+    const todayCheckin = allCheckins.find(
+        ci => isSameDay(parseISO(ci.check_in_timestamp), new Date())
     );
     
-    if (todayCheckIns.length > 0) {
-        const latestCheckIn = todayCheckIns[0]; 
+    if (todayCheckin) {
         setCurrentCheckin({
-            time: format(parseISO(latestCheckIn.check_in_timestamp), 'p'),
-            location: latestCheckIn.address_resolved || latestCheckIn.manual_reason || 'Checked In',
-            date: format(parseISO(latestCheckIn.check_in_timestamp), 'yyyy-MM-dd'),
-            photoPreview: latestCheckIn.photo_url, 
-            isGpsVerified: latestCheckIn.is_gps_verified,
+            time: format(parseISO(todayCheckin.check_in_timestamp), 'p'),
+            location: todayCheckin.address_resolved || todayCheckin.manual_reason || 'Checked In',
+            date: format(parseISO(todayCheckin.check_in_timestamp), 'yyyy-MM-dd'),
+            photoPreview: todayCheckin.photo_url, 
+            isGpsVerified: todayCheckin.is_gps_verified,
         });
         setStep('success');
         setIsLoading(false);
@@ -60,7 +135,7 @@ export default function CheckInPage() {
     }
     setIsLoading(false);
     return false;
-  }, [getTodayDateString]);
+  }, []);
 
   React.useEffect(() => {
     loadCheckinFromStorage().then(hasCheckedIn => {
@@ -102,13 +177,25 @@ export default function CheckInPage() {
       async (position) => {
         const { latitude, longitude } = position.coords;
         
-        // --- Geofence Logic (Client-Side Simulation) ---
-        // In a real app, fetch company geofence details from backend.
-        // For mock: Assume company is at (34.0522, -118.2437) and radius 500m.
-        // const companyLat = 34.0522; const companyLng = -118.2437; const radius = 500;
-        // const distance = haversineDistance({lat: latitude, lng: longitude}, {lat: companyLat, lng: companyLng});
-        // const withinGeofence = distance <= radius;
-        const withinGeofence = Math.random() < 0.8; // Simulate 80% chance of being within geofence
+        // --- Geofence Logic ---
+        // Fetch company location data for geofence verification
+        let withinGeofence = true; // Default to true if we can't verify
+        try {
+          const companyData = await StudentApiService.getCompanyInfo();
+          // Type assertion to inform TypeScript about the expected structure
+          const companyInfo = companyData as { company?: { coordinates?: { lat: number; lng: number; radius?: number } } };
+          if (companyInfo?.company?.coordinates) {
+            const { lat: companyLat, lng: companyLng, radius = 500 } = companyInfo.company.coordinates;
+            const distance = haversineDistance(
+              { lat: latitude, lng: longitude }, 
+              { lat: companyLat, lng: companyLng }
+            );
+            withinGeofence = distance <= radius;
+          }
+        } catch (error) {
+          console.warn('Could not fetch company location for geofence check:', error);
+          // Continue with check-in if we can't verify location
+        }
 
         const checkInData: CheckInCreatePayload = {
           latitude: latitude,
@@ -368,9 +455,9 @@ export default function CheckInPage() {
                 </div>
 
                 <div className="md:col-span-1 space-y-4">
-                    <AnalyticsStatCard title="Check-in Streak" value="5 Days" icon={TrendingUp} description="Consecutive daily check-ins" iconBgColor="bg-green-500/10"/>
-                    <AnalyticsStatCard title="Punctuality" value="92%" icon={Clock} description="On-time check-in rate" iconBgColor="bg-blue-500/10"/>
-                    <AnalyticsStatCard title="Monthly Check-ins" value="18" icon={CalendarCheck2} description={`In ${format(new Date(), 'MMMM')}`} iconBgColor="bg-purple-500/10"/>
+                    <AnalyticsStatCard title="Check-in Streak" value={`${attendanceStats.streak} Days`} icon={TrendingUp} description="Consecutive daily check-ins" iconBgColor="bg-green-500/10"/>
+                    <AnalyticsStatCard title="Punctuality" value={`${attendanceStats.punctuality}%`} icon={Clock} description="On-time check-in rate" iconBgColor="bg-blue-500/10"/>
+                    <AnalyticsStatCard title="Monthly Check-ins" value={`${attendanceStats.monthlyCheckins}`} icon={CalendarCheck2} description={`In ${format(new Date(), 'MMMM')}`} iconBgColor="bg-purple-500/10"/>
                 </div>
             </div>
 
@@ -418,3 +505,4 @@ export default function CheckInPage() {
     </div>
   );
 }
+
