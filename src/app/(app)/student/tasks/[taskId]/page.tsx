@@ -112,15 +112,9 @@ export default function TaskDetailPage() {
           </div>
         </CardHeader>
         <CardContent className="p-6 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-1">
-              <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center"><Calendar className="mr-2 h-4 w-4 text-primary" />Date</h3>
-              <p className="text-foreground text-base">{format(parseISO(task.date), "PPP")}</p>
-            </div>
-             <div className="space-y-1">
-              <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center"><Award className="mr-2 h-4 w-4 text-primary" />Department Outcome Link</h3>
-              <p className="text-foreground text-base">{task.departmentOutcomeLink || 'N/A'}</p>
-            </div>
+          <div className="space-y-1">
+            <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center"><Calendar className="mr-2 h-4 w-4 text-primary" />Date</h3>
+            <p className="text-foreground text-base">{format(parseISO(task.date), "PPP")}</p>
           </div>
           
           <Separator />

@@ -56,7 +56,9 @@ export interface HODApprovalQueueItem {
   supervisorName: string;
   supervisorEmail: string;
   submissionDate: string; // ISO string
-  status: 'PENDING_APPROVAL'; 
+  status: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED'; // Extended for logging
+  startDate: string;
+  endDate: string;
 }
 
 export interface AttachmentData {
@@ -73,7 +75,6 @@ export interface DailyTask {
   outcomes: string;
   learningObjectives: string;
   studentId: string;
-  departmentOutcomeLink?: string;
   status: 'PENDING' | 'SUBMITTED' | 'APPROVED' | 'REJECTED';
   attachments?: AttachmentData[];
   supervisorComments?: string;

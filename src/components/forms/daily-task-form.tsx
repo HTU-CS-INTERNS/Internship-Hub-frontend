@@ -31,8 +31,6 @@ const dailyTaskSchema = z.object({
   description: z.string().min(10, { message: 'Description must be at least 10 characters.' }).max(1000, {message: 'Description too long (max 1000).' }),
   outcomes: z.string().min(10, { message: 'Outcomes must be at least 10 characters.' }).max(1000, {message: 'Outcomes too long (max 1000).' }),
   learningObjectives: z.string().min(10, { message: 'Learning objectives must be at least 10 characters.' }).max(1000, {message: 'Learning objectives too long (max 1000).' }),
-  departmentOutcomeLink: z.string().max(100, {message: 'Link too long (max 100).' }).optional().or(z.literal('')),
-  // Form will manage File objects, service will convert. Schema here focuses on form input.
   newAttachments: z.array(z.instanceof(File)).max(5, {message: 'Maximum 5 combined attachments allowed.'}).optional(),
 });
 
@@ -74,7 +72,6 @@ export default function DailyTaskForm({ defaultValues, taskIdToEdit, onSuccess }
       description: defaultValues?.description || '',
       outcomes: defaultValues?.outcomes || '',
       learningObjectives: defaultValues?.learningObjectives || '',
-      departmentOutcomeLink: defaultValues?.departmentOutcomeLink || '',
       newAttachments: [],
     },
   });
@@ -86,7 +83,6 @@ export default function DailyTaskForm({ defaultValues, taskIdToEdit, onSuccess }
         description: defaultValues.description || '',
         outcomes: defaultValues.outcomes || '',
         learningObjectives: defaultValues.learningObjectives || '',
-        departmentOutcomeLink: defaultValues.departmentOutcomeLink || '',
         newAttachments: [],
       });
       setExistingAttachments(defaultValues.attachments || []);
@@ -139,7 +135,6 @@ export default function DailyTaskForm({ defaultValues, taskIdToEdit, onSuccess }
         description: values.description,
         outcomes: values.outcomes,
         learningObjectives: values.learningObjectives,
-        departmentOutcomeLink: values.departmentOutcomeLink,
         attachments: finalAttachments, 
       };
 
@@ -243,23 +238,6 @@ export default function DailyTaskForm({ defaultValues, taskIdToEdit, onSuccess }
               <FormControl>
                 <Textarea placeholder="What new skills, knowledge, or insights do you expect to gain or apply?" {...field} rows={3} className="rounded-lg border-input" />
               </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="departmentOutcomeLink"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Link to Departmental Outcomes (Optional)</FormLabel>
-              <FormControl>
-                <Input placeholder="e.g., Relates to DO1.2 - Problem Solving" {...field} className="rounded-lg border-input" />
-              </FormControl>
-              <FormDescription>
-                If applicable, specify how this task relates to your department's learning outcomes.
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
