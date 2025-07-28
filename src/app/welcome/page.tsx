@@ -3,12 +3,13 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, LogIn, GraduationCap, CheckSquare, Users, FileText } from 'lucide-react';
+import { ArrowRight, LogIn, GraduationCap, CheckSquare, Users, FileText, Building } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import Image from 'next/image';
+import { Badge } from '@/components/ui/badge';
 
 const FeatureCard = ({ icon: Icon, title, description, color }: { icon: React.ElementType, title: string, description: string, color: string }) => (
     <div className="p-6 rounded-2xl bg-card shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-border">
