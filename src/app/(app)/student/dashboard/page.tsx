@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -16,7 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { format, parseISO, differenceInDays } from 'date-fns';
+import { format, parseISO, differenceInDays, isValid } from 'date-fns';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { PieChart, Pie, Cell } from "recharts";
 import { useToast } from '@/hooks/use-toast';
@@ -411,10 +412,11 @@ const StudentDashboard: React.FC = () => {
     }
 
     // Calculated stats
-    const internshipDurationDays = activeInternship ? differenceInDays(parseISO(activeInternship.end_date), parseISO(activeInternship.start_date)) + 1 : 0;
-    const daysCompleted = activeInternship ? differenceInDays(new Date(), parseISO(activeInternship.start_date)) + 1 : 0;
+    const areDatesValid = activeInternship && activeInternship.start_date && activeInternship.end_date && isValid(parseISO(activeInternship.start_date)) && isValid(parseISO(activeInternship.end_date));
+    const internshipDurationDays = areDatesValid ? differenceInDays(parseISO(activeInternship.end_date), parseISO(activeInternship.start_date)) + 1 : 0;
+    const daysCompleted = areDatesValid ? differenceInDays(new Date(), parseISO(activeInternship.start_date)) + 1 : 0;
     const progressPercentage = internshipDurationDays > 0 ? Math.min(100, Math.round((daysCompleted / internshipDurationDays) * 100)) : 0;
-
+    
     const completedTasksCount = dailyTasks.filter(task => task.status === 'SUBMITTED' || task.status === 'APPROVED').length;
     const pendingTasksCount = dailyTasks.filter(task => task.status === 'PENDING').length;
 
@@ -750,4 +752,3 @@ export default function DashboardPage() {
         </div>
     );
 }
-
