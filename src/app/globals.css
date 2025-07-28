@@ -18,43 +18,43 @@ body {
     --popover: 0 0% 100%; /* White */
     --popover-foreground: 0 0% 15%; /* Darker text for popovers */
 
-    /* Primary color - HTU Navy Blue */
-    --primary: 215 50% 25%; /* Approx. from logo: hsl(215, 50%, 25%) rgb(32, 64, 96) */
-    --primary-foreground: 0 0% 98%; /* Off-white text on primary */
+    /* Primary color - A modern, friendly purple */
+    --primary: 250 80% 60%; /* hsl(250, 80%, 60%) */
+    --primary-foreground: 0 0% 100%; /* White text on primary */
     
-    /* Accent color - HTU Red */
-    --accent: 0 70% 50%; /* Approx. from logo flame: hsl(0, 70%, 50%) rgb(217, 38, 38) */
+    /* Accent color - A vibrant pink/red for CTA */
+    --accent: 340 90% 60%; /* hsl(340, 90%, 60%) */
     --accent-foreground: 0 0% 100%; /* White text on accent */
 
-    --secondary: 215 30% 90%; /* Lighter shade of primary for secondary elements */
-    --secondary-foreground: 215 50% 20%; /* Darker text for secondary */
+    --secondary: 250 30% 92%; /* Lighter shade of primary for secondary elements */
+    --secondary-foreground: 250 50% 20%; /* Darker text for secondary */
 
-    --muted: 0 0% 90%; /* Muted gray */
+    --muted: 0 0% 96%; /* Lighter Muted gray */
     --muted-foreground: 0 0% 45.1%; /* Default medium gray */
 
-    --destructive: 0 72% 51%; /* Standard destructive red (can be same as accent if desired) */
+    --destructive: 0 72% 51%; /* Standard destructive red */
     --destructive-foreground: 0 0% 98%;
 
-    --border: 0 0% 88%; /* Light gray border #E0E0E0 */
+    --border: 0 0% 90%; /* Light gray border #E5E5E5 */
     --input: 0 0% 88%; /* Consistent with border */
-    --ring: 215 50% 45%; /* Ring color based on primary (HTU Navy) */
+    --ring: 250 80% 70%; /* Ring color based on primary */
 
-    --chart-1: 215 50% 25%; /* Primary HTU Navy */
-    --chart-2: 0 70% 50%;   /* Accent HTU Red */
+    --chart-1: 250 80% 60%; /* Primary */
+    --chart-2: 340 90% 60%;   /* Accent */
     --chart-3: 145 63% 49%; /* A complementary green */
-    --chart-4: 260 80% 70%; /* A contrasting purple */
+    --chart-4: 220 80% 70%; /* A contrasting blue */
     --chart-5: 45 100% 55%; /* A bright yellow/gold */
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
-    /* Sidebar specific variables */
-    --sidebar-background: 215 50% 18%; /* Darker shade of HTU Navy */
+    /* Sidebar specific variables - Can be kept or adjusted */
+    --sidebar-background: 240 10% 10%; /* Darker shade for sidebar */
     --sidebar-foreground: 0 0% 95%;   
     --sidebar-primary: 0 0% 100%;   
-    --sidebar-primary-foreground: 215 50% 10%; 
-    --sidebar-accent: 215 50% 28%;    
+    --sidebar-primary-foreground: 240 10% 5%; 
+    --sidebar-accent: 250 80% 60%;    
     --sidebar-accent-foreground: 0 0% 100%; 
-    --sidebar-border: 215 50% 15%;    
-    --sidebar-ring: 215 50% 50%;      
+    --sidebar-border: 240 10% 15%;    
+    --sidebar-ring: 250 80% 70%;      
 
     /* Mobile layout variables */
     --mobile-header-height: 3.75rem; /* 60px */
@@ -62,48 +62,48 @@ body {
   }
 
   .dark {
-    --background: 0 0% 8%; 
+    --background: 240 10% 4%; 
     --foreground: 0 0% 92%; 
 
-    --card: 0 0% 12%; 
+    --card: 240 10% 10%; 
     --card-foreground: 0 0% 92%; 
 
-    --popover: 0 0% 12%; 
+    --popover: 240 10% 10%; 
     --popover-foreground: 0 0% 92%; 
 
-    --primary: 215 50% 35%; /* Dark theme primary HTU Navy */
+    --primary: 250 80% 65%;
     --primary-foreground: 0 0% 95%; 
 
-    --secondary: 215 30% 22%; 
+    --secondary: 250 30% 22%; 
     --secondary-foreground: 0 0% 92%;
 
-    --muted: 0 0% 18%;
+    --muted: 240 10% 15%;
     --muted-foreground: 0 0% 65%;
 
-    --accent: 0 70% 55%; /* Dark theme accent HTU Red */
+    --accent: 340 90% 65%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 70% 55%;
     --destructive-foreground: 0 0% 92%;
 
-    --border: 0 0% 22%;
-    --input: 0 0% 22%;
-    --ring: 215 50% 40%; 
+    --border: 240 10% 20%;
+    --input: 240 10% 20%;
+    --ring: 250 80% 70%; 
     
-    --chart-1: 215 50% 35%;
-    --chart-2: 0 70% 55%;
+    --chart-1: 250 80% 65%;
+    --chart-2: 340 90% 65%;
     --chart-3: 145 50% 50%;
-    --chart-4: 260 70% 60%;
+    --chart-4: 220 70% 60%;
     --chart-5: 45 100% 50%;
 
-    --sidebar-background: 215 50% 15%; 
+    --sidebar-background: 240 10% 10%; 
     --sidebar-foreground: 0 0% 90%;   
     --sidebar-primary: 0 0% 98%;   
-    --sidebar-primary-foreground: 215 50% 8%; 
-    --sidebar-accent: 215 50% 25%;    
+    --sidebar-primary-foreground: 240 10% 5%; 
+    --sidebar-accent: 250 80% 60%;    
     --sidebar-accent-foreground: 0 0% 98%; 
-    --sidebar-border: 215 50% 12%;    
-    --sidebar-ring: 215 50% 45%;     
+    --sidebar-border: 240 10% 15%;    
+    --sidebar-ring: 250 80% 70%;     
   }
 }
 
@@ -149,4 +149,3 @@ body {
 .shadow-top-md {
   box-shadow: 0 -4px 6px -1px rgb(0 0 0 / 0.1), 0 -2px 4px -2px rgb(0 0 0 / 0.1);
 }
-    
