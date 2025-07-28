@@ -1,19 +1,17 @@
+
 'use client';
 
-import PageHeader from '@/components/shared/page-header';
-import InternshipSubmissionForm from '@/components/student/InternshipSubmissionForm';
-import { Building } from 'lucide-react';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import AppLoadingScreen from '@/components/shared/app-loading-screen';
 
-export default function StudentInternshipSubmitPage() {
-  return (
-    <div className="space-y-6 p-4 md:p-6">
-      <PageHeader
-        title="Internship Application"
-        description="Submit your internship details for admin approval"
-        icon={Building}
-      />
-      
-      <InternshipSubmissionForm />
-    </div>
-  );
+export default function InternshipSubmissionRedirectPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    // Redirect to the profile page, specifically to the internship tab
+    router.replace('/profile#internship');
+  }, [router]);
+
+  return <AppLoadingScreen />;
 }

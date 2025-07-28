@@ -70,7 +70,7 @@ export const NAV_LINKS: NavItem[] = [
   },
   {
     href: '/student/reports',
-    label: 'Daily Reports',
+    label: 'Work Reports',
     icon: FileText,
     roles: ['STUDENT'],
     section: "Main",
@@ -92,23 +92,7 @@ export const NAV_LINKS: NavItem[] = [
     section: "Main", 
     mobile: false 
   },
-  {
-    href: '/student/internship',
-    label: 'My Internship',
-    icon: Briefcase,
-    roles: ['STUDENT'],
-    section: "Main",
-    mobile: true
-  },
-  {
-    href: '/student/profile',
-    label: 'Internship Profile',
-    icon: User,
-    roles: ['STUDENT'],
-    section: "Main",
-    mobile: true
-  },
-
+  
   // Tools Section
   { 
     href: '/student/check-in', 
@@ -126,22 +110,6 @@ export const NAV_LINKS: NavItem[] = [
     section: "Tools",
     mobile: true
   },
-  // { 
-  //   href: '/schedule', 
-  //   label: 'My Schedule', 
-  //   icon: CalendarDays, 
-  //   roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD'], 
-  //   section: "Tools", 
-  //   mobile: false 
-  // },
-  // { 
-  //   href: '/communication', 
-  //   label: 'Feedback Hub', 
-  //   icon: MessageSquare, 
-  //   roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD', 'ADMIN'], 
-  //   section: "Tools", 
-  //   mobile: true 
-  // },
   {
     href: '/student/evaluations',
     label: 'Evaluations',
@@ -244,8 +212,7 @@ export const NAV_LINKS: NavItem[] = [
 ];
 
 export const BOTTOM_NAV_LINKS: NavItem[] = [
-    { href: '/student/profile', label: 'My Profile', icon: UserCircle, roles: ['STUDENT'], section: "Settings", mobile: true },
-    { href: '/profile', label: 'My Profile', icon: UserCircle, roles: ['LECTURER', 'SUPERVISOR', 'HOD', 'ADMIN'], section: "Settings", mobile: true },
+    { href: '/profile', label: 'My Profile', icon: UserCircle, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD', 'ADMIN'], section: "Settings", mobile: true },
     { href: '/notifications', label: 'Notifications', icon: Bell, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD', 'ADMIN'], section: "Settings", mobile: true },
     { href: '/settings', label: 'Settings', icon: Settings, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD', 'ADMIN'], section: "Settings" },
     { href: '/help', label: 'Help & Support', icon: BookOpen, roles: ['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD', 'ADMIN'], section: "Settings" },

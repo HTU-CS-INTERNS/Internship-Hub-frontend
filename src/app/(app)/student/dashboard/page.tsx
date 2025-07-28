@@ -192,6 +192,7 @@ const StudentDashboard: React.FC = () => {
     const [activeInternship, setActiveInternship] = React.useState<Internship | null>(null);
     const [dailyTasks, setDailyTasks] = React.useState<DailyTask[]>([]);
     const [todayCheckIn, setTodayCheckIn] = React.useState<CheckIn | null>(null);
+    const [reportStats, setReportStats] = React.useState({ total: 0, approved: 0 });
 
     const [reportDate, setReportDate] = React.useState<Date | undefined>(new Date());
     const [reportSummary, setReportSummary] = React.useState('');
@@ -238,50 +239,33 @@ const StudentDashboard: React.FC = () => {
                     const submission = await StudentApiService.getMyInternshipSubmission() as PendingInternship | null;
                     setMyInternshipSubmission(submission);
 
+                    const reports = await StudentApiService.getReports();
+                    const totalReports = reports.length;
+                    const approvedReports = reports.filter(r => r.status === 'APPROVED').length;
+                    setReportStats({ total: totalReports, approved: approvedReports });
+
                     // If a submission exists and is APPROVED, fetch active internship and related data
                     if (submission && submission.status === 'APPROVED') {
                         try {
                             const internship = await StudentApiService.getMyInternship() as Internship | null;
-                            console.log('Fetched internship:', internship); // Debug log
                             setActiveInternship(internship);
 
                             if (internship && internship.id) {
-                                // Validate internship ID before parsing
-                                const internshipId = typeof internship.id === 'string' ? parseInt(internship.id, 10) : internship.id;
-                                console.log('Parsed internship ID:', internshipId); // Debug log
-                                
-                                // Only proceed if we have a valid numeric ID
-                                if (!isNaN(internshipId) && internshipId > 0) {
-                                    try {
-                                        // Fetch today's tasks
-                                        const tasks = await StudentApiService.getTasks(internshipId, getTodayDateString()) as DailyTask[];
-                                        setDailyTasks(tasks || []);
-                                    } catch (taskError) {
-                                        console.error('Error fetching tasks:', taskError);
-                                        // Don't break the whole dashboard for task errors
-                                        setDailyTasks([]);
-                                    }
-
-                                    // Fetch today's check-in (this method may need to be implemented)
-                                    // const checkIns = await StudentApiService.getMyCheckIns();
-                                    // const todayCheckInEntry = checkIns.find(ci => format(parseISO(ci.check_in_timestamp), 'yyyy-MM-dd') === getTodayDateString());
-                                    // setTodayCheckIn(todayCheckInEntry || null);
-                                } else {
-                                    console.warn('Invalid internship ID:', internship.id);
+                                try {
+                                    // Fetch today's tasks
+                                    const tasks = await StudentApiService.getTasks(Number(internship.id), getTodayDateString()) as DailyTask[];
+                                    setDailyTasks(tasks || []);
+                                } catch (taskError) {
+                                    console.error('Error fetching tasks:', taskError);
+                                    setDailyTasks([]);
                                 }
-                            } else {
-                                console.log('No internship or internship ID found');
                             }
                         } catch (internshipError) {
                             console.error('Error fetching internship:', internshipError);
-                            // If fetching internship fails, continue without it
                             setActiveInternship(null);
                         }
-                    } else {
-                        console.log('No approved submission found, status:', submission?.status);
                     }
                 } else {
-                    // Handle non-student or unauthenticated user (e.g., redirect)
                     setError("Access Denied: User is not a student or not logged in.");
                 }
             } catch (err: any) {
@@ -309,18 +293,18 @@ const StudentDashboard: React.FC = () => {
         }
 
         try {
-            // This API call assumes you can submit a report without explicit tasks initially
-            // You might need to adjust the API or this form if `related_task_ids` is mandatory.
             await StudentApiService.createReport({
-                internshipId: activeInternship.id,
+                internshipId: Number(activeInternship.id),
                 report_date: format(reportDate, 'yyyy-MM-dd'),
                 summary_of_work: reportSummary,
-                // If you add file upload to createDailyReport, handle reportFile here
-                // related_task_ids: [] // Or collect selected task IDs if applicable
             });
             toast({ title: "Quick Report Submitted!", description: `Summary for ${format(reportDate, "PPP")} recorded.` });
             setReportSummary('');
             setReportFile(null); // Clear file input
+            // Refresh report stats
+            const reports = await StudentApiService.getReports();
+            setReportStats({ total: reports.length, approved: reports.filter(r => r.status === 'APPROVED').length });
+
         } catch (error: any) {
             toast({ title: "Error submitting report", description: error.message || "Failed to submit report.", variant: "destructive" });
         }
@@ -419,7 +403,7 @@ const StudentDashboard: React.FC = () => {
     
     const completedTasksCount = dailyTasks.filter(task => task.status === 'SUBMITTED' || task.status === 'APPROVED').length;
     const pendingTasksCount = dailyTasks.filter(task => task.status === 'PENDING').length;
-
+    const reportApprovalRate = reportStats.total > 0 ? Math.round((reportStats.approved / reportStats.total) * 100) : 0;
 
     return (
         <>
@@ -443,9 +427,9 @@ const StudentDashboard: React.FC = () => {
                                 </Button>
                             </Link>
                         ) : (
-                            <Link href="/student/internship/submit" passHref>
+                            <Link href="/profile#internship" passHref>
                                 <Button variant="destructive" className="font-medium transition rounded-lg px-4 py-2 text-sm animate-pulse">
-                                    <Building className="mr-2 h-4 w-4" /> Apply for Internship
+                                    <Building className="mr-2 h-4 w-4" /> Submit Internship Details
                                 </Button>
                             </Link>
                         )}
@@ -465,22 +449,19 @@ const StudentDashboard: React.FC = () => {
                 />
                 <DashboardStatsCard
                     title="Reports Submitted"
-                    // You'll need an API to get count of submitted reports and approved reports
-                    value="--" // Placeholder
+                    value={reportStats.total}
                     icon={FileTextLucide}
-                    detail={<span>Approved: -- <span className="text-green-600">(--%)</span></span>}
+                    detail={<span>Approved: {reportStats.approved} <span className="text-green-600">({reportApprovalRate}%)</span></span>}
                     iconBgColor="bg-green-100 dark:bg-green-900/70"
                     iconColor="text-green-600 dark:text-green-300"
                 />
                 <DashboardStatsCard
                     title="Supervisor Rating"
-                    // This would come from an API endpoint for supervisor feedback
-                    value="N/A" // Placeholder
+                    value="N/A"
                     icon={StarIcon}
                     detail={
                         <div className="flex items-center text-xs">
                             <div className="flex text-yellow-400">
-                                {/* Render stars based on value */}
                                 <StarIcon fill="currentColor" className="w-3 h-3" />
                                 <StarIcon fill="currentColor" className="w-3 h-3" />
                                 <StarIcon fill="currentColor" className="w-3 h-3" />
@@ -507,7 +488,7 @@ const StudentDashboard: React.FC = () => {
                         <CardContent className="p-0 divide-y divide-border">
                             {dailyTasks.length > 0 ? (
                                 dailyTasks.map(task => (
-                                    <StudentTaskItem key={task.id} task={task} onEdit={() => { /* Handle edit task, maybe open a dialog */ toast({ title: "Edit task", description: "Functionality to be implemented." }) }} />
+                                    <StudentTaskItem key={task.id} task={task} onEdit={() => toast({ title: "Edit task", description: "Functionality to be implemented." })} />
                                 ))
                             ) : (
                                 <div className="p-4 text-center text-muted-foreground">No tasks assigned for today.</div>
@@ -531,8 +512,8 @@ const StudentDashboard: React.FC = () => {
                                 <div className="text-center p-4 text-muted-foreground bg-blue-50 rounded-md border border-blue-200">
                                     <Info className="h-5 w-5 inline-block mr-2 text-blue-500" />
                                     <p>You need an active, approved internship to submit reports.</p>
-                                    <Link href="/student/internship/submit" passHref>
-                                        <Button variant="link" className="text-blue-600">Apply for Internship</Button>
+                                    <Link href="/profile#internship" passHref>
+                                        <Button variant="link" className="text-blue-600">Submit Internship Details</Button>
                                     </Link>
                                 </div>
                             ) : (

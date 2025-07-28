@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils';
 import { format, parseISO, isValid } from 'date-fns';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/contexts/auth-context';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const getInitials = (name: string) => {
     if (!name) return 'U';
@@ -37,7 +38,6 @@ export default function ProfilePage() {
   const [isEditingProfile, setIsEditingProfile] = React.useState(false);
   const [isEditingInternship, setIsEditingInternship] = React.useState(false);
   
-  // Local state to manage internship details, as they are not part of the core user object
   const [internshipDetails, setInternshipDetails] = React.useState<InternshipDetails | null>(null);
 
   React.useEffect(() => {
@@ -45,7 +45,6 @@ export default function ProfilePage() {
       router.push('/login');
     }
     if(user?.role === 'STUDENT' && !internshipDetails) {
-        // Mock fetching internship details for the student
         const detailsRaw = localStorage.getItem(`userInternshipDetails_${user.email}`);
         if (detailsRaw) {
             setInternshipDetails(JSON.parse(detailsRaw));
@@ -56,8 +55,6 @@ export default function ProfilePage() {
   }, [user, role, isAuthLoading, router, internshipDetails]);
 
   const handleProfileSaveSuccess = (updatedProfileData: Partial<UserProfileData>) => {
-    // In a real app, the auth context would re-fetch the user.
-    // Here we can just close the form. The context is not updated directly.
     setIsEditingProfile(false);
   };
 
@@ -102,203 +99,208 @@ export default function ProfilePage() {
         icon={UserIcon}
         breadcrumbs={[{ href: "/dashboard", label: "Dashboard" }, { label: "Profile" }]}
       />
-
-      <Card className="shadow-xl rounded-xl">
-        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 border-b">
-          <div className="flex items-center gap-4 flex-grow">
-            <Avatar className="h-20 w-20 border-2 border-primary">
-              <AvatarImage src={user.avatar_url} alt={userName} data-ai-hint="person portrait"/>
-              <AvatarFallback className="text-2xl bg-primary/20 text-primary">{getInitials(userName)}</AvatarFallback>
-            </Avatar>
-            <div className="flex-grow">
-              <div className="flex items-center gap-2">
-                <CardTitle className="text-2xl font-headline">{userName}</CardTitle>
-                {!isEditingInternship && !isEditingProfile && (
-                    <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" onClick={() => setIsEditingProfile(true)} className="text-muted-foreground hover:text-primary h-7 w-7">
-                                    <Edit3 className="h-4 w-4" />
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent className="bg-card text-card-foreground border-border">
-                                <p>Edit Profile</p>
-                            </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
-                )}
-              </div>
-              <CardDescription className="text-base">{user.email}</CardDescription>
-              <p className="text-sm text-primary font-medium">{USER_ROLES[role]}</p>
-            </div>
-          </div>
-          {isEditingProfile && (
-             <Button variant="outline" onClick={() => setIsEditingProfile(false)} className="bg-card hover:bg-accent hover:text-accent-foreground rounded-lg mt-2 sm:mt-0">
-              Cancel Profile Edit
-            </Button>
-          )}
-        </CardHeader>
-        <CardContent className="p-6">
-          {isEditingProfile ? (
-            <ProfileSetupForm
-              userRole={role}
-              defaultValues={user}
-              onSuccess={handleProfileSaveSuccess}
-            />
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 text-sm">
-              {role === 'STUDENT' && (
-                <>
-                  <div className="flex items-center gap-2">
-                    <GraduationCap className="h-5 w-5 text-primary"/>
-                    <div>
-                        <p className="font-medium text-foreground">Faculty:</p>
-                        <p className="text-muted-foreground">{facultyName}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Building className="h-5 w-5 text-primary"/>
-                    <div>
-                        <p className="font-medium text-foreground">Department:</p>
-                        <p className="text-muted-foreground">{departmentName}</p>
-                    </div>
-                  </div>
-                </>
-              )}
-              <div className="flex items-center gap-2">
-                <PhoneIcon className="h-5 w-5 text-primary"/>
-                <div>
-                    <p className="font-medium text-foreground">Contact Number:</p>
-                    <p className="text-muted-foreground">{user.phone_number || 'Not set'}</p>
-                </div>
-              </div>
-               {role === 'SUPERVISOR' && user.company_name && (
-                 <>
+      <Tabs defaultValue="profile" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="profile">Personal Profile</TabsTrigger>
+            {role === 'STUDENT' && <TabsTrigger value="internship">Internship Details</TabsTrigger>}
+        </TabsList>
+        <TabsContent value="profile">
+            <Card className="shadow-xl rounded-xl">
+                <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 border-b">
+                <div className="flex items-center gap-4 flex-grow">
+                    <Avatar className="h-20 w-20 border-2 border-primary">
+                    <AvatarImage src={user.avatar_url} alt={userName} data-ai-hint="person portrait"/>
+                    <AvatarFallback className="text-2xl bg-primary/20 text-primary">{getInitials(userName)}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-grow">
                     <div className="flex items-center gap-2">
-                        <Landmark className="h-5 w-5 text-primary"/>
+                        <CardTitle className="text-2xl font-headline">{userName}</CardTitle>
+                        {!isEditingProfile && (
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button variant="ghost" size="icon" onClick={() => setIsEditingProfile(true)} className="text-muted-foreground hover:text-primary h-7 w-7">
+                                            <Edit3 className="h-4 w-4" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent className="bg-card text-card-foreground border-border">
+                                        <p>Edit Profile</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        )}
+                    </div>
+                    <CardDescription className="text-base">{user.email}</CardDescription>
+                    <p className="text-sm text-primary font-medium">{USER_ROLES[role]}</p>
+                    </div>
+                </div>
+                {isEditingProfile && (
+                    <Button variant="outline" onClick={() => setIsEditingProfile(false)} className="bg-card hover:bg-accent hover:text-accent-foreground rounded-lg mt-2 sm:mt-0">
+                    Cancel Profile Edit
+                    </Button>
+                )}
+                </CardHeader>
+                <CardContent className="p-6">
+                {isEditingProfile ? (
+                    <ProfileSetupForm
+                    userRole={role}
+                    defaultValues={user}
+                    onSuccess={handleProfileSaveSuccess}
+                    />
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 text-sm">
+                    {role === 'STUDENT' && (
+                        <>
+                        <div className="flex items-center gap-2">
+                            <GraduationCap className="h-5 w-5 text-primary"/>
+                            <div>
+                                <p className="font-medium text-foreground">Faculty:</p>
+                                <p className="text-muted-foreground">{facultyName}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Building className="h-5 w-5 text-primary"/>
+                            <div>
+                                <p className="font-medium text-foreground">Department:</p>
+                                <p className="text-muted-foreground">{departmentName}</p>
+                            </div>
+                        </div>
+                        </>
+                    )}
+                    <div className="flex items-center gap-2">
+                        <PhoneIcon className="h-5 w-5 text-primary"/>
                         <div>
-                            <p className="font-medium text-foreground">Company Name:</p>
-                            <p className="text-muted-foreground">{user.company_name}</p>
+                            <p className="font-medium text-foreground">Contact Number:</p>
+                            <p className="text-muted-foreground">{user.phone_number || 'Not set'}</p>
                         </div>
                     </div>
-                 </>
-               )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                    {role === 'SUPERVISOR' && user.company_name && (
+                        <>
+                            <div className="flex items-center gap-2">
+                                <Landmark className="h-5 w-5 text-primary"/>
+                                <div>
+                                    <p className="font-medium text-foreground">Company Name:</p>
+                                    <p className="text-muted-foreground">{user.company_name}</p>
+                                </div>
+                            </div>
+                        </>
+                    )}
+                    </div>
+                )}
+                </CardContent>
+            </Card>
+            {role !== 'STUDENT' && (
+                <Card className="shadow-xl rounded-xl mt-6">
+                <CardHeader className="p-6 border-b">
+                    <div className="flex items-center gap-3">
+                    <BookOpen className="h-6 w-6 text-primary" />
+                    <CardTitle className="text-xl font-headline">Role-Specific Information</CardTitle>
+                    </div>
+                </CardHeader>
+                <CardContent className="p-6">
+                    <p className="text-muted-foreground">
+                    As a {USER_ROLES[role]}, your primary role involves { role === 'LECTURER' ? 'managing student assignments, tracking progress, and facilitating communication.' : role === 'HOD' ? 'overseeing departmental internship activities, managing assignments, and analyzing overall program performance.' : role === 'ADMIN' ? 'managing the entire InternHub platform, including university structure, user accounts, and system settings.' : role === 'SUPERVISOR' ? 'overseeing assigned interns at your company, providing task guidance, and submitting performance evaluations.' : '' }
+                    You can manage relevant aspects via your dashboard and navigation menu.
+                    </p>
+                </CardContent>
+                </Card>
+            )}
+        </TabsContent>
+        {role === 'STUDENT' && internshipDetails && (
+             <TabsContent value="internship">
+                 <Card className="shadow-xl rounded-xl" id="internship">
+                    <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 border-b">
+                    <div className="flex items-center gap-3 flex-grow">
+                        <Briefcase className="h-6 w-6 text-primary" />
+                        <CardTitle className="text-xl font-headline">Internship Details</CardTitle>
+                    </div>
+                    {!isEditingInternship && canEditInternship && (
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button variant="ghost" size="icon" onClick={() => setIsEditingInternship(true)} className="text-muted-foreground hover:text-primary h-7 w-7">
+                                            <Edit3 className="h-4 w-4" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent className="bg-card text-card-foreground border-border">
+                                        <p>{internshipEditButtonText}</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                    )}
+                    {isEditingInternship && (
+                        <Button variant="outline" onClick={() => setIsEditingInternship(false)} className="bg-card hover:bg-accent hover:text-accent-foreground rounded-lg">
+                            Cancel Edit
+                        </Button>
+                    )}
+                    </CardHeader>
+                    <CardContent className="p-6">
+                    {currentInternshipStatus !== 'NOT_SUBMITTED' && !isEditingInternship && (
+                        <Alert className={cn("mb-6", statusAlertColors[currentInternshipStatus]?.bg, statusAlertColors[currentInternshipStatus]?.border)}>
+                            <StatusIcon className={cn("h-5 w-5", statusAlertColors[currentInternshipStatus]?.iconColor)} />
+                            <AlertTitle className={cn("font-semibold", statusAlertColors[currentInternshipStatus]?.iconColor)}>
+                                {currentInternshipStatus.replace('_', ' ').toUpperCase()}
+                            </AlertTitle>
+                            <AlertDescription className="text-muted-foreground">
+                                {currentInternshipStatus === 'PENDING_APPROVAL' && "Your internship details are currently awaiting HOD review."}
+                                {currentInternshipStatus === 'APPROVED' && "Your internship details have been approved! You are all set."}
+                                {currentInternshipStatus === 'REJECTED' && `Your internship details were rejected. ${internshipDetails.rejectionReason ? `Reason: ${internshipDetails.rejectionReason}. ` : ''}Please update and resubmit.`}
+                            </AlertDescription>
+                        </Alert>
+                    )}
 
-      {role === 'STUDENT' && internshipDetails && (
-        <>
-          <Separator className="my-8" />
-          <Card className="shadow-xl rounded-xl" id="internship">
-            <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 border-b">
-              <div className="flex items-center gap-3 flex-grow">
-                <Briefcase className="h-6 w-6 text-primary" />
-                <CardTitle className="text-xl font-headline">Internship Details</CardTitle>
-              </div>
-               {!isEditingProfile && !isEditingInternship && canEditInternship && (
-                    <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" onClick={() => setIsEditingInternship(true)} className="text-muted-foreground hover:text-primary h-7 w-7">
-                                    <Edit3 className="h-4 w-4" />
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent className="bg-card text-card-foreground border-border">
-                                <p>{internshipEditButtonText}</p>
-                            </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
-               )}
-               {isEditingInternship && (
-                <Button variant="outline" onClick={() => setIsEditingInternship(false)} className="bg-card hover:bg-accent hover:text-accent-foreground rounded-lg">
-                    Cancel Edit
-                </Button>
-               )}
-            </CardHeader>
-            <CardContent className="p-6">
-              {currentInternshipStatus !== 'NOT_SUBMITTED' && !isEditingInternship && (
-                <Alert className={cn("mb-6", statusAlertColors[currentInternshipStatus]?.bg, statusAlertColors[currentInternshipStatus]?.border)}>
-                    <StatusIcon className={cn("h-5 w-5", statusAlertColors[currentInternshipStatus]?.iconColor)} />
-                    <AlertTitle className={cn("font-semibold", statusAlertColors[currentInternshipStatus]?.iconColor)}>
-                        {currentInternshipStatus.replace('_', ' ').toUpperCase()}
-                    </AlertTitle>
-                    <AlertDescription className="text-muted-foreground">
-                        {currentInternshipStatus === 'PENDING_APPROVAL' && "Your internship details are currently awaiting HOD review."}
-                        {currentInternshipStatus === 'APPROVED' && "Your internship details have been approved! You are all set."}
-                        {currentInternshipStatus === 'REJECTED' && `Your internship details were rejected. ${internshipDetails.rejectionReason ? `Reason: ${internshipDetails.rejectionReason}. ` : ''}Please update and resubmit.`}
-                    </AlertDescription>
-                </Alert>
-              )}
-
-              {isEditingInternship ? (
-                <InternshipDetailsForm
-                  defaultValues={internshipDetails}
-                  onSuccess={handleInternshipSaveSuccess}
-                  isResubmitting={currentInternshipStatus === 'REJECTED' || currentInternshipStatus === 'PENDING_APPROVAL'}
-                />
-              ) : currentInternshipStatus !== 'NOT_SUBMITTED' ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 text-sm">
-                  <div>
-                    <p className="font-medium text-foreground">Company Name:</p>
-                    <p className="text-muted-foreground">{internshipDetails.companyName || 'N/A'}</p>
-                  </div>
-                   <div>
-                    <p className="font-medium text-foreground">Company Address:</p>
-                    <p className="text-muted-foreground">{internshipDetails.companyAddress || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <p className="font-medium text-foreground">Supervisor Name:</p>
-                    <p className="text-muted-foreground">{internshipDetails.supervisorName || 'N/A'}</p>
-                  </div>
-                   <div>
-                    <p className="font-medium text-foreground">Supervisor Email:</p>
-                    <p className="text-muted-foreground">{internshipDetails.supervisorEmail || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <p className="font-medium text-foreground">Start Date:</p>
-                    <p className="text-muted-foreground">{internshipDetails.startDate && isValid(parseISO(internshipDetails.startDate)) ? format(parseISO(internshipDetails.startDate), "PPP") : 'N/A'}</p>
-                  </div>
-                  <div>
-                    <p className="font-medium text-foreground">End Date:</p>
-                    <p className="text-muted-foreground">{internshipDetails.endDate && isValid(parseISO(internshipDetails.endDate)) ? format(parseISO(internshipDetails.endDate), "PPP") : 'N/A'}</p>
-                  </div>
-                  <div className="md:col-span-2">
-                    <p className="font-medium text-foreground">Location/Work Arrangement:</p>
-                    <p className="text-muted-foreground">{internshipDetails.location || 'N/A'}</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-6">
-                    <Briefcase className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
-                    <p className="text-lg font-semibold text-foreground">Internship Details Not Submitted</p>
-                    <p className="text-muted-foreground mb-4">Please add your internship placement information to be approved by your Head of Department.</p>
-                    <Button onClick={() => setIsEditingInternship(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg">
-                        Add Internship Details
-                    </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </>
-      )}
-      {role !== 'STUDENT' && (
-         <Card className="shadow-xl rounded-xl mt-6">
-          <CardHeader className="p-6 border-b">
-            <div className="flex items-center gap-3">
-              <BookOpen className="h-6 w-6 text-primary" />
-              <CardTitle className="text-xl font-headline">Role-Specific Information</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="p-6">
-            <p className="text-muted-foreground">
-              As a {USER_ROLES[role]}, your primary role involves { role === 'LECTURER' ? 'managing student assignments, tracking progress, and facilitating communication.' : role === 'HOD' ? 'overseeing departmental internship activities, managing assignments, and analyzing overall program performance.' : role === 'ADMIN' ? 'managing the entire InternHub platform, including university structure, user accounts, and system settings.' : role === 'SUPERVISOR' ? 'overseeing assigned interns at your company, providing task guidance, and submitting performance evaluations.' : '' }
-              You can manage relevant aspects via your dashboard and navigation menu.
-            </p>
-          </CardContent>
-        </Card>
-      )}
+                    {isEditingInternship ? (
+                        <InternshipDetailsForm
+                        defaultValues={internshipDetails}
+                        onSuccess={handleInternshipSaveSuccess}
+                        isResubmitting={currentInternshipStatus === 'REJECTED' || currentInternshipStatus === 'PENDING_APPROVAL'}
+                        />
+                    ) : currentInternshipStatus !== 'NOT_SUBMITTED' ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 text-sm">
+                        <div>
+                            <p className="font-medium text-foreground">Company Name:</p>
+                            <p className="text-muted-foreground">{internshipDetails.companyName || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <p className="font-medium text-foreground">Company Address:</p>
+                            <p className="text-muted-foreground">{internshipDetails.companyAddress || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <p className="font-medium text-foreground">Supervisor Name:</p>
+                            <p className="text-muted-foreground">{internshipDetails.supervisorName || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <p className="font-medium text-foreground">Supervisor Email:</p>
+                            <p className="text-muted-foreground">{internshipDetails.supervisorEmail || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <p className="font-medium text-foreground">Start Date:</p>
+                            <p className="text-muted-foreground">{internshipDetails.startDate && isValid(parseISO(internshipDetails.startDate)) ? format(parseISO(internshipDetails.startDate), "PPP") : 'N/A'}</p>
+                        </div>
+                        <div>
+                            <p className="font-medium text-foreground">End Date:</p>
+                            <p className="text-muted-foreground">{internshipDetails.endDate && isValid(parseISO(internshipDetails.endDate)) ? format(parseISO(internshipDetails.endDate), "PPP") : 'N/A'}</p>
+                        </div>
+                        <div className="md:col-span-2">
+                            <p className="font-medium text-foreground">Location/Work Arrangement:</p>
+                            <p className="text-muted-foreground">{internshipDetails.location || 'N/A'}</p>
+                        </div>
+                        </div>
+                    ) : (
+                        <div className="text-center py-6">
+                            <Briefcase className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
+                            <p className="text-lg font-semibold text-foreground">Internship Details Not Submitted</p>
+                            <p className="text-muted-foreground mb-4">Please add your internship placement information to be approved by your Head of Department.</p>
+                            <Button onClick={() => setIsEditingInternship(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg">
+                                Add Internship Details
+                            </Button>
+                        </div>
+                    )}
+                    </CardContent>
+                </Card>
+             </TabsContent>
+        )}
+      </Tabs>
     </div>
   );
 }
