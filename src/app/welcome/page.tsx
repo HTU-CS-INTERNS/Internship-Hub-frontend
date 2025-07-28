@@ -19,7 +19,7 @@ const FeatureCard = ({ icon: Icon, title, description, color }: { icon: React.El
 
 const WavyBackground = () => (
     <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
-        <div className="absolute -top-1/4 -left-1/4 w-[150%] h-[150%] bg-gradient-to-br from-indigo-500 via-purple-500 to-blue-500 opacity-80" />
+        <div className="absolute -top-1/4 -left-1/4 w-[150%] h-[150%] bg-gradient-to-br from-blue-400 via-blue-500 to-sky-500 opacity-80" />
     </div>
 )
 
@@ -36,10 +36,10 @@ export default function WelcomePage() {
   return (
     <main className="flex flex-col min-h-screen bg-background text-foreground overflow-x-hidden">
       {/* Header */}
-       <header className="sticky top-0 z-50 w-full bg-transparent text-white">
+       <header className="sticky top-0 z-50 w-full bg-blue-500 border-b border-border text-white">
             <div className="container mx-auto h-20 flex items-center justify-between px-4">
                 <Link href="/" className="flex items-center gap-2 font-bold text-lg">
-                    <div className="p-1.5 bg-white/20 rounded-lg">
+                    <div className="p-1.5 bg-transparent rounded-lg">
                         <GraduationCap className="h-6 w-6" />
                     </div>
                     <span>InternHub</span>
@@ -70,12 +70,12 @@ export default function WelcomePage() {
                         <Link href="/student-verification">Get Started <ArrowRight className="ml-2 h-5 w-5" /></Link>
                     </Button>
                      <Button asChild variant="outline" size="lg" className="text-base h-12 px-8 bg-transparent border-white/50 hover:bg-white/10 text-white rounded-full">
-                        <Link href="/onboarding/step1"><PlayCircle className="mr-2 h-5 w-5" />How It Works</Link>
+                        <Link href="/onboarding/step1"><PlayCircle className="mr-2 h-5 w-5" />Discover InternHub</Link>
                     </Button>
                 </div>
                 <div className="relative mt-16 max-w-4xl mx-auto aspect-[4/3] sm:aspect-[16/9]">
                     <Image 
-                        src="https://placehold.co/1200x800.png" 
+                        src="/IMG-20250228-WA0051.jpg" 
                         alt="InternHub application dashboard" 
                         className="rounded-xl shadow-2xl border-4 border-white/10"
                         data-ai-hint="app dashboard" 
