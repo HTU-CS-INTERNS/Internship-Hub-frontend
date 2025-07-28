@@ -1,7 +1,7 @@
 
 'use client';
 
-import type { UserProfileData, CheckIn } from '@/types';
+import type { UserProfileData, CheckIn, Faculty, Department } from '@/types';
 
 // API service for admin-related data, using localStorage as a mock database
 export class AdminApiService {
@@ -21,7 +21,7 @@ export class AdminApiService {
       const activeInternships = placements.filter((p: any) => p.status === 'APPROVED').length;
       const totalCompanies = new Set(placements.map((p: any) => p.companyName)).size;
       const assignedInternIds = new Set(placements.map((p: any) => p.studentId));
-      const unassignedInterns = users.filter(u => u.role === 'STUDENT' && !assignedInternIds.has(u.email)).length;
+      const unassignedInterns = users.filter(u => u.role === 'STUDENT' && u.status === 'ACTIVE' && !assignedInternIds.has(u.email)).length;
       
       return {
         totalFaculties: faculties.length,
@@ -85,13 +85,69 @@ export class AdminApiService {
     return newUser;
   }
   
-  static async getPendingStudents() {
+  static async getPendingStudents(): Promise<UserProfileData[]> {
     const usersRaw = localStorage.getItem('internshipHub_users');
+    const facultiesRaw = localStorage.getItem('internshipHub_faculties') || '[]';
+    const departmentsRaw = localStorage.getItem('internshipHub_departments') || '[]';
+    
     const allUsers: UserProfileData[] = usersRaw ? JSON.parse(usersRaw) : [];
-    return allUsers.filter(u => u.role === 'STUDENT' && u.status === 'PENDING_ACTIVATION');
+    const faculties: Faculty[] = JSON.parse(facultiesRaw);
+    const departments: Department[] = JSON.parse(departmentsRaw);
+
+    const pendingStudents = allUsers
+        .filter(u => u.role === 'STUDENT' && u.status === 'PENDING_ACTIVATION')
+        .map(student => {
+            const faculty = faculties.find(f => f.id === student.faculty_id);
+            const department = departments.find(d => d.id === student.department_id);
+            return {
+                ...student,
+                faculty_name: faculty ? faculty.name : 'N/A',
+                department_name: department ? department.name : 'N/A',
+            };
+        });
+    
+    return pendingStudents;
+  }
+  
+  static async addPendingStudent(studentData: Omit<UserProfileData, 'id' | 'role' | 'status'>): Promise<UserProfileData> {
+    const usersRaw = localStorage.getItem('internshipHub_users');
+    let allUsers: UserProfileData[] = usersRaw ? JSON.parse(usersRaw) : [];
+    if (allUsers.some(u => u.email === studentData.email)) {
+      throw new Error("A user with this email already exists.");
+    }
+    const newUser: UserProfileData = {
+      ...studentData,
+      id: `user_${Date.now()}`,
+      role: 'STUDENT',
+      status: 'PENDING_ACTIVATION',
+    };
+    allUsers.push(newUser);
+    localStorage.setItem('internshipHub_users', JSON.stringify(allUsers));
+    return newUser;
   }
 
-  // Mocks for other methods to prevent errors
+  static async bulkAddPendingStudents(studentsData: Omit<UserProfileData, 'id' | 'role' | 'status'>[]): Promise<{ success: boolean, added: number }> {
+      const usersRaw = localStorage.getItem('internshipHub_users');
+      let allUsers: UserProfileData[] = usersRaw ? JSON.parse(usersRaw) : [];
+      let addedCount = 0;
+      
+      studentsData.forEach(studentData => {
+          if (!allUsers.some(u => u.email === studentData.email)) {
+              const newUser: UserProfileData = {
+                  ...studentData,
+                  id: `user_${Date.now()}_${addedCount}`,
+                  role: 'STUDENT',
+                  status: 'PENDING_ACTIVATION',
+              };
+              allUsers.push(newUser);
+              addedCount++;
+          }
+      });
+
+      localStorage.setItem('internshipHub_users', JSON.stringify(allUsers));
+      return { success: true, added: addedCount };
+  }
+
   static async getFaculties() { return JSON.parse(localStorage.getItem('internshipHub_faculties') || '[]'); }
   static async getDepartments(facultyId?: string) { 
       const depts = JSON.parse(localStorage.getItem('internshipHub_departments') || '[]');

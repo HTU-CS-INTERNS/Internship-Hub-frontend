@@ -12,6 +12,7 @@ import { useFaculties, useDepartments } from '@/hooks/useApiData';
 import { Loader2, Upload, FileText, X, Download } from 'lucide-react';
 import Papa from 'papaparse';
 import type { Faculty, Department } from '@/types';
+import { AdminApiService } from '@/lib/services/adminApi';
 
 interface AddStudentFormData {
   student_id_number: string;
@@ -20,7 +21,7 @@ interface AddStudentFormData {
   last_name: string;
   faculty_id: number | string | null;
   department_id: number | string | null;
-  program_of_study: string;
+  program_of_study?: string;
 }
 
 interface CSVStudent {
@@ -33,24 +34,7 @@ interface CSVStudent {
   program_of_study?: string;
 }
 
-// This component will eventually use a real API, but for now, it's a placeholder.
-// The `apiClient` logic would need to be built out on the backend.
-async function addPendingStudent(studentData: any) {
-    console.log("Simulating add pending student:", studentData);
-    // In a real app: await apiClient.post('/admin/pending-students', studentData);
-    await new Promise(resolve => setTimeout(resolve, 500));
-    return { success: true };
-}
-
-async function bulkAddPendingStudents(students: any[]) {
-    console.log("Simulating bulk add:", students);
-    // In a real app: await apiClient.post('/admin/pending-students/bulk', { students });
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    return { success: true, added: students.length };
-}
-
-
-export function AddPendingStudentForm() {
+export function AddPendingStudentForm({ onStudentAdded }: { onStudentAdded: () => void }) {
   const { toast } = useToast();
   const { faculties, loading: facultiesLoading } = useFaculties();
   const [selectedFacultyId, setSelectedFacultyId] = useState<string | null>(null);
@@ -71,6 +55,7 @@ export function AddPendingStudentForm() {
   const [isBulkUploading, setIsBulkUploading] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
   const [csvPreview, setCsvPreview] = useState<CSVStudent[] | null>(null);
+  const [parsedCsvData, setParsedCsvData] = useState<CSVStudent[]>([]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,11 +72,10 @@ export function AddPendingStudentForm() {
     setIsSubmitting(true);
 
     try {
-      await addPendingStudent({
+      await AdminApiService.addPendingStudent({
           ...formData,
           faculty_id: Number(formData.faculty_id),
           department_id: Number(formData.department_id),
-          program_of_study: formData.program_of_study || null,
         });
 
       toast({
@@ -110,6 +94,7 @@ export function AddPendingStudentForm() {
         program_of_study: '',
       });
       setSelectedFacultyId(null);
+      onStudentAdded();
 
     } catch (error) {
       toast({
@@ -132,16 +117,23 @@ export function AddPendingStudentForm() {
   };
 
   const findFacultyIdByName = (name: string): string | null => {
-    const faculty = faculties.find(f => f.name.toLowerCase() === name.toLowerCase());
+    const faculty = faculties.find(f => f.name.trim().toLowerCase() === name.trim().toLowerCase());
     return faculty ? String(faculty.id) : null;
   };
   
-  const findDepartmentIdByName = (name: string, facultyId: string | null): string | null => {
-    if (!facultyId) return null;
-    const depts = departments.filter(d => d.facultyId === facultyId);
-    const department = depts.find(d => d.name.toLowerCase() === name.toLowerCase());
-    return department ? String(department.id) : null;
+  const findDepartmentIdByName = (name: string, facultyId: string): string | null => {
+      const allDepts = getDepartmentsFromStorage(); // We need all departments for lookup
+      const department = allDepts.find(d => d.name.trim().toLowerCase() === name.trim().toLowerCase() && d.facultyId === facultyId);
+      return department ? String(department.id) : null;
   };
+  
+  // Helper to get all departments regardless of current filter
+  const getDepartmentsFromStorage = (): Department[] => {
+    if (typeof window === "undefined") return [];
+    const data = localStorage.getItem('internshipHub_departments');
+    return data ? JSON.parse(data) : [];
+  };
+
 
   const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -150,6 +142,7 @@ export function AddPendingStudentForm() {
     setFileName(file.name);
     setIsBulkUploading(true);
     setCsvPreview(null);
+    setParsedCsvData([]);
 
     Papa.parse<CSVStudent>(file, {
       header: true,
@@ -164,6 +157,7 @@ export function AddPendingStudentForm() {
           setIsBulkUploading(false);
           return;
         }
+        setParsedCsvData(results.data);
         setCsvPreview(results.data.slice(0, 5));
         setIsBulkUploading(false);
       },
@@ -175,13 +169,14 @@ export function AddPendingStudentForm() {
   };
 
   const processCSVData = async () => {
-    if (!csvPreview) return;
+    if (!parsedCsvData || parsedCsvData.length === 0) return;
     
     setIsBulkUploading(true);
+    let errorCount = 0;
 
-    const validatedStudents = csvPreview.map((student, index) => {
+    const validatedStudents = parsedCsvData.map((student, index) => {
       const facultyId = findFacultyIdByName(student.faculty_name);
-      const departmentId = findDepartmentIdByName(student.department_name, facultyId);
+      const departmentId = facultyId ? findDepartmentIdByName(student.department_name, facultyId) : null;
 
       if (!facultyId || !departmentId) {
         toast({
@@ -189,6 +184,7 @@ export function AddPendingStudentForm() {
           description: `Faculty "${student.faculty_name}" or Department "${student.department_name}" not found or mismatched.`,
           variant: 'destructive'
         });
+        errorCount++;
         return null;
       }
 
@@ -201,17 +197,18 @@ export function AddPendingStudentForm() {
         department_id: Number(departmentId),
         program_of_study: student.program_of_study || null,
       };
-    }).filter(Boolean);
+    }).filter((s): s is NonNullable<typeof s> => s !== null);
 
-    if (validatedStudents.length !== csvPreview.length) {
+    if (errorCount > 0) {
       setIsBulkUploading(false);
       return;
     }
 
     try {
-      await bulkAddPendingStudents(validatedStudents);
-      toast({ title: 'Success', description: `${validatedStudents.length} students added successfully` });
+      const result = await AdminApiService.bulkAddPendingStudents(validatedStudents);
+      toast({ title: 'Success', description: `${result.added} students added successfully` });
       removeFile();
+      onStudentAdded();
     } catch (error) {
       toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to upload students', variant: 'destructive' });
     } finally {
@@ -224,6 +221,7 @@ export function AddPendingStudentForm() {
     if (fileInputRef.current) fileInputRef.current.value = '';
     setFileName(null);
     setCsvPreview(null);
+    setParsedCsvData([]);
   };
   
   const handleDownloadTemplate = () => {
@@ -294,7 +292,7 @@ export function AddPendingStudentForm() {
                 </div>
                 <Button className="mt-4" onClick={processCSVData} disabled={isBulkUploading}>
                     {isBulkUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
-                    Confirm & Upload {csvPreview.length} Students
+                    Confirm & Upload {parsedCsvData.length} Students
                 </Button>
             </div>
           )}
@@ -325,7 +323,7 @@ export function AddPendingStudentForm() {
               <SelectContent>{departmentsLoading ? <SelectItem value="loading" disabled>Loading...</SelectItem> : departments.map((department) => (<SelectItem key={department.id} value={String(department.id)}>{department.name}</SelectItem>))}</SelectContent>
             </Select>
           </div>
-          <div><Label htmlFor="program_of_study">Program of Study (Optional)</Label><Input id="program_of_study" value={formData.program_of_study} onChange={(e) => setFormData(prev => ({ ...prev, program_of_study: e.target.value }))} placeholder="e.g., Computer Science"/></div>
+          <div><Label htmlFor="program_of_study">Program of Study (Optional)</Label><Input id="program_of_study" value={formData.program_of_study || ''} onChange={(e) => setFormData(prev => ({ ...prev, program_of_study: e.target.value }))} placeholder="e.g., Computer Science"/></div>
           <Button type="submit" className="w-full" disabled={isSubmitting || !formData.faculty_id || !formData.department_id}>{isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Adding...</> : 'Add Student'}</Button>
         </form>
       </CardContent>
