@@ -10,6 +10,17 @@ function getStorageKey(studentId: string): string {
     return `${CHECKINS_STORAGE_KEY_PREFIX}${studentId}`;
 }
 
+// --- MOCK GEOCODING ---
+// In a real app, this would be an API call to a geocoding service.
+async function reverseGeocode(lat: number, lon: number): Promise<string> {
+    // Simple mock based on coordinates for Ho, Ghana area
+    if (lat > 6.5 && lat < 6.7 && lon > 0.4 && lon < 0.6) {
+        return `Near HTU, Ho, Volta Region`;
+    }
+    return `Location at ${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+}
+
+
 const getCheckInsFromStorage = (studentId: string): CheckIn[] => {
   if (typeof window === "undefined") return [];
   const key = getStorageKey(studentId);
@@ -36,13 +47,19 @@ export const createCheckInForStudent = async (
   const allCheckins = getCheckInsFromStorage(studentId);
   const now = new Date();
   
+  let resolvedAddress = checkInData.address_resolved;
+  if (checkInData.is_gps_verified && checkInData.latitude && checkInData.longitude) {
+      resolvedAddress = await reverseGeocode(checkInData.latitude, checkInData.longitude);
+  }
+
   const newCheckIn: CheckIn = {
     id: `checkin_${Date.now()}`,
     student_id: studentId,
     check_in_timestamp: formatISO(now),
     created_at: formatISO(now),
     supervisor_verification_status: 'PENDING',
-    ...checkInData
+    ...checkInData,
+    address_resolved: resolvedAddress,
   };
 
   allCheckins.unshift(newCheckIn); // Add to the top

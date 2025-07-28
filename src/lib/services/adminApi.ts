@@ -1,7 +1,7 @@
 
 'use client';
 
-import type { UserProfileData } from '@/types';
+import type { UserProfileData, CheckIn } from '@/types';
 
 // API service for admin-related data, using localStorage as a mock database
 export class AdminApiService {
@@ -36,6 +36,18 @@ export class AdminApiService {
       console.warn('Could not generate admin dashboard stats from localStorage.', error);
       return { totalFaculties: 0, totalInterns: 0, activeInternships: 0, unassignedInterns: 0, totalLecturers: 0, avgLecturerWorkload: 0, totalCompanies: 0 };
     }
+  }
+
+  static async getCheckInLogs(): Promise<CheckIn[]> {
+    const allCheckins: CheckIn[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('internshipHub_checkins_')) {
+            const studentCheckins = JSON.parse(localStorage.getItem(key) || '[]');
+            allCheckins.push(...studentCheckins);
+        }
+    }
+    return allCheckins.sort((a,b) => new Date(b.check_in_timestamp).getTime() - new Date(a.check_in_timestamp).getTime());
   }
 
   static async getAllUsers(filters?: any): Promise<{ users: UserProfileData[], total: number }> {

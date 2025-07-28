@@ -17,20 +17,21 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { format, parseISO, differenceInDays, isValid } from 'date-fns';
+import { format, parseISO, differenceInDays, isValid, isToday as isSameDayAsToday } from 'date-fns';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { PieChart, Pie, Cell } from "recharts";
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/auth-context';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 // Assume these are correctly imported or defined elsewhere
-import { reportAbuse } from '@/lib/services/issue.service'; // Ensure this service exists and calls apiClient.reportIssue()
-import { StudentApiService } from '@/lib/services/studentApi'; // Use StudentApiService instead of apiClient
+import { reportAbuse } from '@/lib/services/issue.service';
+import { StudentApiService } from '@/lib/services/studentApi';
+import { getCheckInsByStudentId } from '@/lib/services/checkInService';
 // Add these imports to the top of your file
 import { Info } from 'lucide-react';
 
 // Define types for data fetched from API to ensure type safety
-import type { UserProfileData, DailyTask, DailyReport } from '@/types'; // Ensure these types are correctly defined based on your Prisma schema
+import type { UserProfileData, DailyTask, DailyReport, CheckIn } from '@/types'; 
 
 // Define additional types for the dashboard
 interface StudentProfileData {
@@ -80,18 +81,6 @@ interface PendingInternship {
   company_address: string;
   status: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED';
   submitted_at: string;
-}
-
-interface CheckIn {
-  id: string;
-  student_id: string;
-  check_in_timestamp: string;
-  latitude?: number;
-  longitude?: number;
-  address_resolved?: string;
-  manual_reason?: string;
-  is_gps_verified: boolean;
-  is_outside_geofence: boolean;
 }
 
 const getInitials = (name?: string | null) => {
@@ -222,11 +211,10 @@ const StudentDashboard: React.FC = () => {
                 if (user.role === 'STUDENT') {
                     const studentData = await StudentApiService.getStudentProfile();
                     if (studentData) {
-                        // Map UserProfileData to StudentProfileData format
                         const mappedProfile: StudentProfileData = {
                             id: studentData.id,
                             user_id: studentData.id,
-                            student_id_number: studentData.id, // Using id as student number for now
+                            student_id_number: studentData.id,
                             faculty_id: studentData.faculty_id || '',
                             department_id: studentData.department_id || '',
                             program_of_study: undefined,
@@ -250,13 +238,17 @@ const StudentDashboard: React.FC = () => {
                     if (internship) {
                         try {
                             const today_str = getTodayDateString();
-                            const tasks = await StudentApiService.getTasks(Number(internship.id), today_str) as DailyTask[];
+                            const tasks = await StudentApiService.getTasks(undefined, today_str) as DailyTask[];
                             setDailyTasks(tasks || []);
                         } catch (taskError) {
                             console.error('Error fetching tasks:', taskError);
                             setDailyTasks([]);
                         }
                     }
+                    
+                    const checkIns = await getCheckInsByStudentId(user.email);
+                    const todaysCheckin = checkIns.find(ci => isSameDayAsToday(parseISO(ci.check_in_timestamp))) || null;
+                    setTodayCheckIn(todaysCheckin);
 
                 } else {
                     setError("Access Denied: User is not a student or not logged in.");
@@ -288,8 +280,10 @@ const StudentDashboard: React.FC = () => {
         try {
             await StudentApiService.createReport({
                 internshipId: Number(activeInternship.id),
-                report_date: format(reportDate, 'yyyy-MM-dd'),
-                summary_of_work: reportSummary,
+                date: format(reportDate, 'yyyy-MM-dd'),
+                description: reportSummary,
+                learningObjectives: 'Quick log entry.',
+                outcomes: 'Task progress updated.',
             });
             toast({ title: "Quick Report Submitted!", description: `Summary for ${format(reportDate, "PPP")} recorded.` });
             setReportSummary('');
@@ -318,8 +312,8 @@ const StudentDashboard: React.FC = () => {
             await reportAbuse({
                 title: reportTitle,
                 description: reportDescription,
-                reportedByStudentId: user.id, // Use actual user ID
-                reportedByName: `${user.first_name} ${user.last_name}`, // Use actual user name
+                reportedByStudentId: user.id,
+                reportedByName: `${user.first_name} ${user.last_name}`,
             });
             toast({
                 title: "Abuse Reported",
@@ -639,78 +633,6 @@ const StudentDashboard: React.FC = () => {
                         </CardFooter>
                     </Card>
                 </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card className="shadow-lg rounded-xl bg-card text-card-foreground">
-                    <CardHeader className="border-b border-border">
-                        <CardTitle className="font-headline text-lg flex items-center"><Briefcase className="mr-2 h-5 w-5 text-primary" />Industrial Supervisor</CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-4">
-                        {activeInternship?.company_supervisor ? (
-                            <div className="flex items-center space-x-3">
-                                <Avatar className="h-12 w-12 border">
-                                    <AvatarImage src={activeInternship.company_supervisor.users?.profile_picture_url || undefined} alt={activeInternship.company_supervisor.users?.first_name || 'Supervisor'} />
-                                    <AvatarFallback className="bg-primary/20 text-primary">{getInitials(`${activeInternship.company_supervisor.users?.first_name} ${activeInternship.company_supervisor.users?.last_name}`)}</AvatarFallback>
-                                </Avatar>
-                                <div>
-                                    <p className="font-medium text-foreground">{activeInternship.company_supervisor.users?.first_name} {activeInternship.company_supervisor.users?.last_name}</p>
-                                    <p className="text-xs text-muted-foreground">Industrial Supervisor</p>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="text-muted-foreground text-sm py-2">No industrial supervisor assigned yet.</div>
-                        )}
-                    </CardContent>
-                    <CardFooter className="p-4 border-t border-border">
-                        {activeInternship?.company_supervisor ? (
-                            <Link href={`/communication?to=${activeInternship.company_supervisor.users?.id}`} className="w-full">
-                                <Button variant="outline" className="w-full rounded-lg border-input text-foreground hover:bg-muted">
-                                    <Contact className="mr-2 h-4 w-4" /> Contact Supervisor
-                                </Button>
-                            </Link>
-                        ) : (
-                            <Button variant="outline" className="w-full rounded-lg border-input text-foreground hover:bg-muted" disabled>
-                                <Contact className="mr-2 h-4 w-4" /> Contact Supervisor
-                            </Button>
-                        )}
-                    </CardFooter>
-                </Card>
-
-                <Card className="shadow-lg rounded-xl bg-card text-card-foreground">
-                    <CardHeader className="border-b border-border">
-                        <CardTitle className="font-headline text-lg flex items-center"><SchoolIcon className="mr-2 h-5 w-5 text-primary" />Assigned Lecturer</CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-4">
-                        {activeInternship?.lecturer ? (
-                            <div className="flex items-center space-x-3">
-                                <Avatar className="h-12 w-12 border">
-                                    <AvatarImage src={activeInternship.lecturer.users?.profile_picture_url || undefined} alt={activeInternship.lecturer.users?.first_name || 'Lecturer'} />
-                                    <AvatarFallback className="bg-primary/20 text-primary">{getInitials(`${activeInternship.lecturer.users?.first_name} ${activeInternship.lecturer.users?.last_name}`)}</AvatarFallback>
-                                </Avatar>
-                                <div>
-                                    <p className="font-medium text-foreground">{activeInternship.lecturer.users?.first_name} {activeInternship.lecturer.users?.last_name}</p>
-                                    <p className="text-xs text-muted-foreground">Faculty Lecturer</p>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="text-muted-foreground text-sm py-2">No faculty lecturer assigned yet.</div>
-                        )}
-                    </CardContent>
-                    <CardFooter className="p-4 border-t border-border">
-                        {activeInternship?.lecturer ? (
-                            <Link href={`/communication?to=${activeInternship.lecturer.users?.id}`} className="w-full">
-                                <Button variant="outline" className="w-full rounded-lg border-input text-foreground hover:bg-muted">
-                                    <Contact className="mr-2 h-4 w-4" /> Contact Lecturer
-                                </Button>
-                            </Link>
-                        ) : (
-                            <Button variant="outline" className="w-full rounded-lg border-input text-foreground hover:bg-muted" disabled>
-                                <Contact className="mr-2 h-4 w-4" /> Contact Lecturer
-                            </Button>
-                        )}
-                    </CardFooter>
-                </Card>
             </div>
         </>
     );
