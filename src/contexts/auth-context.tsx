@@ -3,9 +3,9 @@
 
 import * as React from 'react';
 import type { UserProfileData, UserRole } from '@/types';
-import api from '@/lib/api';
 import AppLoadingScreen from '@/components/shared/app-loading-screen';
 import { useRouter, usePathname } from 'next/navigation';
+import { apiClient } from '@/lib/api-client';
 
 interface AuthContextType {
   user: UserProfileData | null;
@@ -54,43 +54,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // If we have a token, we are likely logged in. Let's try to get user data.
+      // If we have a token, we are likely logged in.
+      // In this mock setup, we trust the localStorage data.
       try {
-        console.log('AuthContext: Attempting to verify user with /auth/me...');
-        const userData = await api<UserProfileData>('/auth/me'); 
-        console.log('AuthContext: User data received:', userData);
-        
-        if (userData && userData.email) {
-          const normalizedRole = normalizeRole(userData.role);
-          const userWithNormalizedRole = { ...userData, role: normalizedRole };
-          setUser(userWithNormalizedRole);
-          localStorage.setItem('user', JSON.stringify(userWithNormalizedRole));
-          localStorage.setItem('userRole', normalizedRole);
-          localStorage.setItem('userName', `${userData.first_name || ''} ${userData.last_name || ''}`);
-          localStorage.setItem('userEmail', userData.email);
-          console.log('AuthContext: User authenticated successfully, original role:', userData.role, 'normalized role:', normalizedRole);
+        console.log('AuthContext: Attempting to get user data from localStorage...');
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+            const userData = JSON.parse(storedUser);
+            const normalizedRole = normalizeRole(userData.role);
+            const userWithNormalizedRole = { ...userData, role: normalizedRole };
+            setUser(userWithNormalizedRole);
+            console.log('AuthContext: User authenticated from localStorage.');
         } else {
-            // This case might happen if token is invalid or expired
-            console.log('AuthContext: No user data from API, logging out.');
+            // This might happen if token exists but user data is cleared
+            console.log('AuthContext: Token exists, but no user data in localStorage. Logging out.');
             handleLogout();
         }
       } catch (error) {
-        console.error('AuthContext: Authentication with API failed:', error);
-        // Fallback to localStorage if API fails (e.g., backend is down)
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-          try {
-            const userData = JSON.parse(storedUser);
-            setUser(userData);
-             console.log('AuthContext: Using stored user data as fallback.');
-          } catch (parseError) {
-             console.error('AuthContext: Failed to parse stored user data:', parseError);
-             handleLogout();
-          }
-        } else {
-          console.log('AuthContext: No stored user data available, logging out');
-          handleLogout();
-        }
+        console.error('AuthContext: Authentication with localStorage failed:', error);
+        handleLogout();
       } finally {
         console.log('AuthContext: Setting loading to false');
         setIsLoading(false);

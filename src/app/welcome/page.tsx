@@ -8,6 +8,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import Image from 'next/image';
 
 const FeatureCard = ({ icon: Icon, title, description, color }: { icon: React.ElementType, title: string, description: string, color: string }) => (
     <div className="p-6 rounded-2xl bg-card shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-border">
@@ -60,7 +61,7 @@ export default function WelcomePage() {
                 </Button>
             </div>
              <div className="mt-12 relative w-full max-w-4xl aspect-video rounded-2xl shadow-2xl overflow-hidden border-8 border-card">
-                <img src="https://placehold.co/1200x675.png" alt="InternHub Dashboard Preview" className="w-full h-full object-cover" data-ai-hint="dashboard analytics" />
+                <Image src="https://placehold.co/1200x675.png" alt="InternHub Dashboard Preview" className="w-full h-full object-cover" data-ai-hint="dashboard analytics" layout="fill" />
                  <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent"></div>
             </div>
         </section>
