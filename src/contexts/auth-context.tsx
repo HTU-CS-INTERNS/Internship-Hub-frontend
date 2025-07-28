@@ -23,71 +23,57 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   const handleLogout = React.useCallback(() => {
+    apiClient.logout();
     setUser(null);
-    if (typeof window !== "undefined") {
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('user');
-        localStorage.removeItem('userRole');
-        localStorage.removeItem('userName');
-        localStorage.removeItem('userEmail');
-        localStorage.removeItem('isLoggedIn'); // Clear legacy flag
-    }
     router.push('/login');
   }, [router]);
 
   React.useEffect(() => {
-    const verifyUser = async () => {
-      console.log('AuthContext: Starting user verification...');
+    const checkAuthStatus = async () => {
+      console.log('AuthContext: Checking auth status...');
       const token = typeof window !== "undefined" ? localStorage.getItem('authToken') : null;
       console.log('AuthContext: Token found:', !!token);
       
       const isPublicPage = ['/login', '/register', '/student-verification', '/supervisor-verification', '/lecturer-verification'].includes(pathname) || pathname.startsWith('/onboarding') || pathname.startsWith('/welcome') || pathname === '/';
       
       if (!token) {
-        console.log('AuthContext: No token found, checking if public page...');
+        console.log('AuthContext: No token, checking if public page...');
         setIsLoading(false);
-        console.log('AuthContext: Is public page:', isPublicPage, 'for path:', pathname);
         if (!isPublicPage) {
-            console.log('AuthContext: Not a public page, redirecting to login...');
+            console.log('AuthContext: Not public, redirecting to login...');
             router.push('/login');
         }
         return;
       }
 
-      // If we have a token, we are likely logged in.
-      // In this mock setup, we trust the localStorage data.
+      // If token exists, trust localStorage user data for this mock setup.
       try {
-        console.log('AuthContext: Attempting to get user data from localStorage...');
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-            const userData = JSON.parse(storedUser);
-            const normalizedRole = normalizeRole(userData.role);
-            const userWithNormalizedRole = { ...userData, role: normalizedRole };
-            setUser(userWithNormalizedRole);
+        const currentUser = await apiClient.getCurrentUser();
+        if (currentUser) {
+            setUser(currentUser);
             console.log('AuthContext: User authenticated from localStorage.');
         } else {
-            // This might happen if token exists but user data is cleared
-            console.log('AuthContext: Token exists, but no user data in localStorage. Logging out.');
+            console.log('AuthContext: Token exists, but no user data. Logging out.');
             handleLogout();
         }
       } catch (error) {
-        console.error('AuthContext: Authentication with localStorage failed:', error);
+        console.error('AuthContext: Error getting current user from mock client:', error);
         handleLogout();
       } finally {
-        console.log('AuthContext: Setting loading to false');
         setIsLoading(false);
       }
     };
-    verifyUser();
+
+    checkAuthStatus();
   }, [pathname, router, handleLogout]);
 
   if (isLoading) {
     return <AppLoadingScreen />;
   }
-
+  
   const isPublicPage = ['/login', '/register', '/student-verification', '/supervisor-verification', '/lecturer-verification'].includes(pathname) || pathname.startsWith('/onboarding') || pathname.startsWith('/welcome') || pathname === '/';
   if (!user && !isLoading && !isPublicPage) {
-      // If we are done loading, not on a public page, and have no user, show loading screen while we redirect.
+      // While redirecting, show loading screen
       return <AppLoadingScreen />;
   }
 
@@ -104,17 +90,4 @@ export function useAuth() {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-}
-
-function normalizeRole(role: string): UserRole {
-  const roleMap: Record<string, UserRole> = {
-    'admin': 'ADMIN',
-    'student': 'STUDENT', 
-    'lecturer': 'LECTURER',
-    'company_supervisor': 'SUPERVISOR',
-    'supervisor': 'SUPERVISOR',
-    'hod': 'HOD'
-  };
-  
-  return roleMap[role.toLowerCase()] || role.toUpperCase() as UserRole;
 }

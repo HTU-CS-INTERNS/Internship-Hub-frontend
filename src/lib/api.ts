@@ -1,8 +1,8 @@
 
 'use client';
 
-// This file provides compatibility with the legacy API interface
-// while delegating to the new API client that connects to the real backend.
+// This file provides compatibility with any legacy code that used the 'api' function.
+// It now delegates directly to the new, purely client-side ApiClient.
 
 import type { UserProfileData } from "@/types";
 import { apiClient } from './api-client';
@@ -13,39 +13,24 @@ type ApiOptions = {
     body?: any;
 };
 
-// Legacy API function that maps to the new API client
+// The legacy API function now maps to the new API client methods.
 async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
-    // Map legacy endpoints to new API client methods
-    switch (endpoint) {
-        case '/auth/login':
-            if (options.body) {
-                const { email, password } = options.body;
-                const response = await apiClient.login({ email, password });
-                return { user: response.user, session: { access_token: response.access_token } } as T;
-            }
-            break;
+    // This function can be expanded with more specific endpoint handling if needed,
+    // but the goal is to phase out its use in favor of direct service calls.
+    console.log(`Legacy api() call for endpoint: ${endpoint}`);
 
-        case '/auth/signup':
-            if (options.body) {
-                const response = await apiClient.signup(options.body);
-                return { user: response.user, session: { access_token: response.access_token } } as T;
-            }
-            break;
-
-        case '/auth/me':
-            return await apiClient.request<T>('api/users/me') as T;
-
-        case '/auth/verify-student':
-            // This endpoint might need to be implemented in the backend
-            // For now, we'll return a placeholder response
-            throw new Error('Student verification endpoint needs to be implemented in backend');
-
-        default:
-            // For any other endpoint, use the direct API client request
-            return await apiClient.request<T>(endpoint, options);
+    // Example mapping for login
+    if (endpoint === '/auth/login' && options.method === 'POST') {
+        const { user, access_token } = await apiClient.login(options.body);
+        // Match the expected legacy response structure
+        return { user, session: { access_token } } as T;
     }
-
-    throw new Error(`API endpoint not implemented: ${endpoint}`);
+    
+    // For now, other unmapped endpoints will show a warning.
+    console.warn(`Unhandled legacy api() call to endpoint: ${endpoint}`);
+    // You could throw an error or return a default value.
+    // Throwing an error is better for identifying parts of the code still using the old system.
+    throw new Error(`Legacy api() call to unhandled endpoint: ${endpoint}`);
 }
 
 export default api;

@@ -1,33 +1,15 @@
 
 'use client';
 
-import type { UserProfileData } from "@/types";
+import type { UserProfileData, UserRole } from "@/types";
 
-// This file is now a mock client that interacts with localStorage
+// This file is a mock client that interacts with localStorage
 // to simulate a real API, preventing any "Failed to fetch" errors.
 
 class ApiClient {
   private getAuthToken(): string | null {
     if (typeof window === "undefined") return null;
     return localStorage.getItem('authToken');
-  }
-
-  // Generic request handler for methods that need to be mocked
-  async request<T>(endpoint: string, options: { method?: string; body?: any } = {}): Promise<T> {
-    console.log(`Mock API Request: ${options.method || 'GET'} to ${endpoint}`);
-    
-    // You can add more specific mock handlers here if needed
-    // For now, this will mostly be a pass-through for methods that are
-    // already implemented directly below.
-    if (endpoint === 'api/users/me' && this.getAuthToken()) {
-      const userRaw = localStorage.getItem('user');
-      if (userRaw) {
-        return JSON.parse(userRaw) as T;
-      }
-    }
-
-    // Default empty response for unhandled cases
-    return {} as T;
   }
 
   // --- Auth Methods ---
@@ -53,12 +35,8 @@ class ApiClient {
     return { user, access_token: mockToken };
   }
 
-  async signup(userData: any): Promise<{ user: UserProfileData; access_token: string }> {
-    throw new Error("Direct signup is disabled. Please use the verification flow.");
-  }
-
   async getCurrentUser(): Promise<UserProfileData | null> {
-    const userRaw = localStorage.getItem('user');
+    const userRaw = typeof window !== "undefined" ? localStorage.getItem('user') : null;
     return userRaw ? JSON.parse(userRaw) : null;
   }
 
@@ -127,13 +105,21 @@ class ApiClient {
         user: users[userIndex],
     };
   }
-
+  
+  // These are now the primary methods used by the verification components.
   async sendStudentOtp(email: string) { return this._sendOtp(email, 'STUDENT'); }
   async verifyStudentOtp(data: { email: string; otp_code: string; password: string; }) { return this._verifyOtpAndUpdate(data, 'STUDENT'); }
   async sendSupervisorOtp(email: string) { return this._sendOtp(email, 'SUPERVISOR'); }
   async verifySupervisorOtp(data: { email: string; otp_code: string; password: string; job_title?: string; phone_number?: string; }) { return this._verifyOtpAndUpdate(data, 'SUPERVISOR', { job_title: data.job_title, phone_number: data.phone_number }); }
   async sendLecturerOtp(email: string) { return this._sendOtp(email, 'LECTURER'); }
   async verifyLecturerOtp(data: { email: string; otp_code: string; password: string; staff_id?: string; phone_number?: string; office_location?: string; }) { return this._verifyOtpAndUpdate(data, 'LECTURER', { staff_id: data.staff_id, phone_number: data.phone_number, office_location: data.office_location }); }
+
+  // Generic request handler has been removed to prevent any accidental network calls.
+  // Add specific mock handlers here if new API interactions are needed.
+  async request<T>(endpoint: string, options: { method?: string; body?: any } = {}): Promise<T> {
+    console.warn(`ApiClient.request called for unhandled endpoint: ${endpoint}. Returning empty object.`);
+    return {} as T;
+  }
 }
 
 export const apiClient = new ApiClient();
