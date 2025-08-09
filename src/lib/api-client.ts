@@ -1,123 +1,102 @@
 
 'use client';
 
-import type { UserProfileData, UserRole } from "@/types";
+import { createClient } from '@supabase/supabase-js';
+import type { UserProfileData } from "@/types";
 
-// This file is a mock client that interacts with localStorage
-// to simulate a real API, preventing any "Failed to fetch" errors.
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 class ApiClient {
-  private getAuthToken(): string | null {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem('authToken');
-  }
-
+  
   // --- Auth Methods ---
   async login(credentials: { email: string; password: string }): Promise<{ user: UserProfileData; access_token: string }> {
-    const usersRaw = typeof window !== "undefined" ? localStorage.getItem('internshipHub_users') : null;
-    if (!usersRaw) {
-        throw new Error("No local user data found. Please ensure the app is seeded.");
-    }
-    const users: UserProfileData[] = JSON.parse(usersRaw);
-    const user = users.find(u => u.email.toLowerCase() === credentials.email.toLowerCase());
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword(credentials);
 
-    if (!user) {
-        throw new Error("Invalid credentials. User not found.");
+    if (authError || !authData.user) {
+      throw new Error(authError?.message || "Invalid login credentials.");
     }
-    if (user.password !== credentials.password) {
-        throw new Error("Invalid credentials. Password does not match.");
-    }
-    if (user.status === 'PENDING_ACTIVATION') {
-        throw new Error("Account not activated. Please use the verification flow.");
-    }
-
-    const mockToken = `local-token-${user.id}-${Date.now()}`;
-    return { user, access_token: mockToken };
-  }
-
-  async getCurrentUser(): Promise<UserProfileData | null> {
-    const userRaw = typeof window !== "undefined" ? localStorage.getItem('user') : null;
-    return userRaw ? JSON.parse(userRaw) : null;
-  }
-
-  async logout(): Promise<void> {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
-      localStorage.removeItem('userRole');
-      localStorage.removeItem('userName');
-      localStorage.removeItem('userEmail');
-    }
-  }
-
-  // --- Verification Flows ---
-  private async _sendOtp(email: string, role: 'STUDENT' | 'LECTURER' | 'SUPERVISOR'): Promise<{ message: string; otp?: string }> {
-    const usersRaw = localStorage.getItem('internshipHub_users');
-    if (!usersRaw) throw new Error('Local user database not found.');
     
-    const users: UserProfileData[] = JSON.parse(usersRaw);
-    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.role === role);
+    // After successful auth, fetch the user's public profile
+    const userProfile = await this.getCurrentUser(authData.user.id);
 
-    if (!user) {
-      throw new Error(`No pending ${role.toLowerCase()} account found for this email.`);
+    if (!userProfile) {
+      // This case might happen if the trigger fails or is not set up.
+      // It's a critical data inconsistency issue.
+      await supabase.auth.signOut();
+      throw new Error("Login successful, but user profile not found. Please contact support.");
     }
-    if (user.status === 'ACTIVE') {
-      throw new Error('This account is already active. Please log in.');
-    }
-
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    localStorage.setItem(`otp_${email}`, otp);
-    
-    return {
-      message: `An OTP has been 'sent' to ${email}.`,
-      otp: otp, // For testing purposes
-    };
-  }
-
-  private async _verifyOtpAndUpdate(data: { email: string; otp_code: string; password: string }, roleToVerify: 'STUDENT' | 'LECTURER' | 'SUPERVISOR', additionalData?: any): Promise<{ message: string; user: any }> {
-    const storedOtp = localStorage.getItem(`otp_${data.email}`);
-    if (!storedOtp || storedOtp !== data.otp_code) {
-      throw new Error('Invalid OTP code.');
-    }
-
-    const usersRaw = localStorage.getItem('internshipHub_users');
-    if (!usersRaw) throw new Error('Local user database not found.');
-    
-    let users: UserProfileData[] = JSON.parse(usersRaw);
-    const userIndex = users.findIndex(u => u.email.toLowerCase() === data.email.toLowerCase() && u.role === roleToVerify);
-
-    if (userIndex === -1) {
-      throw new Error(`User with email ${data.email} not found.`);
-    }
-
-    users[userIndex] = {
-        ...users[userIndex],
-        ...additionalData,
-        status: 'ACTIVE',
-        password: data.password
-    };
-
-    localStorage.setItem('internshipHub_users', JSON.stringify(users));
-    localStorage.removeItem(`otp_${data.email}`);
 
     return {
-        message: 'Account activated successfully!',
-        user: users[userIndex],
+      user: userProfile,
+      access_token: authData.session?.access_token || '',
     };
+  }
+
+  async getCurrentUser(userId?: string): Promise<UserProfileData | null> {
+    let currentUserId = userId;
+    
+    if (!currentUserId) {
+        const { data: authData } = await supabase.auth.getUser();
+        if (!authData.user) return null;
+        currentUserId = authData.user.id;
+    }
+
+    if (!currentUserId) return null;
+
+    // Explicitly query the public.users table for the profile
+    const { data: profile, error } = await supabase
+      .from('users')
+      .select(`
+        *,
+        faculty:faculty_id(name),
+        department:department_id(name)
+      `)
+      .eq('id', currentUserId)
+      .single();
+
+    if (error) {
+      console.error('Error fetching user profile:', error.message);
+      // Don't throw here, allow auth context to handle missing profile gracefully
+      return null;
+    }
+    
+    if (!profile) return null;
+
+    // Manually map the joined data to match the UserProfileData type
+    const userProfile: UserProfileData = {
+        ...profile,
+        faculty_name: profile.faculty?.name,
+        department_name: profile.department?.name,
+    };
+    
+    // Remove the nested faculty/department objects to avoid structure mismatch
+    delete (userProfile as any).faculty;
+    delete (userProfile as any).department;
+
+    return userProfile;
   }
   
-  // These are now the primary methods used by the verification components.
-  async sendStudentOtp(email: string) { return this._sendOtp(email, 'STUDENT'); }
-  async verifyStudentOtp(data: { email: string; otp_code: string; password: string; }) { return this._verifyOtpAndUpdate(data, 'STUDENT'); }
-  async sendSupervisorOtp(email: string) { return this._sendOtp(email, 'SUPERVISOR'); }
-  async verifySupervisorOtp(data: { email: string; otp_code: string; password: string; job_title?: string; phone_number?: string; }) { return this._verifyOtpAndUpdate(data, 'SUPERVISOR', { job_title: data.job_title, phone_number: data.phone_number }); }
-  async sendLecturerOtp(email: string) { return this._sendOtp(email, 'LECTURER'); }
-  async verifyLecturerOtp(data: { email: string; otp_code: string; password: string; staff_id?: string; phone_number?: string; office_location?: string; }) { return this._verifyOtpAndUpdate(data, 'LECTURER', { staff_id: data.staff_id, phone_number: data.phone_number, office_location: data.office_location }); }
+  async logout(): Promise<void> {
+    await supabase.auth.signOut();
+  }
 
-  // Generic request handler has been removed to prevent any accidental network calls.
-  // Add specific mock handlers here if new API interactions are needed.
-  async request<T>(endpoint: string, options: { method?: string; body?: any } = {}): Promise<T> {
-    console.warn(`ApiClient.request called for unhandled endpoint: ${endpoint}. Returning empty object.`);
+  // Generic request handler
+  async request<T>(endpoint: string, options: { method?: string; body?: any, headers?: any } = {}): Promise<T> {
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+
+    const headers = {
+        'Content-Type': 'application/json',
+        ...options.headers,
+        ...(token && { Authorization: `Bearer ${token}` }),
+    };
+    
+    // This is a placeholder for custom backend API calls.
+    // In this setup, we'll primarily use the Supabase JS client directly.
+    console.warn(`ApiClient.request called for endpoint: ${endpoint}. This is a placeholder and does not make a real API call.`);
     return {} as T;
   }
 }

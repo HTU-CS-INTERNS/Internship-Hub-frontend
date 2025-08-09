@@ -17,24 +17,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import type { UserProfileData, UserRole } from '@/types';
 import { Loader2 } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
-
-// Role normalization function to handle backend/frontend role differences
-function normalizeRole(role: string): UserRole {
-  const roleMap: Record<string, UserRole> = {
-    'admin': 'ADMIN',
-    'student': 'STUDENT', 
-    'lecturer': 'LECTURER',
-    'company_supervisor': 'SUPERVISOR',
-    'supervisor': 'SUPERVISOR',
-    'hod': 'HOD'
-  };
-  
-  // Return normalized role or fallback to uppercase version
-  return roleMap[role.toLowerCase()] || role.toUpperCase() as UserRole;
-}
+import { useAuth } from '@/contexts/auth-context';
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
@@ -46,6 +31,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 export function LoginForm() {
   const router = useRouter();
   const { toast } = useToast();
+  const { fetchAndSetUser } = useAuth();
   const [isLoading, setIsLoading] = React.useState(false);
 
   const form = useForm<LoginFormValues>({
@@ -59,19 +45,12 @@ export function LoginForm() {
   async function onSubmit(values: LoginFormValues) {
     setIsLoading(true);
     try {
-      const { user, access_token } = await apiClient.login(values);
-
-      const normalizedRole = normalizeRole(user.role);
-      const userWithNormalizedRole = { ...user, role: normalizedRole };
+      const { user } = await apiClient.login(values);
       
-      if (typeof window !== "undefined") {
-        localStorage.setItem('authToken', access_token);
-        localStorage.setItem('userRole', normalizedRole);
-        localStorage.setItem('userName', `${user.first_name} ${user.last_name}`);
-        localStorage.setItem('userEmail', user.email);
-        localStorage.setItem('user', JSON.stringify(userWithNormalizedRole));
-      }
-
+      // The auth context will handle setting the user state via onAuthStateChange,
+      // but we can trigger a manual fetch to be sure.
+      await fetchAndSetUser(user.id);
+      
       toast({
         title: "Login Successful!",
         description: `Welcome back, ${user.first_name || user.email}!`,
@@ -80,6 +59,7 @@ export function LoginForm() {
 
       // ALWAYS redirect to the generic dashboard. The redirector page will handle the rest.
       router.push('/dashboard');
+      router.refresh(); // Force a layout refresh to ensure auth state is propagated
 
     } catch (error: any) {
       toast({

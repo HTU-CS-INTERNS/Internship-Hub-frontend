@@ -1,0 +1,8 @@
+-- This file is deprecated and should not be used.
+-- The database is now initialized by creating ENUM types and a trigger function.
+-- Please run the files in the following order in your Supabase SQL Editor:
+-- 1. 00-enum-types.sql
+-- 2. 01-on-new-user.sql
+--
+-- This setup ensures that new users created via Supabase Auth
+-- are automatically populated into the public user profile tables.

@@ -6,16 +6,17 @@ import AppSidebar from '@/components/layout/app-sidebar';
 import AppHeader from '@/components/layout/app-header';
 import MobileHeader from '@/components/layout/mobile-header';
 import MobileBottomNav from '@/components/layout/mobile-bottom-nav';
-import { AuthProvider, useAuth } from '@/contexts/auth-context';
+import { useAuth } from '@/contexts/auth-context';
 import { useIsMobile } from '@/hooks/use-mobile';
+import AppLoadingScreen from '@/components/shared/app-loading-screen';
 
 function AppLayoutContent({ children }: { children: React.ReactNode }) {
-  const { user, role } = useAuth();
+  const { user, role, isLoading } = useAuth();
   const isMobileView = useIsMobile();
 
-  if (!user || !role) {
-    // This state is handled by the AuthProvider's loading/redirect logic
-    return null;
+  if (isLoading || !user || !role) {
+    // Show a loading screen while auth state is being determined
+    return <AppLoadingScreen />;
   }
 
   if (isMobileView) {
@@ -55,10 +56,8 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <AuthProvider>
-        <SidebarProvider defaultOpen={true}>
-            <AppLayoutContent>{children}</AppLayoutContent>
-        </SidebarProvider>
-    </AuthProvider>
+      <SidebarProvider defaultOpen={true}>
+          <AppLayoutContent>{children}</AppLayoutContent>
+      </SidebarProvider>
   );
 }

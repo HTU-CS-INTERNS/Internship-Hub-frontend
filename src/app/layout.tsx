@@ -5,12 +5,7 @@ import * as React from 'react';
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
-import { seedLocalStorage } from '@/lib/services/seed.service';
-
-// Since this is the root layout, metadata can be defined here.
-// However, if we need client-side logic like `useEffect` for seeding,
-// we need to handle it carefully. A common pattern is to have a client
-// component inside a server component layout.
+import { AuthProvider } from '@/contexts/auth-context';
 
 const AppMetadata: Metadata = {
   applicationName: "InternHub - HTU",
@@ -30,15 +25,6 @@ const AppMetadata: Metadata = {
   },
 };
 
-// A client component to handle the seeding logic
-function LocalStorageSeeder() {
-  React.useEffect(() => {
-    seedLocalStorage();
-  }, []);
-  return null; // This component doesn't render anything
-}
-
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -56,8 +42,9 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased min-h-screen flex flex-col">
-        <LocalStorageSeeder />
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
         <Toaster />
       </body>
     </html>

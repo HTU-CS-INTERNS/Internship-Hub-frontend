@@ -6,12 +6,14 @@ import type { UserProfileData, UserRole } from '@/types';
 import AppLoadingScreen from '@/components/shared/app-loading-screen';
 import { useRouter, usePathname } from 'next/navigation';
 import { apiClient } from '@/lib/api-client';
+import { useToast } from '@/hooks/use-toast';
 
 interface AuthContextType {
   user: UserProfileData | null;
   role: UserRole | null;
   isLoading: boolean;
   logout: () => void;
+  fetchAndSetUser: (userId?: string) => Promise<void>;
 }
 
 const AuthContext = React.createContext<AuthContextType | null>(null);
@@ -21,64 +23,87 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = React.useState(true);
   const router = useRouter();
   const pathname = usePathname();
-
-  const handleLogout = React.useCallback(() => {
-    apiClient.logout();
+  const { toast } = useToast();
+  
+  const handleLogout = React.useCallback(async () => {
+    await apiClient.logout();
     setUser(null);
     router.push('/login');
   }, [router]);
 
+  const fetchAndSetUser = React.useCallback(async (userId?: string) => {
+    try {
+      const userData = await apiClient.getCurrentUser(userId);
+      if (!userData) {
+        console.error("Profile missing for authenticated user. Logging out.");
+        toast({
+          title: "Profile Incomplete",
+          description: "Your user profile is missing. Please log in again or contact support.",
+          variant: "destructive",
+        });
+        handleLogout();
+      } else {
+        setUser(userData);
+      }
+    } catch (error: any) {
+      console.error("Error fetching user profile:", error);
+      if (error.message.includes("relation") || error.message.includes("schema")) {
+        toast({
+          title: "Configuration Error",
+          description: "There's a problem with the system configuration. Please contact support.",
+          variant: "destructive",
+        });
+      }
+      handleLogout();
+    }
+  }, [handleLogout, toast]);
+
   React.useEffect(() => {
     const checkAuthStatus = async () => {
-      console.log('AuthContext: Checking auth status...');
-      const token = typeof window !== "undefined" ? localStorage.getItem('authToken') : null;
-      console.log('AuthContext: Token found:', !!token);
+      setIsLoading(true);
+      const { data: { session } } = await apiClient.supabase.auth.getSession();
       
-      const isPublicPage = ['/login', '/register', '/student-verification', '/supervisor-verification', '/lecturer-verification'].includes(pathname) || pathname.startsWith('/onboarding') || pathname.startsWith('/welcome') || pathname === '/';
-      
-      if (!token) {
-        console.log('AuthContext: No token, checking if public page...');
-        setIsLoading(false);
+      const isAuthPage = ['/login', '/register', '/student-verification', '/supervisor-verification', '/lecturer-verification'].includes(pathname);
+      const isPublicPage = isAuthPage || pathname.startsWith('/onboarding') || pathname.startsWith('/welcome') || pathname === '/';
+
+      if (!session) {
         if (!isPublicPage) {
-            console.log('AuthContext: Not public, redirecting to login...');
-            router.push('/login');
+          router.push('/login');
         }
+        setIsLoading(false);
         return;
       }
 
-      // If token exists, trust localStorage user data for this mock setup.
-      try {
-        const currentUser = await apiClient.getCurrentUser();
-        if (currentUser) {
-            setUser(currentUser);
-            console.log('AuthContext: User authenticated from localStorage.');
-        } else {
-            console.log('AuthContext: Token exists, but no user data. Logging out.');
-            handleLogout();
-        }
-      } catch (error) {
-        console.error('AuthContext: Error getting current user from mock client:', error);
-        handleLogout();
-      } finally {
-        setIsLoading(false);
+      if (session && !user) {
+        await fetchAndSetUser(session.user.id);
       }
+      
+      setIsLoading(false);
     };
 
     checkAuthStatus();
-  }, [pathname, router, handleLogout]);
+
+    const { data: { subscription } } = apiClient.supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        if (_event === 'SIGNED_IN' && session?.user) {
+          await fetchAndSetUser(session.user.id);
+        } else if (_event === 'SIGNED_OUT') {
+          setUser(null);
+        }
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [pathname, router, fetchAndSetUser, user]);
 
   if (isLoading) {
     return <AppLoadingScreen />;
   }
-  
-  const isPublicPage = ['/login', '/register', '/student-verification', '/supervisor-verification', '/lecturer-verification'].includes(pathname) || pathname.startsWith('/onboarding') || pathname.startsWith('/welcome') || pathname === '/';
-  if (!user && !isLoading && !isPublicPage) {
-      // While redirecting, show loading screen
-      return <AppLoadingScreen />;
-  }
 
   return (
-    <AuthContext.Provider value={{ user, role: user?.role || null, isLoading, logout: handleLogout }}>
+    <AuthContext.Provider value={{ user, role: user?.role || null, isLoading, logout: handleLogout, fetchAndSetUser }}>
       {children}
     </AuthContext.Provider>
   );
