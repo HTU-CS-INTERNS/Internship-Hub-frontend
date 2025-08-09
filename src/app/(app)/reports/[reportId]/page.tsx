@@ -192,4 +192,3 @@ export default function ReportDetailPage({ params }: { params: { reportId: strin
     </div>
   );
 }
-

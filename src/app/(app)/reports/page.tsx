@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile'; 
 import { useToast } from '@/hooks/use-toast';
 
-export const DUMMY_REPORTS: (DailyReport & { title?: string; challengesFaced?: string; securePhotoUrl?: string; attachments?: string[]; supervisorComments?: string })[] = [
+export const DUMMY_REPORTS: (DailyReport & { title?: string; challengesFaced?: string; securePhotoUrl?: string; attachments?: any[]; supervisorComments?: string })[] = [
   { 
     id: 'report1', 
     date: '2024-07-26', 
@@ -25,7 +25,7 @@ export const DUMMY_REPORTS: (DailyReport & { title?: string; challengesFaced?: s
     studentId: 'stu1', 
     status: 'APPROVED',
     challengesFaced: "Minor issues with token refresh logic, resolved by adjusting expiration strategy.",
-    attachments: ['auth_architecture.pdf', 'security_review_notes.txt'],
+    attachments: [],
     securePhotoUrl: 'https://placehold.co/600x400.png',
     supervisorComments: "Good progress this week, Alice. The JWT implementation looks solid. Keep up the great work!"
   },
@@ -39,7 +39,7 @@ export const DUMMY_REPORTS: (DailyReport & { title?: string; challengesFaced?: s
     studentId: 'stu1', 
     status: 'SUBMITTED',
     challengesFaced: "Condensing all work into a short presentation was challenging.",
-    attachments: ['mid_term_presentation.pptx'],
+    attachments: [],
     supervisorComments: "Looking forward to seeing the presentation."
   },
   { 
@@ -233,4 +233,3 @@ export default function ReportsPage() {
     </div>
   );
 }
-

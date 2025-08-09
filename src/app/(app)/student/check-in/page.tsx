@@ -398,9 +398,9 @@ export default function CheckInPage() {
                 </div>
 
                 <div className="md:col-span-1 space-y-4">
-                    <AnalyticsStatCard title="Check-in Streak" value="5 Days" icon={TrendingUp} description="Consecutive daily check-ins" iconBgColor="bg-green-500/10"/>
-                    <AnalyticsStatCard title="Punctuality" value="92%" icon={Clock} description="On-time check-in rate" iconBgColor="bg-blue-500/10"/>
-                    <AnalyticsStatCard title="Monthly Check-ins" value="18" icon={CalendarCheck2} description={`In ${format(new Date(), 'MMMM')}`} iconBgColor="bg-purple-500/10"/>
+                    <AnalyticsStatCard title="Check-in Streak" value={`${attendanceStats.streak} Days`} icon={TrendingUp} description="Consecutive daily check-ins" iconBgColor="bg-green-500/10"/>
+                    <AnalyticsStatCard title="Punctuality" value={`${attendanceStats.punctuality}%`} icon={Clock} description="On-time check-in rate" iconBgColor="bg-blue-500/10"/>
+                    <AnalyticsStatCard title="Monthly Check-ins" value={`${attendanceStats.monthlyCheckins}`} icon={CalendarCheck2} description={`In ${format(new Date(), 'MMMM')}`} iconBgColor="bg-purple-500/10"/>
                 </div>
             </div>
 
@@ -448,4 +448,3 @@ export default function CheckInPage() {
     </div>
   );
 }
-    

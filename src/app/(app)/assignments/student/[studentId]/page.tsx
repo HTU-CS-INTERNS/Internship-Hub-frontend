@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { DUMMY_ASSIGNMENTS } from '@/app/(app)/assignments/page';
 import { DUMMY_STUDENTS_DATA, SCORING_METRICS } from '@/lib/constants';
-import { DUMMY_REPORTS } from '@/app/(app)/student/reports/page'; 
+import { DUMMY_REPORTS } from '@/app/(app)/reports/page'; 
 import { DUMMY_TASKS } from '@/app/(app)/tasks/page'; 
 import type { DailyReport, DailyTask, InternEvaluation } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
