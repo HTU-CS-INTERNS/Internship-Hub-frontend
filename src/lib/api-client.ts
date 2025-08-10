@@ -22,7 +22,7 @@ class ApiClient {
       throw new Error(authError?.message || "Invalid login credentials.");
     }
     
-    // After successful auth, fetch the user's public profile
+    // After successful auth, fetch the user's public profile using the new robust method
     const userProfile = await this.getCurrentUser(authData.user.id);
 
     if (!userProfile) {
@@ -49,11 +49,10 @@ class ApiClient {
 
     if (!currentUserId) return null;
 
-    // Explicitly query the public.users table for the profile
-    // This uses an RPC call to a function you should have created via seed.sql
+    // Use an explicit RPC call to a dedicated SQL function for robust data fetching.
+    // This avoids schema detection errors with complex joins.
     const { data, error } = await this.supabase
-      .rpc('get_user_profile', { user_id: currentUserId });
-
+      .rpc('get_user_profile', { user_id_param: currentUserId });
 
     if (error) {
       console.error('Error fetching user profile via RPC:', error.message);
@@ -61,7 +60,8 @@ class ApiClient {
       return null;
     }
     
-    return data as UserProfileData || null;
+    // The RPC function returns a single object or null if not found.
+    return data || null;
   }
   
   async logout(): Promise<void> {
@@ -70,4 +70,3 @@ class ApiClient {
 }
 
 export const apiClient = new ApiClient();
-export const supabase = apiClient.supabase; // Export for direct use if needed
