@@ -1,8 +1,9 @@
+
 'use client';
 
 import type { UserProfileData } from "@/types";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const API_BASE_URL = ''; // Use relative paths for API routes within the same app
 
 type ApiOptions = {
     headers?: Record<string, string>;
@@ -59,7 +60,9 @@ class ApiClient {
 
             const contentType = response.headers.get('content-type');
             if (contentType && contentType.includes('application/json')) {
-                return await response.json();
+                const jsonResponse = await response.json();
+                // Check for a nested 'data' property which is common in my API routes
+                return jsonResponse.data || jsonResponse;
             }
             
             return {} as T;
