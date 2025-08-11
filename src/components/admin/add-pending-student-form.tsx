@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useRef, ChangeEvent } from 'react';
@@ -8,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useFaculties, useDepartments } from '@/hooks/useApiData';
-import { apiClient } from '@/lib/supabase-api-client';
+import { AdminService } from '@/lib/services';
 import { Loader2, Upload, FileText, X } from 'lucide-react';
 import Papa from 'papaparse';
 import type { Faculty, Department } from '@/types';
@@ -53,7 +54,7 @@ export function AddPendingStudentForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isBulkUploading, setIsBulkUploading] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
-  const [csvPreview, setCsvPreview] = useState<CSVStudent[] | null>(null);
+  const [csvData, setCsvData] = useState<CSVStudent[]>([]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,18 +71,21 @@ export function AddPendingStudentForm() {
     setIsSubmitting(true);
 
     try {
-      await apiClient.request('api/students/pending', {
-        method: 'POST',
-        body: {
-          student_id_number: formData.student_id_number,
-          email: formData.email,
-          first_name: formData.first_name,
-          last_name: formData.last_name,
-          faculty_id: formData.faculty_id,
-          department_id: formData.department_id,
-          program_of_study: formData.program_of_study || null,
-        },
+      const result = await AdminService.createStudent({
+        user_id: '', // This will be set on the backend after user creation
+        student_id_number: formData.student_id_number,
+        email: formData.email,
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        faculty_id: formData.faculty_id,
+        department_id: formData.department_id,
+        program_of_study: formData.program_of_study || null,
+        status: 'PENDING',
+        is_verified: false,
+        profile_complete: false,
       });
+
+      if (!result.success) throw new Error(result.error);
 
       toast({
         title: 'Success',
@@ -122,12 +126,13 @@ export function AddPendingStudentForm() {
   };
 
   const findFacultyIdByName = (name: string): number | null => {
-    const faculty = faculties.find(f => f.name.toLowerCase() === name.toLowerCase());
+    const faculty = faculties.find(f => f.name.trim().toLowerCase() === name.trim().toLowerCase());
     return faculty ? faculty.id : null;
   };
 
-  const findDepartmentIdByName = (name: string): number | null => {
-    const department = departments.find(d => d.name.toLowerCase() === name.toLowerCase());
+  const findDepartmentIdByName = (name: string, facultyId: number): number | null => {
+    const facultyDepartments = DEPARTMENTS.filter(d => d.faculty_id === facultyId);
+    const department = facultyDepartments.find(d => d.name.trim().toLowerCase() === name.trim().toLowerCase());
     return department ? department.id : null;
   };
 
@@ -137,12 +142,12 @@ export function AddPendingStudentForm() {
 
     setFileName(file.name);
     setIsBulkUploading(true);
-    setCsvPreview(null);
+    setCsvData([]);
 
     Papa.parse<CSVStudent>(file, {
       header: true,
       skipEmptyLines: true,
-      complete: async (results) => {
+      complete: (results) => {
         if (results.errors.length > 0) {
           toast({
             title: 'CSV Error',
@@ -152,9 +157,7 @@ export function AddPendingStudentForm() {
           setIsBulkUploading(false);
           return;
         }
-
-        // Show preview before processing
-        setCsvPreview(results.data.slice(0, 5)); // Show first 5 rows as preview
+        setCsvData(results.data);
         setIsBulkUploading(false);
       },
       error: (error) => {
@@ -169,29 +172,26 @@ export function AddPendingStudentForm() {
   };
 
   const processCSVData = async () => {
-    if (!csvPreview) return;
+    if (csvData.length === 0) return;
     
     setIsBulkUploading(true);
 
-    // Wait for faculties and departments to load if they're still loading
-    if (facultiesLoading || departmentsLoading) {
-      await new Promise(resolve => setTimeout(resolve, 500));
-    }
-
     const validatedStudents = [];
-    const errors = [];
+    const errors: string[] = [];
 
-    for (const [index, student] of csvPreview.entries()) {
+    // Assuming departments are already loaded or we can fetch them as needed.
+    // For simplicity, we use the global departments list from the hook.
+    // A more robust solution might fetch departments for each faculty as it processes.
+    for (const [index, student] of csvData.entries()) {
       const facultyId = findFacultyIdByName(student.faculty_name);
-      const departmentId = findDepartmentIdByName(student.department_name);
-
       if (!facultyId) {
-        errors.push(`Row ${index + 1}: Faculty "${student.faculty_name}" not found`);
+        errors.push(`Row ${index + 2}: Faculty "${student.faculty_name}" not found`);
         continue;
       }
 
+      const departmentId = findDepartmentIdByName(student.department_name, facultyId);
       if (!departmentId) {
-        errors.push(`Row ${index + 1}: Department "${student.department_name}" not found`);
+        errors.push(`Row ${index + 2}: Department "${student.department_name}" not found in faculty "${student.faculty_name}"`);
         continue;
       }
 
@@ -203,44 +203,41 @@ export function AddPendingStudentForm() {
         faculty_id: facultyId,
         department_id: departmentId,
         program_of_study: student.program_of_study || null,
+        status: 'PENDING' as const,
+        is_verified: false,
+        profile_complete: false,
+        user_id: '', // Will be set on backend
       });
     }
 
     if (errors.length > 0) {
       toast({
-        title: 'Validation Errors',
+        title: `Validation Errors (${errors.length})`,
         description: (
           <div className="max-h-40 overflow-y-auto">
-            {errors.map((error, i) => (
+            {errors.slice(0, 5).map((error, i) => (
               <p key={i} className="text-sm">{error}</p>
             ))}
+            {errors.length > 5 && <p className="text-sm font-bold">...and {errors.length - 5} more errors.</p>}
           </div>
         ),
         variant: 'destructive',
+        duration: 10000,
       });
       setIsBulkUploading(false);
       return;
     }
 
     try {
-      await apiClient.request('api/students/pending/bulk', {
-        method: 'POST',
-        body: {
-          students: validatedStudents,
-        },
-      });
+      const result = await AdminService.bulkCreateStudents(validatedStudents);
+      if (!result.success) throw new Error(result.error);
 
       toast({
         title: 'Success',
         description: `${validatedStudents.length} students added successfully`,
       });
 
-      // Reset file input and preview
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-      setFileName(null);
-      setCsvPreview(null);
+      removeFile(); // Reset file input and state
     } catch (error) {
       toast({
         title: 'Error',
@@ -261,7 +258,7 @@ export function AddPendingStudentForm() {
       fileInputRef.current.value = '';
     }
     setFileName(null);
-    setCsvPreview(null);
+    setCsvData([]);
   };
 
   return (
@@ -274,7 +271,7 @@ export function AddPendingStudentForm() {
       </CardHeader>
       <CardContent className="space-y-6">
         {/* CSV Upload Section */}
-        <div className="space-y-4">
+        <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
           <div className="flex items-center gap-4">
             <input
               type="file"
@@ -290,7 +287,7 @@ export function AddPendingStudentForm() {
               disabled={isBulkUploading}
             >
               <Upload className="mr-2 h-4 w-4" />
-              {isBulkUploading ? 'Uploading...' : 'Upload CSV'}
+              {isBulkUploading ? 'Parsing...' : 'Upload CSV'}
             </Button>
             {fileName && (
               <div className="flex items-center gap-2">
@@ -311,41 +308,15 @@ export function AddPendingStudentForm() {
           </div>
           <div className="text-sm text-muted-foreground">
             <p>CSV format should include these columns:</p>
-            <p className="font-mono">student_id_number,email,first_name,last_name,faculty_name,department_name,program_of_study</p>
+            <p className="font-mono text-xs">student_id_number,email,first_name,last_name,faculty_name,department_name,program_of_study</p>
             <p className="mt-2 text-yellow-600">
               Note: Faculty and department names must match exactly with the system records.
             </p>
           </div>
 
-          {csvPreview && (
+          {csvData.length > 0 && (
             <div className="space-y-2">
-              <div className="border rounded-lg overflow-hidden">
-                <div className="bg-gray-100 p-2 font-medium">CSV Preview (first 5 rows)</div>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        {Object.keys(csvPreview[0]).map((key) => (
-                          <th key={key} className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            {key}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {csvPreview.map((row, i) => (
-                        <tr key={i}>
-                          {Object.values(row).map((value, j) => (
-                            <td key={j} className="px-4 py-2 text-sm">
-                              {value || '-'}
-                            </td>
-                          ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              <p className="text-sm font-medium">{csvData.length} students detected in file. Click "Confirm Import" to proceed.</p>
               <div className="flex justify-end gap-2">
                 <Button
                   variant="outline"

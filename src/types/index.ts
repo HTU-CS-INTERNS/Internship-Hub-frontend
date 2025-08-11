@@ -9,11 +9,11 @@ export interface UserProfileData {
   first_name: string;
   last_name: string;
   phone_number?: string;
-  status: UserStatus;
+  status?: UserStatus;
   
   // Denormalized/joined data for convenience in the frontend
-  faculty_id?: string; 
-  department_id?: string;
+  faculty_id?: number; 
+  department_id?: number;
   company_name?: string; 
   
   // For display purposes, not in the `users` table directly
@@ -23,13 +23,13 @@ export interface UserProfileData {
 }
 
 export interface Faculty {
-  id: string;
+  id: number;
   name: string;
 }
 
 export interface Department {
-  id: string;
-  facultyId: string;
+  id: number;
+  faculty_id: number;
   name: string;
 }
 

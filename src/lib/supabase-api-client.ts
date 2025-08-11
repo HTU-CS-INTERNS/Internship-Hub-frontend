@@ -332,19 +332,65 @@ class SupabaseApiClient {
     return data;
   }
 
-  async createStudent(studentData: Tables['students']['Insert']): Promise<Tables['students']['Row']> {
-    const { data, error } = await supabase
+  async createStudentWithUser(studentData: Omit<Tables['students']['Insert'], 'user_id'> & { first_name: string; last_name: string; email: string; }): Promise<Tables['students']['Row']> {
+    // Create user in auth.users
+    const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+      email: studentData.email,
+      password: 'password123', // Temporary password
+      email_confirm: true,
+      user_metadata: {
+        first_name: studentData.first_name,
+        last_name: studentData.last_name,
+        role: 'STUDENT',
+      },
+    });
+
+    if (authError) throw authError;
+
+    // Create profile in public.users
+    const { error: userError } = await supabase.from('users').insert({
+      id: authUser.user.id,
+      email: studentData.email,
+      first_name: studentData.first_name,
+      last_name: studentData.last_name,
+      role: 'STUDENT',
+      student_id_number: studentData.student_id_number,
+      faculty_id: studentData.faculty_id,
+      department_id: studentData.department_id,
+      is_active: true,
+    });
+    
+    if (userError) throw userError;
+
+    // Create record in public.students
+    const { data: student, error: studentError } = await supabase
       .from('students')
-      .insert(studentData)
+      .insert({
+        ...studentData,
+        user_id: authUser.user.id,
+      })
       .select()
       .single();
 
-    if (error) {
-      throw new Error(error.message);
-    }
+    if (studentError) throw studentError;
 
-    return data;
+    return student;
   }
+  
+  async bulkCreateStudentsWithUsers(studentsData: (Omit<Tables['students']['Insert'], 'user_id'> & { first_name: string; last_name: string; email: string; })[]) {
+    const createdStudents = [];
+    for (const studentData of studentsData) {
+      try {
+        const createdStudent = await this.createStudentWithUser(studentData);
+        createdStudents.push(createdStudent);
+      } catch (error) {
+        console.error(`Failed to create student ${studentData.email}:`, error);
+        // Continue with the next student
+      }
+    }
+    return createdStudents;
+  }
+
 
   async updateStudent(id: number, studentData: Tables['students']['Update']): Promise<Tables['students']['Row']> {
     const { data, error } = await supabase
@@ -813,4 +859,3 @@ class SupabaseApiClient {
 // Create a singleton instance
 export const apiClient = new SupabaseApiClient();
 export default apiClient;
-

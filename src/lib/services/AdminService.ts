@@ -103,9 +103,18 @@ export class AdminService extends BaseService {
     }
   }
 
-  static async createStudent(studentData: Tables['students']['Insert']) {
+  static async createStudent(studentData: Omit<Tables['students']['Insert'], 'user_id'> & { first_name: string; last_name: string; email: string; }) {
     try {
-      const result = await apiClient.createStudent(studentData);
+      const result = await apiClient.createStudentWithUser(studentData);
+      return this.handleSuccess(result);
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  static async bulkCreateStudents(studentsData: (Omit<Tables['students']['Insert'], 'user_id'> & { first_name: string; last_name: string; email: string; })[]) {
+    try {
+      const result = await apiClient.bulkCreateStudentsWithUsers(studentsData);
       return this.handleSuccess(result);
     } catch (error) {
       return this.handleError(error);
