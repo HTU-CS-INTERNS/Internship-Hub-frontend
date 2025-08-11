@@ -65,30 +65,40 @@ const InternshipSubmissionForm: React.FC = () => {
     const fetchSubmission = async () => {
       try {
         setIsLoading(true);
-        const response = await studentServiceFixed.submitInternshipApplication();
-        
-        if (response.success && response.data) {
-          setSubmission(response.data as InternshipSubmission);
-          // If there's an existing submission, populate the form
-          const submission = response.data as InternshipSubmission;
+        const response = await StudentService.getDashboardData();
+        if (response.success && response.data && response.data.internship) {
+          const internship = response.data.internship;
+          // Map API response to InternshipSubmission interface
+          const mappedSubmission: InternshipSubmission = {
+            id: internship.id?.toString() || '',
+            company_name: internship.company || '',
+            company_address: internship.company_address || '',
+            supervisor_name: internship.supervisor || '',
+            supervisor_email: internship.supervisor_email || '',
+            start_date: internship.start_date ? internship.start_date.split('T')[0] : '',
+            end_date: internship.end_date ? internship.end_date.split('T')[0] : '',
+            location: internship.location || '',
+            status: internship.status || 'PENDING',
+            submitted_at: internship.submitted_at || '',
+            reviewed_at: internship.reviewed_at || '',
+            rejection_reason: internship.rejection_reason || ''
+          };
+          setSubmission(mappedSubmission);
           setFormData({
-            company_name: submission.company_name || '',
-            company_address: submission.company_address || '',
-            supervisor_name: submission.supervisor_name || '',
-            supervisor_email: submission.supervisor_email || '',
-            start_date: submission.start_date ? submission.start_date.split('T')[0] : '',
-            end_date: submission.end_date ? submission.end_date.split('T')[0] : '',
-            location: submission.location || ''
+            company_name: mappedSubmission.company_name,
+            company_address: mappedSubmission.company_address,
+            supervisor_name: mappedSubmission.supervisor_name,
+            supervisor_email: mappedSubmission.supervisor_email,
+            start_date: mappedSubmission.start_date,
+            end_date: mappedSubmission.end_date,
+            location: mappedSubmission.location
           });
-          // Only allow editing if rejected or no submission exists
-          setIsEditing(submission.status === 'REJECTED' || !submission.status);
+          setIsEditing(mappedSubmission.status === 'REJECTED' || !mappedSubmission.status);
         } else {
-          // No existing submission, enable editing
           setIsEditing(true);
         }
       } catch (error) {
         console.error('Failed to fetch internship submission:', error);
-        // If no submission exists, enable editing
         setIsEditing(true);
       } finally {
         setIsLoading(false);
@@ -169,7 +179,7 @@ const InternshipSubmissionForm: React.FC = () => {
     setIsSubmitting(true);
     
     try {
-      const response = await StudentServiceFixed.submitInternshipApplication(formData);
+      const response = await StudentService.submitInternshipApplication(formData);
       
       if (response.success) {
         setSubmission({

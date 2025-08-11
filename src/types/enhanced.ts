@@ -3,38 +3,33 @@ import type { Database } from './database';
 type Tables = Database['public']['Tables'];
 
 // Enhanced types with joined data that matches our API responses
-export interface StudentWithRelations extends Tables['students']['Row'] {
+export type StudentWithRelations = Tables['students']['Row'] & {
   users?: Tables['users']['Row'];
   faculties?: Tables['faculties']['Row'];
   departments?: Tables['departments']['Row'];
 }
 
-export interface InternshipWithRelations extends Tables['internships']['Row'] {
+export type InternshipWithRelations = Tables['internships']['Row'] & {
   companies?: Tables['companies']['Row'];
   company_supervisors?: Tables['company_supervisors']['Row'];
   lecturers?: Tables['lecturers']['Row'];
   students?: StudentWithRelations;
 }
 
-export interface LecturerWithRelations extends Tables['lecturers']['Row'] {
+export type LecturerWithRelations = Tables['lecturers']['Row'] & {
   users?: Tables['users']['Row'];
   faculties?: Tables['faculties']['Row'];
   departments?: Tables['departments']['Row'];
 }
 
-export interface TaskWithRelations extends Tables['daily_tasks']['Row'] {
+export type TaskWithRelations = Tables['daily_tasks']['Row'] & {
   internships?: InternshipWithRelations;
   students?: StudentWithRelations;
 }
 
-export interface ReportWithRelations extends Tables['daily_reports']['Row'] {
+export type ReportWithRelations = Tables['daily_reports']['Row'] & {
   internships?: InternshipWithRelations;
   students?: StudentWithRelations;
-}
-
-export interface CheckInWithRelations extends Tables['check_ins']['Row'] {
-  students?: StudentWithRelations;
-  internships?: InternshipWithRelations;
 }
 
 // Student summary type for supervisor dashboard
