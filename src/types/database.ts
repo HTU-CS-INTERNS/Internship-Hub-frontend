@@ -371,6 +371,7 @@ export type Database = {
           faculty_id: number | null
           department_id: number | null
           program_of_study: string | null
+          status: 'PENDING' | 'ACTIVE' | 'INACTIVE'
           is_verified: boolean | null
           profile_complete: boolean | null
           created_at: string
@@ -382,6 +383,7 @@ export type Database = {
           faculty_id?: number | null
           department_id?: number | null
           program_of_study?: string | null
+          status?: 'PENDING' | 'ACTIVE' | 'INACTIVE'
           is_verified?: boolean | null
           profile_complete?: boolean | null
         }
@@ -391,6 +393,7 @@ export type Database = {
           faculty_id?: number | null
           department_id?: number | null
           program_of_study?: string | null
+          status?: 'PENDING' | 'ACTIVE' | 'INACTIVE'
           is_verified?: boolean | null
           profile_complete?: boolean | null
         }

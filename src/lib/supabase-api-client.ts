@@ -115,6 +115,32 @@ class SupabaseApiClient {
     return data;
   }
 
+  async updateUser(id: string, userData: Tables['users']['Update']): Promise<Tables['users']['Row']> {
+    const { data, error } = await supabase
+      .from('users')
+      .update(userData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    // First delete the auth user
+    const { error: authError } = await supabase.auth.admin.deleteUser(id);
+    
+    if (authError) {
+      throw new Error(authError.message);
+    }
+
+    // The users table record should be deleted automatically via cascade
+  }
+
   // Faculty methods
   async getFaculties(): Promise<Tables['faculties']['Row'][]> {
     const { data, error } = await supabase
@@ -141,6 +167,32 @@ class SupabaseApiClient {
     }
 
     return data;
+  }
+
+  async updateFaculty(id: number, facultyData: Tables['faculties']['Update']): Promise<Tables['faculties']['Row']> {
+    const { data, error } = await supabase
+      .from('faculties')
+      .update(facultyData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
+
+  async deleteFaculty(id: number): Promise<void> {
+    const { error } = await supabase
+      .from('faculties')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      throw new Error(error.message);
+    }
   }
 
   // Department methods
@@ -175,6 +227,32 @@ class SupabaseApiClient {
     }
 
     return data;
+  }
+
+  async updateDepartment(id: number, departmentData: Tables['departments']['Update']): Promise<Tables['departments']['Row']> {
+    const { data, error } = await supabase
+      .from('departments')
+      .update(departmentData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
+
+  async deleteDepartment(id: number): Promise<void> {
+    const { error } = await supabase
+      .from('departments')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      throw new Error(error.message);
+    }
   }
 
   // Company methods
@@ -490,6 +568,32 @@ class SupabaseApiClient {
     return data;
   }
 
+  async updateLecturer(id: number, lecturerData: Tables['lecturers']['Update']): Promise<Tables['lecturers']['Row']> {
+    const { data, error } = await supabase
+      .from('lecturers')
+      .update(lecturerData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
+
+  async deleteLecturer(id: number): Promise<void> {
+    const { error } = await supabase
+      .from('lecturers')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+  }
+
   // Company Supervisors methods
   async getCompanySupervisors(): Promise<Tables['company_supervisors']['Row'][]> {
     const { data, error } = await supabase
@@ -520,6 +624,32 @@ class SupabaseApiClient {
     }
 
     return data;
+  }
+
+  async updateCompanySupervisor(id: number, supervisorData: Tables['company_supervisors']['Update']): Promise<Tables['company_supervisors']['Row']> {
+    const { data, error } = await supabase
+      .from('company_supervisors')
+      .update(supervisorData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
+
+  async deleteCompanySupervisor(id: number): Promise<void> {
+    const { error } = await supabase
+      .from('company_supervisors')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      throw new Error(error.message);
+    }
   }
 
   // Issues methods

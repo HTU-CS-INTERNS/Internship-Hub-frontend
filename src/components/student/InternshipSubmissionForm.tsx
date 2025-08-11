@@ -65,7 +65,7 @@ const InternshipSubmissionForm: React.FC = () => {
     const fetchSubmission = async () => {
       try {
         setIsLoading(true);
-        const response = await StudentService.getMyInternshipApplication();
+        const response = await studentServiceFixed.submitInternshipApplication();
         
         if (response.success && response.data) {
           setSubmission(response.data as InternshipSubmission);
@@ -169,7 +169,7 @@ const InternshipSubmissionForm: React.FC = () => {
     setIsSubmitting(true);
     
     try {
-      const response = await StudentService.submitInternshipApplication(formData);
+      const response = await StudentServiceFixed.submitInternshipApplication(formData);
       
       if (response.success) {
         setSubmission({

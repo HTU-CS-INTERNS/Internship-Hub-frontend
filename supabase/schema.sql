@@ -8,6 +8,7 @@ CREATE TYPE submission_status_enum AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
 CREATE TYPE issue_status_enum AS ENUM ('OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED');
 CREATE TYPE evaluation_type_enum AS ENUM ('MID_TERM', 'FINAL');
 CREATE TYPE internship_status_enum AS ENUM ('PENDING', 'APPROVED', 'REJECTED', 'IN_PROGRESS', 'COMPLETED');
+CREATE TYPE student_status_enum AS ENUM ('PENDING', 'ACTIVE', 'INACTIVE');
 
 -- Create tables
 
@@ -112,6 +113,7 @@ CREATE TABLE public.students (
   faculty_id bigint,
   department_id bigint,
   program_of_study text,
+  status student_status_enum DEFAULT 'PENDING',
   is_verified boolean DEFAULT false,
   profile_complete boolean DEFAULT false,
   created_at timestamp with time zone DEFAULT now(),
@@ -253,6 +255,25 @@ CREATE TABLE public.change_log (
   CONSTRAINT change_log_changed_by_fkey FOREIGN KEY (changed_by) REFERENCES public.users(id)
 );
 
+-- 14. Email Notifications (for tracking sent emails)
+CREATE TABLE email_notifications (
+  id SERIAL PRIMARY KEY,
+  recipient_email VARCHAR(255) NOT NULL,
+  subject VARCHAR(500) NOT NULL,
+  html_content TEXT NOT NULL,
+  template_type VARCHAR(50) NOT NULL CHECK (template_type IN ('supervisor_verification', 'task_notification', 'report_notification', 'evaluation_request')),
+  metadata JSONB,
+  status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'sent', 'failed', 'bounced')),
+  sent_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+COMMENT ON TABLE email_notifications IS 'Email notifications sent by the system for tracking purposes.';
+COMMENT ON COLUMN email_notifications.template_type IS 'Type of email template used for categorization.';
+COMMENT ON COLUMN email_notifications.metadata IS 'Additional data related to the email (JSON format).';
+COMMENT ON COLUMN email_notifications.status IS 'Current status of the email notification.';
+
 -- Enable RLS on all tables
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.students ENABLE ROW LEVEL SECURITY;
@@ -269,6 +290,7 @@ ALTER TABLE public.issues ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.faculties ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.departments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.change_log ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.email_notifications ENABLE ROW LEVEL SECURITY;
 
 -- Create RLS policies (basic examples - adjust as needed)
 

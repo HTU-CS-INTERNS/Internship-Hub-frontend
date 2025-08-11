@@ -89,6 +89,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           try {
             const userProfile = await apiClient.getCurrentUser();
             setUser(userProfile);
+            
+            // If user is a student and their email is verified, update their status to ACTIVE
+            if (userProfile.role === 'STUDENT' && session.user.email_confirmed_at) {
+              try {
+                // Get student record
+                const students = await apiClient.getStudents();
+                const studentRecord = students?.find(s => s.user_id === userProfile.id);
+                
+                if (studentRecord && studentRecord.status === 'PENDING') {
+                  console.log('AuthContext: Updating student status to ACTIVE after email verification');
+                  await apiClient.updateStudent(studentRecord.id, { 
+                    status: 'ACTIVE',
+                    is_verified: true 
+                  });
+                }
+              } catch (error) {
+                console.error('AuthContext: Error updating student status:', error);
+              }
+            }
           } catch (error) {
             console.error('AuthContext: Error fetching user after sign in:', error);
           }
