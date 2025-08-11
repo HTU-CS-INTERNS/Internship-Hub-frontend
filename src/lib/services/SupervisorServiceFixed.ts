@@ -343,5 +343,3 @@ export class SupervisorService {
     }
   }
 }
-
-export const supervisorService = new SupervisorService();

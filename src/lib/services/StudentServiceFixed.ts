@@ -35,7 +35,7 @@ interface DailyTaskData {
   learning_objective?: string;
 }
 
-export class StudentServiceFixed {
+export class StudentService {
   /**
    * Submit internship application with auto-supervisor creation
    */
@@ -477,4 +477,4 @@ export class StudentServiceFixed {
   }
 }
 
-export const studentServiceFixed = new StudentServiceFixed();
+export const studentService = new StudentService();

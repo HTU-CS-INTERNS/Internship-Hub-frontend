@@ -9,8 +9,8 @@
 export { BaseService } from './BaseService';
 
 // Export role-specific services
-export { StudentService } from './StudentService';
-export { SupervisorService } from './SupervisorService';
+export { StudentService } from './StudentServiceFixed';
+export { SupervisorService } from './SupervisorServiceFixed';
 export { LecturerService } from './LecturerService';
 export { AdminService } from './AdminService';
 
