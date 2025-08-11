@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { useFaculties, useDepartments } from '@/hooks/useApiData';
 import { AdminService } from '@/lib/services';
-import { Loader2, Upload, FileText, X } from 'lucide-react';
+import { Loader2, Upload, FileText, X, Download } from 'lucide-react';
 import Papa from 'papaparse';
 import type { Faculty, Department } from '@/types';
 
@@ -72,7 +72,6 @@ export function AddPendingStudentForm() {
 
     try {
       const result = await AdminService.createStudent({
-        user_id: '', // This will be set on the backend after user creation
         student_id_number: formData.student_id_number,
         email: formData.email,
         first_name: formData.first_name,
@@ -81,8 +80,6 @@ export function AddPendingStudentForm() {
         department_id: formData.department_id,
         program_of_study: formData.program_of_study || null,
         status: 'PENDING',
-        is_verified: false,
-        profile_complete: false,
       });
 
       if (!result.success) throw new Error(result.error);
@@ -178,10 +175,12 @@ export function AddPendingStudentForm() {
 
     const validatedStudents = [];
     const errors: string[] = [];
+    
+    // Create a temporary, full list of departments for validation, as the hook is filtered
+    // In a real-world scenario, you might want to pre-fetch all departments if memory allows
+    const allDepartmentsResponse = await AdminService.getDepartments();
+    const allDepartments = allDepartmentsResponse.data || [];
 
-    // Assuming departments are already loaded or we can fetch them as needed.
-    // For simplicity, we use the global departments list from the hook.
-    // A more robust solution might fetch departments for each faculty as it processes.
     for (const [index, student] of csvData.entries()) {
       const facultyId = findFacultyIdByName(student.faculty_name);
       if (!facultyId) {
@@ -189,8 +188,12 @@ export function AddPendingStudentForm() {
         continue;
       }
 
-      const departmentId = findDepartmentIdByName(student.department_name, facultyId);
-      if (!departmentId) {
+      const department = allDepartments.find((d: Department) => 
+        d.name.trim().toLowerCase() === student.department_name.trim().toLowerCase() && 
+        d.faculty_id === facultyId
+      );
+
+      if (!department) {
         errors.push(`Row ${index + 2}: Department "${student.department_name}" not found in faculty "${student.faculty_name}"`);
         continue;
       }
@@ -201,12 +204,9 @@ export function AddPendingStudentForm() {
         first_name: student.first_name,
         last_name: student.last_name,
         faculty_id: facultyId,
-        department_id: departmentId,
+        department_id: department.id,
         program_of_study: student.program_of_study || null,
         status: 'PENDING' as const,
-        is_verified: false,
-        profile_complete: false,
-        user_id: '', // Will be set on backend
       });
     }
 
@@ -261,6 +261,19 @@ export function AddPendingStudentForm() {
     setCsvData([]);
   };
 
+  const downloadTemplate = () => {
+    const csvContent = "student_id_number,email,first_name,last_name,faculty_name,department_name,program_of_study\n";
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", "student_upload_template.csv");
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <Card className="max-w-4xl mx-auto">
       <CardHeader>
@@ -272,7 +285,7 @@ export function AddPendingStudentForm() {
       <CardContent className="space-y-6">
         {/* CSV Upload Section */}
         <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <input
               type="file"
               ref={fileInputRef}
@@ -288,6 +301,14 @@ export function AddPendingStudentForm() {
             >
               <Upload className="mr-2 h-4 w-4" />
               {isBulkUploading ? 'Parsing...' : 'Upload CSV'}
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={downloadTemplate}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Download Template
             </Button>
             {fileName && (
               <div className="flex items-center gap-2">
@@ -307,10 +328,9 @@ export function AddPendingStudentForm() {
             )}
           </div>
           <div className="text-sm text-muted-foreground">
-            <p>CSV format should include these columns:</p>
-            <p className="font-mono text-xs">student_id_number,email,first_name,last_name,faculty_name,department_name,program_of_study</p>
+            <p>CSV format must include these headers: `student_id_number,email,first_name,last_name,faculty_name,department_name,program_of_study`</p>
             <p className="mt-2 text-yellow-600">
-              Note: Faculty and department names must match exactly with the system records.
+              Note: `faculty_name` and `department_name` must match exactly with the system records.
             </p>
           </div>
 

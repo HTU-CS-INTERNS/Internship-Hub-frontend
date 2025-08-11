@@ -1,3 +1,4 @@
+
 export type Json =
   | string
   | number
@@ -678,41 +679,50 @@ export type Database = {
         Row: {
           created_at: string
           department_id: number | null
+          email: string
           faculty_id: number | null
+          first_name: string
           id: number
           is_verified: boolean | null
+          last_name: string
           profile_complete: boolean | null
           program_of_study: string | null
           status: Database["public"]["Enums"]["student_status_enum"] | null
           student_id_number: string | null
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
           department_id?: number | null
+          email: string
           faculty_id?: number | null
+          first_name: string
           id?: number
           is_verified?: boolean | null
+          last_name: string
           profile_complete?: boolean | null
           program_of_study?: string | null
           status?: Database["public"]["Enums"]["student_status_enum"] | null
           student_id_number?: string | null
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
           department_id?: number | null
+          email?: string
           faculty_id?: number | null
+          first_name?: string
           id?: number
           is_verified?: boolean | null
+          last_name?: string
           profile_complete?: boolean | null
           program_of_study?: string | null
           status?: Database["public"]["Enums"]["student_status_enum"] | null
           student_id_number?: string | null
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
