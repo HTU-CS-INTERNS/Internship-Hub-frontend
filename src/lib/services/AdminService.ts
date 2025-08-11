@@ -33,7 +33,7 @@ export class AdminService extends BaseService {
   static async createUser(userData: {
     email: string;
     password: string;
-    role: 'ADMIN' | 'STUDENT' | 'LECTURER' | 'COMPANY_SUPERVISOR';
+    role: 'ADMIN' | 'STUDENT' | 'LECTURER' | 'SUPERVISOR';
     first_name: string;
     last_name: string;
   }) {
@@ -45,13 +45,7 @@ export class AdminService extends BaseService {
     }
   }
 
-  static async updateUser(id: string, userData: {
-    first_name?: string;
-    last_name?: string;
-    email?: string;
-    role?: 'ADMIN' | 'STUDENT' | 'LECTURER' | 'SUPERVISOR';
-    is_active?: boolean;
-  }) {
+  static async updateUser(id: string, userData: Tables['users']['Update']) {
     try {
       const result = await apiClient.updateUser(id, userData);
       return this.handleSuccess(result);
@@ -125,33 +119,11 @@ export class AdminService extends BaseService {
       return this.handleError(error);
     }
   }
-
-  static async approveStudent(id: number) {
-    try {
-      const result = await apiClient.updateStudent(id, { is_verified: true });
-      return this.handleSuccess(result);
-    } catch (error) {
-      return this.handleError(error);
-    }
-  }
-
-  static async rejectStudent(id: number, rejectionReason?: string) {
-    try {
-      const result = await apiClient.updateStudent(id, { 
-        is_verified: false,
-        status: 'INACTIVE'
-        // Note: rejection_reason field doesn't exist in schema
-      });
-      return this.handleSuccess(result);
-    } catch (error) {
-      return this.handleError(error);
-    }
-  }
-
+  
   static async getPendingStudents() {
     try {
       const students = await apiClient.getStudents();
-      const pendingStudents = students?.filter(s => s.status === 'PENDING') || [];
+      const pendingStudents = students?.filter((s: any) => s.status === 'PENDING') || [];
       return this.handleSuccess(pendingStudents);
     } catch (error) {
       return this.handleError(error);
@@ -161,7 +133,7 @@ export class AdminService extends BaseService {
   static async getActiveStudents() {
     try {
       const students = await apiClient.getStudents();
-      const activeStudents = students?.filter(s => s.status === 'ACTIVE') || [];
+      const activeStudents = students?.filter((s: any) => s.status === 'ACTIVE') || [];
       return this.handleSuccess(activeStudents);
     } catch (error) {
       return this.handleError(error);
@@ -253,7 +225,7 @@ export class AdminService extends BaseService {
 
   static async updateInternshipStatus(internshipId: number, status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'IN_PROGRESS' | 'COMPLETED', notes?: string) {
     try {
-      const updateData = {
+      const updateData: any = {
         status,
         admin_notes: notes
       };
@@ -270,7 +242,6 @@ export class AdminService extends BaseService {
       const updateData: any = {
         status: 'APPROVED' as const,
         admin_notes: notes
-        // approved_at doesn't exist in schema
       };
 
       if (lat && lng) {
@@ -290,7 +261,6 @@ export class AdminService extends BaseService {
       const updateData = {
         status: 'REJECTED' as const,
         admin_notes: reason
-        // rejection_reason doesn't exist in schema
       };
 
       const result = await apiClient.updateInternship(internshipId, updateData);
@@ -385,8 +355,6 @@ export class AdminService extends BaseService {
       return this.handleError(error);
     }
   }
-  
-  // getDepartments method is inherited from BaseService
 
   static async createDepartment(departmentData: Tables['departments']['Insert']) {
     try {
@@ -415,83 +383,6 @@ export class AdminService extends BaseService {
     }
   }
 
-  // ==================== LECTURER MANAGEMENT ====================
-
-  static async getLecturers() {
-    try {
-      const lecturers = await apiClient.getLecturers();
-      return this.handleSuccess(lecturers || []);
-    } catch (error) {
-      return this.handleError(error);
-    }
-  }
-
-  static async createLecturer(lecturerData: Tables['lecturers']['Insert']) {
-    try {
-      const result = await apiClient.createLecturer(lecturerData);
-      return this.handleSuccess(result);
-    } catch (error) {
-      return this.handleError(error);
-    }
-  }
-
-  static async updateLecturer(id: number, lecturerData: Tables['lecturers']['Update']) {
-    try {
-      const result = await apiClient.updateLecturer(id, lecturerData);
-      return this.handleSuccess(result);
-    } catch (error) {
-      return this.handleError(error);
-    }
-  }
-
-  static async deleteLecturer(id: number) {
-    try {
-      await apiClient.deleteLecturer(id);
-      return this.handleSuccess(null);
-    } catch (error) {
-      return this.handleError(error);
-    }
-  }
-
-  // ==================== COMPANY SUPERVISOR MANAGEMENT ====================
-
-  static async getCompanySupervisors() {
-    try {
-      const supervisors = await apiClient.getCompanySupervisors();
-      return this.handleSuccess(supervisors || []);
-    } catch (error) {
-      return this.handleError(error);
-    }
-  }
-
-  static async createCompanySupervisor(supervisorData: Tables['company_supervisors']['Insert']) {
-    try {
-      const result = await apiClient.createCompanySupervisor(supervisorData);
-      return this.handleSuccess(result);
-    } catch (error) {
-      return this.handleError(error);
-    }
-  }
-
-  static async updateCompanySupervisor(id: number, supervisorData: Tables['company_supervisors']['Update']) {
-    try {
-      const result = await apiClient.updateCompanySupervisor(id, supervisorData);
-      return this.handleSuccess(result);
-    } catch (error) {
-      return this.handleError(error);
-    }
-  }
-
-  static async deleteCompanySupervisor(id: number) {
-    try {
-      await apiClient.deleteCompanySupervisor(id);
-      return this.handleSuccess(null);
-    } catch (error) {
-      return this.handleError(error);
-    }
-  }
-
-  // ==================== SYSTEM ANALYTICS & REPORTING ====================
   // ==================== SYSTEM ANALYTICS & REPORTING ====================
 
   static async getSystemAnalytics() {
@@ -522,241 +413,14 @@ export class AdminService extends BaseService {
           rejected: internships?.filter((i: any) => i.status === 'REJECTED').length || 0
         },
         userVerificationStatus: {
-          studentsAwaitingApproval: students?.filter(s => s.status === 'PENDING').length || 0,
-          activeStudents: students?.filter(s => s.status === 'ACTIVE').length || 0,
-          inactiveStudents: students?.filter(s => s.status === 'INACTIVE').length || 0,
-          lecturersAwaitingApproval: lecturers?.length || 0, // Lecturers don't have verification_status in schema
-          supervisorsAwaitingApproval: supervisors?.length || 0 // Supervisors don't have verification_status in schema
+          studentsAwaitingApproval: students?.filter(s => (s as any).status === 'PENDING').length || 0,
+          activeStudents: students?.filter(s => (s as any).status === 'ACTIVE').length || 0,
+          inactiveStudents: students?.filter(s => (s as any).status === 'INACTIVE').length || 0,
         },
         evaluationsCount: evaluations?.length || 0,
-        recentActivity: this.generateRecentActivity(internships, students, lecturers)
       };
 
       return this.handleSuccess(analytics);
-    } catch (error) {
-      return this.handleError(error);
-    }
-  }
-
-  static async getDashboardStats() {
-    try {
-      const [
-        students,
-        lecturers,
-        internships,
-        companies,
-        faculties,
-        departments,
-        supervisors
-      ] = await Promise.all([
-        apiClient.getStudents(),
-        apiClient.getLecturers(),
-        apiClient.getInternships(),
-        apiClient.getCompanies(),
-        apiClient.getFaculties(),
-        apiClient.getDepartments(),
-        apiClient.getCompanySupervisors()
-      ]);
-
-      const activeInternships = internships?.filter(i => 
-        i.status === 'IN_PROGRESS' || i.status === 'APPROVED'
-      ) || [];
-
-      const pendingInternships = internships?.filter(i => 
-        i.status === 'PENDING'
-      ) || [];
-
-      const completedInternships = internships?.filter(i => 
-        i.status === 'COMPLETED'
-      ) || [];
-
-      const stats = {
-        totalStudents: students?.length || 0,
-        totalLecturers: lecturers?.length || 0,
-        totalInternships: internships?.length || 0,
-        totalCompanies: companies?.length || 0,
-        totalSupervisors: supervisors?.length || 0,
-        activeInternships: activeInternships.length,
-        totalFaculties: faculties?.length || 0,
-        totalDepartments: departments?.length || 0,
-        
-        // Chart data for dashboard
-        chartData: {
-          internshipsByStatus: [
-            { status: 'Pending', count: pendingInternships.length },
-            { status: 'Active', count: activeInternships.length },
-            { status: 'Completed', count: completedInternships.length }
-          ],
-          studentsByFaculty: faculties?.map(faculty => ({
-            faculty: faculty.name,
-            count: students?.filter(student => 
-              student.faculty_id === faculty.id
-            ).length || 0
-          })) || []
-        }
-      };
-
-      return this.handleSuccess(stats);
-    } catch (error) {
-      return this.handleError(error);
-    }
-  }
-
-  // ==================== SYSTEM HEALTH & MONITORING ====================
-
-  static async getSystemHealth() {
-    try {
-      const health = {
-        status: 'healthy',
-        timestamp: new Date().toISOString(),
-        services: {
-          database: 'connected',
-          api: 'operational',
-          storage: 'available'
-        },
-        metrics: {
-          uptime: '99.9%',
-          responseTime: '120ms',
-          activeUsers: await this.getActiveUsersCount()
-        }
-      };
-      return this.handleSuccess(health);
-    } catch (error) {
-      return this.handleError(error);
-    }
-  }
-
-  // Note: getSystemLogs, getSystemSettings, updateSystemSettings methods not available in apiClient
-
-  // ==================== HELPER METHODS ====================
-
-  private static async getActiveUsersCount(): Promise<number> {
-    try {
-      const users = await apiClient.getUsers();
-      return users?.filter(u => u.is_active).length || 0;
-    } catch (error) {
-      return 0;
-    }
-  }
-
-  private static generateRecentActivity(internships: any[], students: any[], lecturers: any[]): any[] {
-    const activities: any[] = [];
-    
-    // Recent internship applications
-    const recentInternships = internships?.slice(0, 3) || [];
-    recentInternships.forEach(internship => {
-      activities.push({
-        id: `internship-${internship.id}`,
-        type: 'internship_submitted',
-        message: `New internship application submitted`,
-        timestamp: internship.created_at,
-        details: {
-          internshipId: internship.id,
-          studentId: internship.student_id
-        }
-      });
-    });
-
-    // Recent user registrations
-    const recentStudents = students?.slice(0, 2) || [];
-    recentStudents.forEach(student => {
-      activities.push({
-        id: `student-${student.id}`,
-        type: 'student_registered',
-        message: `New student registered`,
-        timestamp: student.created_at,
-        details: {
-          studentId: student.id,
-          name: `${student.first_name} ${student.last_name}`
-        }
-      });
-    });
-
-    return activities
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-      .slice(0, 5);
-  }
-
-  // ==================== BATCH OPERATIONS ====================
-
-  static async bulkApproveStudents(studentIds: number[]) {
-    try {
-      const results = await Promise.all(
-        studentIds.map(id => this.activateStudent(id))
-      );
-      const successCount = results.filter(r => r.success).length;
-      return this.handleSuccess({ successCount, message: `${successCount} students activated successfully` });
-    } catch (error) {
-      return this.handleError(error);
-    }
-  }
-
-  static async bulkRejectStudents(studentIds: number[], reason: string) {
-    try {
-      const results = await Promise.all(
-        studentIds.map(id => this.deactivateStudent(id))
-      );
-      const successCount = results.filter(r => r.success).length;
-      return this.handleSuccess({ successCount, message: `${successCount} students deactivated` });
-    } catch (error) {
-      return this.handleError(error);
-    }
-  }
-
-  static async bulkUpdateStudentStatus(studentIds: number[], status: 'PENDING' | 'ACTIVE' | 'INACTIVE') {
-    try {
-      const results = await Promise.all(
-        studentIds.map(id => this.updateStudentStatus(id, status))
-      );
-      const successCount = results.filter(r => r.success).length;
-      return this.handleSuccess({ successCount, message: `${successCount} students updated to ${status.toLowerCase()} status` });
-    } catch (error) {
-      return this.handleError(error);
-    }
-  }
-
-  static async bulkApproveInternships(internshipIds: number[]) {
-    try {
-      const results = await Promise.all(
-        internshipIds.map(id => this.approveInternship(id))
-      );
-      const successCount = results.filter(r => r.success).length;
-      return this.handleSuccess({ successCount, message: `${successCount} internships approved successfully` });
-    } catch (error) {
-      return this.handleError(error);
-    }
-  }
-
-  // ==================== EXPORT/IMPORT ====================
-
-  static async exportData(dataType: 'students' | 'internships' | 'companies' | 'all') {
-    try {
-      let data: any = {};
-      
-      switch (dataType) {
-        case 'students':
-          data.students = await apiClient.getStudents();
-          break;
-        case 'internships':
-          data.internships = await apiClient.getInternships();
-          break;
-        case 'companies':
-          data.companies = await apiClient.getCompanies();
-          break;
-        case 'all':
-          const [students, internships, companies, lecturers, faculties, departments] = await Promise.all([
-            apiClient.getStudents(),
-            apiClient.getInternships(),
-            apiClient.getCompanies(),
-            apiClient.getLecturers(),
-            apiClient.getFaculties(),
-            apiClient.getDepartments()
-          ]);
-          data = { students, internships, companies, lecturers, faculties, departments };
-          break;
-      }
-
-      return this.handleSuccess(data);
     } catch (error) {
       return this.handleError(error);
     }

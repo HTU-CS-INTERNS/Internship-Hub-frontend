@@ -6,6 +6,7 @@
 import { supabase } from '@/lib/supabase';
 import { emailService } from '@/lib/services/EmailService';
 import type { Database } from '@/types/database';
+import { apiClient } from '../supabase-api-client';
 
 type Tables = Database['public']['Tables'];
 
@@ -39,7 +40,7 @@ export class StudentService {
   /**
    * Submit internship application with auto-supervisor creation
    */
-  async submitInternshipApplication(applicationData: InternshipApplicationData): Promise<{ success: boolean; error?: string }> {
+  static async submitInternshipApplication(applicationData: InternshipApplicationData): Promise<{ success: boolean; error?: string }> {
     try {
       // Get current authenticated user
       const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -148,7 +149,7 @@ export class StudentService {
           company_supervisor_id: companySupervisor.id,
           start_date: applicationData.start_date,
           end_date: applicationData.end_date,
-          status: 'PENDING'
+          status: 'APPROVED'
         })
         .select()
         .single();
@@ -181,7 +182,7 @@ export class StudentService {
   /**
    * Submit daily report
    */
-  async submitDailyReport(reportData: DailyReportData): Promise<{ success: boolean; error?: string }> {
+  static async submitDailyReport(reportData: DailyReportData): Promise<{ success: boolean; error?: string }> {
     try {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) {
@@ -243,7 +244,7 @@ export class StudentService {
   /**
    * Submit daily task
    */
-  async submitDailyTask(taskData: DailyTaskData): Promise<{ success: boolean; error?: string }> {
+  static async submitDailyTask(taskData: DailyTaskData): Promise<{ success: boolean; error?: string }> {
     try {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) {
@@ -300,181 +301,39 @@ export class StudentService {
     }
   }
 
-  /**
-   * Get student dashboard data
-   */
-  async getDashboardData(): Promise<{ success: boolean; data?: any; error?: string }> {
-    try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user) {
-        return { success: false, error: 'User not authenticated' };
-      }
-
-      // Get student with internship data
-      const { data: student } = await supabase
-        .from('students')
-        .select(`
-          *,
-          users(first_name, last_name, email)
-        `)
-        .eq('user_id', user.id)
-        .single();
-
-      if (!student) {
-        return { success: false, error: 'Student record not found' };
-      }
-
-      // Get internship data
-      const { data: internship } = await supabase
-        .from('internships')
-        .select(`
-          *,
-          companies(name, address),
-          company_supervisors(
-            users(first_name, last_name, email)
-          )
-        `)
-        .eq('student_id', user.id)
-        .single();
-
-      // Get tasks count
-      const { data: tasks } = await supabase
-        .from('daily_tasks')
-        .select('id, status')
-        .eq('student_id', student.id);
-
-      // Get reports count
-      const { data: reports } = await supabase
-        .from('daily_reports')
-        .select('id, status')
-        .eq('student_id', student.id);
-
-      const userData = (student as any).users;
-      const companyData = internship ? (internship as any).companies : null;
-      const supervisorData = internship ? (internship as any).company_supervisors : null;
-      const supervisorUser = supervisorData ? (supervisorData as any).users : null;
-
-      return {
-        success: true,
-        data: {
-          student: {
-            name: `${userData?.first_name || ''} ${userData?.last_name || ''}`.trim(),
-            email: userData?.email,
-            status: student.status,
-            program: student.program_of_study
-          },
-          internship: internship ? {
-            id: internship.id,
-            company: companyData?.name || 'Unknown Company',
-            supervisor: supervisorUser ? 
-              `${supervisorUser.first_name || ''} ${supervisorUser.last_name || ''}`.trim() : 
-              'Not Assigned',
-            start_date: internship.start_date,
-            end_date: internship.end_date,
-            status: internship.status
-          } : null,
-          stats: {
-            total_tasks: tasks?.length || 0,
-            pending_tasks: tasks?.filter(t => t.status === 'PENDING').length || 0,
-            approved_tasks: tasks?.filter(t => t.status === 'APPROVED').length || 0,
-            total_reports: reports?.length || 0,
-            pending_reports: reports?.filter(r => r.status === 'PENDING').length || 0,
-            approved_reports: reports?.filter(r => r.status === 'APPROVED').length || 0
-          }
-        }
-      };
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to fetch dashboard data' 
-      };
-    }
+  static async getDashboardData() {
+    return apiClient.getStudentDashboardData();
   }
 
-  /**
-   * Get student's tasks
-   */
-  async getMyTasks(): Promise<{ success: boolean; data?: any[]; error?: string }> {
-    try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user) {
-        return { success: false, error: 'User not authenticated' };
-      }
-
-      // Get student ID
-      const { data: student } = await supabase
-        .from('students')
-        .select('id')
-        .eq('user_id', user.id)
-        .single();
-
-      if (!student) {
-        return { success: false, error: 'Student record not found' };
-      }
-
-      // Get tasks
-      const { data: tasks, error: tasksError } = await supabase
-        .from('daily_tasks')
-        .select('*')
-        .eq('student_id', student.id)
-        .order('task_date', { ascending: false });
-
-      if (tasksError) {
-        return { success: false, error: 'Failed to fetch tasks' };
-      }
-
-      return { success: true, data: tasks || [] };
-    } catch (error) {
-      console.error('Error fetching tasks:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to fetch tasks' 
-      };
-    }
+  static async getReports() {
+    return apiClient.getMyReports();
   }
 
-  /**
-   * Get student's reports
-   */
-  async getMyReports(): Promise<{ success: boolean; data?: any[]; error?: string }> {
-    try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user) {
-        return { success: false, error: 'User not authenticated' };
-      }
+  static async getTasks() {
+    return apiClient.getMyTasks();
+  }
 
-      // Get student ID
-      const { data: student } = await supabase
-        .from('students')
-        .select('id')
-        .eq('user_id', user.id)
-        .single();
+  static async getStudentProfile() {
+    return apiClient.getMyProfile();
+  }
 
-      if (!student) {
-        return { success: false, error: 'Student record not found' };
-      }
+  static async getCompanyInfo() {
+    return apiClient.getMyCompanyInfo();
+  }
 
-      // Get reports
-      const { data: reports, error: reportsError } = await supabase
-        .from('daily_reports')
-        .select('*')
-        .eq('student_id', student.id)
-        .order('report_date', { ascending: false });
+  static async getAttendanceRecords(startDate: string, endDate: string) {
+    return apiClient.getAttendanceRecords(startDate, endDate);
+  }
 
-      if (reportsError) {
-        return { success: false, error: 'Failed to fetch reports' };
-      }
+  static async getSkills() {
+    return apiClient.getMySkills();
+  }
 
-      return { success: true, data: reports || [] };
-    } catch (error) {
-      console.error('Error fetching reports:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to fetch reports' 
-      };
-    }
+  static async getMilestones() {
+    return apiClient.getMyMilestones();
+  }
+
+  static async getActivityData(period: 'week' | 'month' | 'all') {
+    return apiClient.getMyActivityData(period);
   }
 }
-
-export const studentService = new StudentService();

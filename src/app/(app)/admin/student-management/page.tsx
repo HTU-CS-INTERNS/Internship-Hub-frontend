@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AddPendingStudentForm } from '@/components/admin/add-pending-student-form';
-import { apiClient } from '@/lib/api-client';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
@@ -57,14 +56,11 @@ function PendingStudentsList() {
     try {
       setLoading(true);
       setError(null);
-      // Try AdminApiService first, fallback to direct API call
-      try {
-        const data = await AdminApiService.getPendingStudents();
-        setPendingStudents(Array.isArray(data) ? data : []);
-      } catch (adminApiError) {
-        console.log('AdminApiService failed, trying direct API call...');
-        const data = await apiClient.request<PendingStudent[]>('api/students/pending');
-        setPendingStudents(data);
+      const response = await AdminService.getPendingStudents();
+      if (response.success && response.data) {
+        setPendingStudents(Array.isArray(response.data) ? response.data as any : []);
+      } else {
+        throw new Error(response.error || 'Failed to fetch pending students');
       }
     } catch (error) {
       console.error('Failed to fetch pending students:', error);
@@ -111,32 +107,24 @@ function PendingStudentsList() {
                   <TableHead>Student ID</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Faculty</TableHead>
-                  <TableHead>Department</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Added By</TableHead>
                   <TableHead>Date Added</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {pendingStudents.map((student) => (
+                {pendingStudents.map((student: any) => (
                   <TableRow key={student.id}>
                     <TableCell className="font-medium">
                       {student.student_id_number}
                     </TableCell>
                     <TableCell>
-                      {student.first_name} {student.last_name}
+                      {student.users?.first_name} {student.users?.last_name}
                     </TableCell>
-                    <TableCell>{student.email}</TableCell>
-                    <TableCell>{student.faculties.name}</TableCell>
-                    <TableCell>{student.departments.name}</TableCell>
+                    <TableCell>{student.users?.email}</TableCell>
                     <TableCell>
                       <Badge variant={student.is_verified ? 'default' : 'secondary'}>
                         {student.is_verified ? 'Verified' : 'Pending'}
                       </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {student.admin.first_name} {student.admin.last_name}
                     </TableCell>
                     <TableCell>
                       {new Date(student.created_at).toLocaleDateString()}
