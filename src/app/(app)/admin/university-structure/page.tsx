@@ -1,4 +1,3 @@
-
 'use client';
 import * as React from 'react';
 import PageHeader from '@/components/shared/page-header';
@@ -12,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { FACULTIES, DEPARTMENTS } from '@/lib/constants';
 import type { Faculty as AppFaculty, Department as AppDepartment } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-import { AdminApiService } from '@/lib/services/adminApi';
+import { AdminService } from '@/lib/services';
 import EmptyState from '@/components/shared/empty-state';
 
 interface EditableFaculty extends AppFaculty { isEditing?: boolean; newName?: string; }
@@ -44,8 +43,8 @@ export default function UniversityStructurePage() {
       setError(null);
       try {
         const [facultiesData, departmentsData] = await Promise.all([
-          AdminApiService.getFaculties(),
-          AdminApiService.getDepartments()
+          AdminService.getFaculties(),
+          AdminService.getDepartments()
         ]);
         
         const facultiesArray = Array.isArray(facultiesData) ? facultiesData : [];
@@ -78,14 +77,14 @@ export default function UniversityStructurePage() {
     }
     
     try {
-      const newFaculty = await AdminApiService.createFaculty({
-        id: newFacultyId,
+      const response = await AdminService.createFaculty({
+        faculty_code: newFacultyId,
         name: newFacultyName
       });
       
       // Handle the response - either use the returned data or create a new object
-      const facultyToAdd: EditableFaculty = newFaculty && typeof newFaculty === 'object' 
-        ? { ...(newFaculty as AppFaculty), isEditing: false, newName: (newFaculty as AppFaculty).name }
+      const facultyToAdd: EditableFaculty = response && response.success && response.data 
+        ? { ...(response.data as AppFaculty), isEditing: false, newName: (response.data as AppFaculty).name }
         : { id: newFacultyId, name: newFacultyName, isEditing: false, newName: newFacultyName };
       
       setFaculties(prev => [...prev, facultyToAdd]);
@@ -110,15 +109,15 @@ export default function UniversityStructurePage() {
     }
     
     try {
-      const newDepartment = await AdminApiService.createDepartment({
-        id: newDepartmentId,
+      const newDepartment = await AdminService.createDepartment({
+        department_code: newDepartmentId,
         name: newDepartmentName,
-        facultyId: selectedFacultyForNewDept
+        faculty_id: parseInt(selectedFacultyForNewDept)
       });
       
       // Handle the response - either use the returned data or create a new object
-      const departmentToAdd: EditableDepartment = newDepartment && typeof newDepartment === 'object'
-        ? { ...(newDepartment as AppDepartment), isEditing: false, newName: (newDepartment as AppDepartment).name, newFacultyId: (newDepartment as AppDepartment).facultyId }
+      const departmentToAdd: EditableDepartment = newDepartment && newDepartment.success && newDepartment.data 
+        ? { ...(newDepartment.data as AppDepartment), isEditing: false, newName: (newDepartment.data as AppDepartment).name, newFacultyId: (newDepartment.data as AppDepartment).facultyId }
         : { id: newDepartmentId, name: newDepartmentName, facultyId: selectedFacultyForNewDept, isEditing: false, newName: newDepartmentName, newFacultyId: selectedFacultyForNewDept };
       
       setDepartments(prev => [...prev, departmentToAdd]);

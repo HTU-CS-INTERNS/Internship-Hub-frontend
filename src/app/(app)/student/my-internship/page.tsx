@@ -2,8 +2,8 @@
 
 import * as React from 'react';
 import dynamic from 'next/dynamic';
-import { useAuth } from '@/contexts/auth-context';
-import { StudentApiService } from '@/lib/services/studentApi';
+import { useAuth } from '@/contexts/supabase-auth-context';
+import { StudentService } from '@/lib/services';
 import { useToast } from '@/hooks/use-toast';
 import PageHeader from '@/components/shared/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -104,7 +104,7 @@ export default function MyInternshipPage() {
       }
       
       try {
-        const data = await StudentApiService.getMyInternship();
+        const data = await StudentService.getMyInternship();
         setInternship(data as InternshipDetails);
       } catch (error) {
         toast({
@@ -136,7 +136,7 @@ export default function MyInternshipPage() {
       async (position) => {
         const { latitude, longitude } = position.coords;
         try {
-          const result = await StudentApiService.checkIn(latitude, longitude) as CheckInResult;
+          const result = await StudentService.checkIn(latitude, longitude) as CheckInResult;
           if (result.is_within_geofence) {
             toast({
               title: 'Check-in Successful',

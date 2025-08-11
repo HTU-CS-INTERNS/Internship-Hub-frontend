@@ -2,10 +2,10 @@
 'use client';
 
 // This file provides compatibility with the legacy API interface
-// while delegating to the new API client that connects to the real backend.
+// while delegating to the new Supabase API client.
 
 import type { UserProfileData } from "@/types";
-import { apiClient } from './api-client';
+import { apiClient } from './supabase-api-client';
 
 type ApiOptions = {
     headers?: Record<string, string>;
@@ -13,9 +13,9 @@ type ApiOptions = {
     body?: any;
 };
 
-// Legacy API function that maps to the new API client
+// Legacy API function that maps to the new Supabase API client
 async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
-    // Map legacy endpoints to new API client methods
+    // Map legacy endpoints to new Supabase API client methods
     switch (endpoint) {
         case '/auth/login':
             if (options.body) {
@@ -33,16 +33,45 @@ async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
             break;
 
         case '/auth/me':
-            return await apiClient.request<T>('api/users/me') as T;
+            return await apiClient.getCurrentUser() as T;
 
         case '/auth/verify-student':
-            // This endpoint might need to be implemented in the backend
-            // For now, we'll return a placeholder response
-            throw new Error('Student verification endpoint needs to be implemented in backend');
+            if (options.body) {
+                const { student_id_number, email } = options.body;
+                return await apiClient.verifyStudent(student_id_number, email) as T;
+            }
+            break;
+
+        case '/faculties':
+            return await apiClient.getFaculties() as T;
+
+        case '/departments':
+            const facultyId = options.body?.faculty_id;
+            return await apiClient.getDepartments(facultyId) as T;
+
+        case '/companies':
+            return await apiClient.getCompanies() as T;
+
+        case '/students':
+            return await apiClient.getStudents() as T;
+
+        case '/internships':
+            return await apiClient.getInternships() as T;
+
+        case '/daily-reports':
+            return await apiClient.getDailyReports() as T;
+
+        case '/daily-tasks':
+            return await apiClient.getDailyTasks() as T;
+
+        case '/lecturers':
+            return await apiClient.getLecturers() as T;
+
+        case '/issues':
+            return await apiClient.getIssues() as T;
 
         default:
-            // For any other endpoint, use the direct API client request
-            return await apiClient.request<T>(endpoint, options);
+            throw new Error(`API endpoint not implemented: ${endpoint}`);
     }
 
     throw new Error(`API endpoint not implemented: ${endpoint}`);

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { apiClient } from '@/lib/api-client';
+import { apiClient } from '@/lib/supabase-api-client';
 import { Eye, EyeOff } from 'lucide-react';
 
 interface VerificationStep1Props {
@@ -109,10 +109,10 @@ function VerificationStep2({ email, onVerificationComplete }: VerificationStep2P
       return;
     }
 
-    if (password.length < 6) {
+    if (password.length < 8) {
       toast({
         title: 'Error',
-        description: 'Password must be at least 6 characters long',
+        description: 'Password must be at least 8 characters long',
         variant: 'destructive',
       });
       return;
@@ -184,7 +184,7 @@ function VerificationStep2({ email, onVerificationComplete }: VerificationStep2P
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Minimum 6 characters"
+                placeholder="Minimum 8 characters"
                 required
               />
               <Button

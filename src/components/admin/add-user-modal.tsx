@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Plus, Loader2 } from 'lucide-react';
-import { AdminApiService } from '@/lib/services/adminApi';
+import { AdminService } from '@/lib/services';
 import { toast } from 'sonner';
 
 interface AddUserModalProps {

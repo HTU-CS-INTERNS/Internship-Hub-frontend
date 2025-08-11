@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { School, Users, BarChart3, Landmark, UserCog, Building, UserCheck, TrendingUp, Briefcase, Settings, Loader2, AlertCircle } from 'lucide-react';
-import { AdminApiService } from '@/lib/services/adminApi';
+import { AdminService } from '@/lib/services';
 import EmptyState from '@/components/shared/empty-state';
 
 const AdminDashboardStatCard: React.FC<{ title: string; value: string | number; icon: React.ElementType; description?: string; actionLink?: string; actionLabel?: string; isLoading?: boolean }> = ({ title, value, icon: Icon, description, actionLink, actionLabel, isLoading }) => (
@@ -55,9 +55,9 @@ export default function AdminDashboardPage() {
       setIsLoading(true);
       setError(null);
       try {
-        const dashboardData = await AdminApiService.getDashboardStats();
-        if (dashboardData && typeof dashboardData === 'object') {
-          setUniversityStats(dashboardData as UniversityStats);
+        const dashboardResponse = await AdminService.getSystemAnalytics();
+        if (dashboardResponse.success && dashboardResponse.data) {
+          setUniversityStats(dashboardResponse.data as UniversityStats);
         } else {
           setError("Failed to load dashboard statistics. Please try again later.");
         }

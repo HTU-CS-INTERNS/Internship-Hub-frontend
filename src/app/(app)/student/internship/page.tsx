@@ -8,9 +8,9 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Building, MapPin, User, Calendar, Clock, Target, Award, FileText, Phone, Mail, AlertCircle } from 'lucide-react';
 import { useRealtimeMetrics } from '@/hooks/use-realtime-metrics';
-import { useAuth } from '@/contexts/auth-context';
+import { useAuth } from '@/contexts/supabase-auth-context';
 import { format, differenceInDays, parseISO } from 'date-fns';
-import { StudentApiService } from '@/lib/services/studentApi';
+import { StudentService } from '@/lib/services';
 import EmptyState from '@/components/shared/empty-state';
 
 interface InternshipDetails {
@@ -71,7 +71,7 @@ export default function StudentInternshipPage() {
       setError(null);
       
       try {
-        const data = await StudentApiService.getInternshipDetails();
+        const data = await StudentService.getInternshipDetails();
         setInternshipData(data);
       } catch (err) {
         console.error('Failed to fetch internship data:', err);

@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -26,7 +25,7 @@ import type { UserProfileData } from '@/types';
 import { sendOtp } from '@/ai/flows/send-otp-flow';
 import { Checkbox } from '@/components/ui/checkbox'; 
 import { Label } from '@/components/ui/label'; 
-import api from '@/lib/api';
+import { apiClient } from '@/lib/supabase-api-client';
 
 const registrationStep1Schema = z.object({
   student_id_number: z.string().min(3, { message: 'School ID must be at least 3 characters.' }).max(20, { message: 'School ID too long.'}),
@@ -65,7 +64,7 @@ export function RegistrationForm() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [step, setStep] = React.useState(1);
   const [verifiedSchoolEmail, setVerifiedSchoolEmail] = React.useState('');
-  const [userDataFromDB, setUserDataFromDB] = React.useState<{first_name: string, last_name: string, faculty_id?: number, department_id?: number} | null>(null);
+  const [userDataFromDB, setUserDataFromDB] = React.useState<{first_name: string, last_name: string, faculty_id?: number | string, department_id?: number | string} | null>(null);
   const [generatedOtpForVerification, setGeneratedOtpForVerification] = React.useState<string | null>(null);
 
   const step1Form = useForm<RegistrationStep1Values>({
@@ -86,11 +85,7 @@ export function RegistrationForm() {
   async function handleStep1Submit(values: RegistrationStep1Values) {
     setIsLoading(true);
     try {
-        const studentData = await api<{first_name: string, last_name: string, faculty_id?: number, department_id?: number}>('/auth/verify-student', {
-            method: 'POST',
-            body: values,
-        });
-
+        const studentData = await apiClient.verifyStudent(values.student_id_number, values.email);
         setUserDataFromDB(studentData);
         setVerifiedSchoolEmail(values.email);
 
@@ -140,30 +135,21 @@ export function RegistrationForm() {
   async function handleStep3Submit(values: RegistrationStep3Values) {
     setIsLoading(true);
     
-    const activationData = {
+    const signupData = {
         email: verifiedSchoolEmail,
         password: values.password,
+        role: 'STUDENT', // Default role for student registration
+        first_name: '', // This will be filled in profile completion
+        last_name: '', // This will be filled in profile completion
     };
 
     try {
-        const response = await api<{ user: UserProfileData; session: { access_token: string; } }>('/auth/signup', {
-            method: 'POST',
-            body: activationData,
-        });
-
-        const { user, session } = response;
-        
-        if (typeof window !== "undefined") {
-            localStorage.setItem('authToken', session.access_token);
-            localStorage.setItem('user', JSON.stringify(user));
-            localStorage.setItem('userRole', user.role);
-            localStorage.setItem('userName', `${user.first_name} ${user.last_name}`);
-            localStorage.setItem('userEmail', user.email);
-        }
+        const response = await apiClient.signup(signupData);
+        const { user, access_token } = response;
         
         toast({
-          title: "Account Activated!",
-          description: `Welcome, ${user.first_name}! Your InternHub account is ready. Please complete your profile.`,
+          title: "Account Created!",
+          description: `Welcome! Your InternHub account is ready. Please complete your profile.`,
           variant: "default",
         });
 
@@ -179,8 +165,8 @@ export function RegistrationForm() {
     }
   }
 
-  const facultyName = userDataFromDB?.faculty_id ? FACULTIES.find(f => f.id === userDataFromDB.faculty_id)?.name : 'N/A';
-  const departmentName = userDataFromDB?.department_id ? DEPARTMENTS.find(d => d.id === userDataFromDB.department_id)?.name : 'N/A';
+  const facultyName = userDataFromDB?.faculty_id ? FACULTIES.find(f => f.id === String(userDataFromDB.faculty_id))?.name : 'N/A';
+  const departmentName = userDataFromDB?.department_id ? DEPARTMENTS.find(d => d.id === String(userDataFromDB.department_id))?.name : 'N/A';
   
   const inputStyles = "bg-white dark:bg-gray-50 text-gray-900 dark:text-gray-900 placeholder:text-gray-500 dark:placeholder:text-gray-500 border-gray-300 dark:border-gray-400 rounded-lg focus:ring-primary focus:border-primary";
   const primaryButtonStyles = "w-full bg-primary-foreground hover:bg-primary-foreground/90 text-primary text-base py-3 rounded-lg";

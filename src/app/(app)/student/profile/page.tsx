@@ -24,8 +24,8 @@ import {
   Award,
   AlertCircle
 } from 'lucide-react';
-import { useAuth } from '@/contexts/auth-context';
-import { StudentApiService } from '@/lib/services/studentApi';
+import { useAuth } from '@/contexts/supabase-auth-context';
+import { StudentService } from '@/lib/services';
 import EmptyState from '@/components/shared/empty-state';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -72,7 +72,7 @@ export default function StudentProfilePage() {
       setError(null);
       
       try {
-        const profileData = await StudentApiService.getStudentProfile();
+        const profileData = await StudentService.getStudentProfile();
         if (profileData) {
           // Transform UserProfileData to StudentProfile
           const transformedProfile: StudentProfile = {
@@ -118,7 +118,7 @@ export default function StudentProfilePage() {
     
     setIsSaving(true);
     try {
-      await StudentApiService.updateProfile(editedProfile);
+      await StudentService.updateProfile(editedProfile);
       setProfile(editedProfile);
       setIsEditing(false);
       toast({

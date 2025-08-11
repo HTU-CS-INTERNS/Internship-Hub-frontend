@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import EmptyState from '@/components/shared/empty-state';
-import { SupervisorApiService } from '@/lib/services/supervisorApi';
+import { SupervisorService } from '@/lib/services';
 import { toast } from 'sonner';
 
 const getInitials = (name: string) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase() : 'U';
@@ -143,23 +143,43 @@ export default function SupervisorDashboardPage() {
       setIsLoading(true);
       setIsLoadingInterns(true);
       
-      const [statsData, internsData] = await Promise.all([
-        SupervisorApiService.getDashboardStats(),
-        SupervisorApiService.getMyInterns({ limit: 6 })
-      ]);
-
-      if (statsData && typeof statsData === 'object') {
+      const dashboardResponse = await SupervisorService.getDashboardData();
+      
+      if (dashboardResponse.success && dashboardResponse.data) {
+        const data = dashboardResponse.data;
         setSupervisorStats({
-          totalInterns: (statsData as any).totalInterns || 0,
-          activeInterns: (statsData as any).activeInterns || 0,
-          pendingEvaluations: (statsData as any).pendingEvaluations || 0,
-          averageRating: (statsData as any).averageRating || 0,
-          completedTasks: (statsData as any).tasksCompleted || 0,
-          overdueReports: (statsData as any).overdueReports || 0,
-          monthlyHours: (statsData as any).monthlyHours || 0,
-          pendingTasks: (statsData as any).activeTasks || 0,
-          pendingReports: (statsData as any).pendingReports || 0
+          totalInterns: data.totalInterns || 0,
+          activeInterns: data.activeInterns || 0,
+          pendingEvaluations: data.pendingEvaluations || 0,
+          averageRating: data.averageRating || 0,
+          completedTasks: data.completedTasks || 0,
+          overdueReports: data.overdueReports || 0,
+          monthlyHours: data.monthlyHours || 0,
+          pendingTasks: data.pendingTasks || 0,
+          pendingReports: data.pendingReports || 0
         });
+        
+        // Set interns data from dashboard response
+        if (data.recentInterns && Array.isArray(data.recentInterns)) {
+          setSupervisedInterns(data.recentInterns.map((intern: any) => {
+            const student = intern.students;
+            const user = student?.users;
+            const internName = user ? `${user.first_name} ${user.last_name}` : 'Unknown';
+            
+            return {
+              id: intern.id.toString(),
+              name: internName,
+              university: student?.faculties?.name || 'Unknown University',
+              department: student?.departments?.name || 'Unknown Department',
+              avatar: null, // Profile pictures not implemented
+              pendingTasks: intern.pendingTasks || 0,
+              progress: intern.progress || 0,
+              status: intern.status || 'active'
+            };
+          }));
+        } else {
+          setSupervisedInterns([]);
+        }
       } else {
         // Fallback data if API fails
         setSupervisorStats({
@@ -173,26 +193,6 @@ export default function SupervisorDashboardPage() {
           pendingTasks: 0,
           pendingReports: 0
         });
-      }
-
-      if (internsData && Array.isArray(internsData)) {
-        setSupervisedInterns(internsData.map((intern: any) => {
-          const student = intern.students;
-          const user = student?.users;
-          const internName = user ? `${user.first_name} ${user.last_name}` : 'Unknown';
-          
-          return {
-            id: intern.id.toString(),
-            name: internName,
-            university: student?.faculties?.name || 'Unknown University',
-            department: student?.departments?.name || 'Unknown Department',
-            avatar: null, // Profile pictures not implemented
-            pendingTasks: intern.pendingTasks || 0,
-            progress: intern.progress || 0,
-            status: intern.status || 'active'
-          };
-        }));
-      } else {
         setSupervisedInterns([]);
       }
     } catch (error) {

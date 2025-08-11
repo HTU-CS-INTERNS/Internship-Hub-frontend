@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { AdminApiService } from '@/lib/services/adminApi';
+import { AdminService } from '@/lib/services';
 import EmptyState from '@/components/shared/empty-state';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -61,7 +61,7 @@ export default function InternshipManagementPage() {
       setError(null);
       // Fetch pending internship submissions
       const [pendingData] = await Promise.all([
-        AdminApiService.getPendingInternships(),
+        AdminService.getAllInternships(),
       ]);
       
       const pending = (Array.isArray(pendingData) ? pendingData : []).map((p: any) => ({
@@ -109,7 +109,7 @@ export default function InternshipManagementPage() {
     if (!selectedInternship) return;
 
     try {
-      await AdminApiService.approveInternship(selectedInternship.id, lat, lng);
+      await AdminService.approveInternship(selectedInternship.id, lat, lng);
       toast({
         title: 'Internship Approved',
         description: `The internship for ${selectedInternship.studentName} has been approved.`,
@@ -137,7 +137,7 @@ export default function InternshipManagementPage() {
     }
 
     try {
-      await AdminApiService.rejectInternship(selectedInternship.id, rejectionReason);
+      await AdminService.rejectInternship(selectedInternship.id, rejectionReason);
       toast({
         title: 'Internship Rejected',
         description: `The internship for ${selectedInternship.studentName} has been rejected.`,

@@ -16,7 +16,7 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
-import { AdminApiService } from '@/lib/services/adminApi';
+import { AdminService } from '@/lib/services';
 import EmptyState from '@/components/shared/empty-state';
 import { Users, AlertCircle } from 'lucide-react';
 

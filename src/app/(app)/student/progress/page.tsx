@@ -39,8 +39,8 @@ import {
   Pie,
   Cell
 } from 'recharts';
-import { useAuth } from '@/contexts/auth-context';
-import { StudentApiService } from '@/lib/services/studentApi';
+import { useAuth } from '@/contexts/supabase-auth-context';
+import { StudentService } from '@/lib/services';
 import EmptyState from '@/components/shared/empty-state';
 
 interface SkillProgress {
@@ -100,9 +100,9 @@ export default function StudentProgressPage() {
       try {
         // Fetch all progress-related data
         const [skillsData, milestonesData, activityDataResult] = await Promise.all([
-          StudentApiService.getSkills(),
-          StudentApiService.getMilestones(),
-          StudentApiService.getActivityData(selectedPeriod)
+          StudentService.getSkills(),
+          StudentService.getMilestones(),
+          StudentService.getActivityData(selectedPeriod)
         ]);
 
         setSkills(Array.isArray(skillsData) ? skillsData : []);

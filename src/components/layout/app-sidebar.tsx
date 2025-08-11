@@ -21,7 +21,7 @@ import type { UserRole } from '@/types';
 import type { NavItem } from '@/lib/constants';
 import { LogOut, ChevronLeft, ChevronRight, GraduationCap } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useAuth } from '@/contexts/auth-context';
+import { useAuth } from '@/contexts/supabase-auth-context';
 
 const getInitials = (name: string) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase() : 'U';
 

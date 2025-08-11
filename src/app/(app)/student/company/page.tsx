@@ -1,4 +1,3 @@
-
 'use client';
 import * as React from 'react';
 import PageHeader from '@/components/shared/page-header';
@@ -8,8 +7,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useAuth } from '@/contexts/auth-context';
-import { StudentApiService } from '@/lib/services/studentApi';
+import { useAuth } from '@/contexts/supabase-auth-context';
+import { StudentService } from '@/lib/services';
 import EmptyState from '@/components/shared/empty-state';
 
 const getInitials = (name: string) => {
@@ -32,7 +31,7 @@ export default function CompanyPage() {
       setError(null);
       
       try {
-        const data = await StudentApiService.getCompanyInfo();
+        const data = await StudentService.getCompanyInfo();
         setCompanyData(data);
       } catch (err) {
         console.error('Failed to fetch company data:', err);

@@ -6,9 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CalendarDays, MapPin, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { useRealtimeMetrics } from '@/hooks/use-realtime-metrics';
-import { useAuth } from '@/contexts/auth-context';
+import { useAuth } from '@/contexts/supabase-auth-context';
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, parseISO } from 'date-fns';
-import { StudentApiService } from '@/lib/services/studentApi';
+import { StudentService } from '@/lib/services';
 import EmptyState from '@/components/shared/empty-state';
 
 interface AttendanceRecord {
@@ -48,7 +48,7 @@ export default function StudentAttendancePage() {
         const weekStart = startOfWeek(selectedWeek, { weekStartsOn: 1 });
         const weekEnd = endOfWeek(selectedWeek, { weekStartsOn: 1 });
         
-        const data = await StudentApiService.getAttendanceRecords(
+        const data = await StudentService.getAttendanceRecords(
           format(weekStart, 'yyyy-MM-dd'),
           format(weekEnd, 'yyyy-MM-dd')
         );

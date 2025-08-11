@@ -17,7 +17,7 @@ import { Bell, Mail, Settings, User, LogOut, Sun, Moon, PanelLeft, ChevronDown }
 import { USER_ROLES } from '@/lib/constants';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth } from '@/contexts/auth-context';
+import { useAuth } from '@/contexts/supabase-auth-context';
 
 const getInitials = (name: string) => {
   if (!name) return '';

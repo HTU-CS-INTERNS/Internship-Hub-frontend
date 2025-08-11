@@ -14,8 +14,8 @@ import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile'; 
 import { useToast } from '@/hooks/use-toast';
 import { format, parseISO } from 'date-fns';
-import { useAuth } from '@/contexts/auth-context';
-import { StudentApiService } from '@/lib/services/studentApi';
+import { useAuth } from '@/contexts/supabase-auth-context';
+import { StudentService } from '@/lib/services';
 import EmptyState from '@/components/shared/empty-state';
 
 const statusColors: Record<DailyReport['status'], string> = {
@@ -49,7 +49,7 @@ export default function ReportsPage() {
       setError(null);
       
       try {
-        const reportsData = await StudentApiService.getReports();
+        const reportsData = await StudentService.getReports();
         const reports = Array.isArray(reportsData) ? reportsData : [];
         setAllReports(reports);
         setFilteredReports(reports.filter(report => 

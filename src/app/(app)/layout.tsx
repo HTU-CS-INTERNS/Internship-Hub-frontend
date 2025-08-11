@@ -6,7 +6,7 @@ import AppSidebar from '@/components/layout/app-sidebar';
 import AppHeader from '@/components/layout/app-header';
 import MobileHeader from '@/components/layout/mobile-header';
 import MobileBottomNav from '@/components/layout/mobile-bottom-nav';
-import { AuthProvider, useAuth } from '@/contexts/auth-context';
+import { AuthProvider, useAuth } from '@/contexts/supabase-auth-context';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 function AppLayoutContent({ children }: { children: React.ReactNode }) {

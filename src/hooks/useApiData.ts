@@ -1,99 +1,46 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { apiClient } from '@/lib/api-client';
+import { apiClient } from '@/lib/supabase-api-client';
 import type { Faculty, Department } from '@/types';
+import { useRealtimeFaculties, useRealtimeDepartments } from './use-realtime-data';
 
 export function useFaculties() {
-  const [faculties, setFaculties] = useState<Faculty[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: faculties, loading, error } = useRealtimeFaculties();
 
-  useEffect(() => {
-    let mounted = true;
+  // Transform data to match expected Faculty type
+  const transformedFaculties = faculties.map((faculty: any) => ({
+    id: faculty.id,
+    name: faculty.name,
+    hod_id: 0, // This would need to be added to the schema if needed
+  }));
 
-    const fetchFaculties = async () => {
-      try {
-        setLoading(true);
-        const data = await apiClient.getFaculties();
-        if (mounted) {
-          // Map backend response to frontend Faculty type
-          const mappedFaculties = data.map((faculty: any) => ({
-            id: faculty.id,
-            name: faculty.name,
-            hod_id: faculty.hod_id || 0, // Provide default value if missing
-          }));
-          setFaculties(mappedFaculties);
-          setError(null);
-        }
-      } catch (err) {
-        if (mounted) {
-          console.error('Error fetching faculties:', err);
-          setError(err instanceof Error ? err.message : 'Failed to fetch faculties');
-          setFaculties([]);
-        }
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    fetchFaculties();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  return { faculties, loading, error, refetch: () => window.location.reload() };
+  return {
+    faculties: transformedFaculties,
+    loading,
+    error,
+    refetch: () => window.location.reload()
+  };
 }
 
 export function useDepartments(facultyId?: string | number) {
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const numericFacultyId = facultyId ? (typeof facultyId === 'string' ? parseInt(facultyId) : facultyId) : undefined;
+  const { data: departments, loading, error } = useRealtimeDepartments(numericFacultyId);
 
-  useEffect(() => {
-    let mounted = true;
+  // Transform data to match expected Department type
+  const transformedDepartments = departments.map((department: any) => ({
+    id: department.id,
+    name: department.name,
+    faculty_id: department.faculty_id,
+    hod_id: 0, // This would need to be added to the schema if needed
+  }));
 
-    const fetchDepartments = async () => {
-      try {
-        setLoading(true);
-        const numericFacultyId = facultyId ? (typeof facultyId === 'string' ? parseInt(facultyId) : facultyId) : undefined;
-        const data = await apiClient.getDepartments(numericFacultyId);
-        if (mounted) {
-          // Map backend response to frontend Department type
-          const mappedDepartments = data.map((department: any) => ({
-            id: department.id,
-            name: department.name,
-            faculty_id: department.faculty_id,
-            hod_id: department.hod_id || 0, // Provide default value if missing
-          }));
-          setDepartments(mappedDepartments);
-          setError(null);
-        }
-      } catch (err) {
-        if (mounted) {
-          console.error('Error fetching departments:', err);
-          setError(err instanceof Error ? err.message : 'Failed to fetch departments');
-          setDepartments([]);
-        }
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    fetchDepartments();
-
-    return () => {
-      mounted = false;
-    };
-  }, [facultyId]);
-
-  return { departments, loading, error, refetch: () => window.location.reload() };
+  return {
+    departments: transformedDepartments,
+    loading,
+    error,
+    refetch: () => window.location.reload()
+  };
 }
 
 // Compatibility function for components that still use the old constants

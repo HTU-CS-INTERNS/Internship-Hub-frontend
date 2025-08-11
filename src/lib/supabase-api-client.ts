@@ -1,0 +1,628 @@
+'use client';
+
+import { supabase } from './supabase';
+import type { Database } from '@/types/database';
+import type { UserProfileData } from '@/types';
+
+type Tables = Database['public']['Tables'];
+
+class SupabaseApiClient {
+  // Authentication methods
+  async login(credentials: { email: string; password: string }) {
+    const { data, error } = await supabase.auth.signInWithPassword(credentials);
+    
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    // Get user profile data
+    const user = await this.getCurrentUser();
+    
+    return {
+      user,
+      access_token: data.session?.access_token || '',
+    };
+  }
+
+  async signup(userData: {
+    email: string;
+    password: string;
+    role: string;
+    first_name: string;
+    last_name: string;
+  }) {
+    const { data, error } = await supabase.auth.signUp({
+      email: userData.email,
+      password: userData.password,
+      options: {
+        data: {
+          first_name: userData.first_name,
+          last_name: userData.last_name,
+          role: userData.role,
+        }
+      }
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    if (!data.user) {
+      throw new Error('User creation failed');
+    }
+
+    // Create user profile in users table
+    const { error: profileError } = await supabase
+      .from('users')
+      .insert({
+        id: data.user.id,
+        email: userData.email,
+        role: userData.role as any,
+        first_name: userData.first_name,
+        last_name: userData.last_name,
+      });
+
+    if (profileError) {
+      throw new Error(profileError.message);
+    }
+
+    const user = await this.getCurrentUser();
+    
+    return {
+      user,
+      access_token: data.session?.access_token || '',
+    };
+  }
+
+  async getCurrentUser(): Promise<UserProfileData> {
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      throw new Error('User not authenticated');
+    }
+
+    const { data: profile, error: profileError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError) {
+      throw new Error(profileError.message);
+    }
+
+    return profile as UserProfileData;
+  }
+
+  async logout(): Promise<void> {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  // Faculty methods
+  async getFaculties(): Promise<Tables['faculties']['Row'][]> {
+    const { data, error } = await supabase
+      .from('faculties')
+      .select('*')
+      .order('name');
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
+
+  async createFaculty(facultyData: Tables['faculties']['Insert']): Promise<Tables['faculties']['Row']> {
+    const { data, error } = await supabase
+      .from('faculties')
+      .insert(facultyData)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
+
+  // Department methods
+  async getDepartments(facultyId?: number): Promise<Tables['departments']['Row'][]> {
+    let query = supabase
+      .from('departments')
+      .select('*')
+      .order('name');
+
+    if (facultyId) {
+      query = query.eq('faculty_id', facultyId);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
+
+  async createDepartment(departmentData: Tables['departments']['Insert']): Promise<Tables['departments']['Row']> {
+    const { data, error } = await supabase
+      .from('departments')
+      .insert(departmentData)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
+
+  // Company methods
+  async getCompanies(): Promise<Tables['companies']['Row'][]> {
+    const { data, error } = await supabase
+      .from('companies')
+      .select('*')
+      .order('name');
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
+
+  async createCompany(companyData: Tables['companies']['Insert']): Promise<Tables['companies']['Row']> {
+    const { data, error } = await supabase
+      .from('companies')
+      .insert(companyData)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
+
+  async updateCompany(id: number, companyData: Tables['companies']['Update']): Promise<Tables['companies']['Row']> {
+    const { data, error } = await supabase
+      .from('companies')
+      .update(companyData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
+
+  async deleteCompany(id: number): Promise<void> {
+    const { error } = await supabase
+      .from('companies')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  // Student methods
+  async getStudents(): Promise<Tables['students']['Row'][]> {
+    const { data, error } = await supabase
+      .from('students')
+      .select(`
+        *,
+        users:user_id (*)
+      `)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
+
+  async createStudent(studentData: Tables['students']['Insert']): Promise<Tables['students']['Row']> {
+    const { data, error } = await supabase
+      .from('students')
+      .insert(studentData)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
+
+  async updateStudent(id: number, studentData: Tables['students']['Update']): Promise<Tables['students']['Row']> {
+    const { data, error } = await supabase
+      .from('students')
+      .update(studentData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
+
+  // Internship methods
+  async getInternships(): Promise<Tables['internships']['Row'][]> {
+    const { data, error } = await supabase
+      .from('internships')
+      .select(`
+        *,
+        companies (*),
+        company_supervisors (*),
+        lecturers (*)
+      `)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
+
+  async createInternship(internshipData: Tables['internships']['Insert']): Promise<Tables['internships']['Row']> {
+    const { data, error } = await supabase
+      .from('internships')
+      .insert(internshipData)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
+
+  async updateInternship(id: number, internshipData: Tables['internships']['Update']): Promise<Tables['internships']['Row']> {
+    const { data, error } = await supabase
+      .from('internships')
+      .update(internshipData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
+
+  // Daily Reports methods
+  async getDailyReports(internshipId?: number): Promise<Tables['daily_reports']['Row'][]> {
+    let query = supabase
+      .from('daily_reports')
+      .select('*')
+      .order('report_date', { ascending: false });
+
+    if (internshipId) {
+      query = query.eq('internship_id', internshipId);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
+
+  async createDailyReport(reportData: Tables['daily_reports']['Insert']): Promise<Tables['daily_reports']['Row']> {
+    const { data, error } = await supabase
+      .from('daily_reports')
+      .insert(reportData)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
+
+  async updateDailyReport(id: number, reportData: Tables['daily_reports']['Update']): Promise<Tables['daily_reports']['Row']> {
+    const { data, error } = await supabase
+      .from('daily_reports')
+      .update(reportData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
+
+  // Daily Tasks methods
+  async getDailyTasks(internshipId?: number): Promise<Tables['daily_tasks']['Row'][]> {
+    let query = supabase
+      .from('daily_tasks')
+      .select('*')
+      .order('task_date', { ascending: false });
+
+    if (internshipId) {
+      query = query.eq('internship_id', internshipId);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
+
+  async createDailyTask(taskData: Tables['daily_tasks']['Insert']): Promise<Tables['daily_tasks']['Row']> {
+    const { data, error } = await supabase
+      .from('daily_tasks')
+      .insert(taskData)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
+
+  async updateDailyTask(id: number, taskData: Tables['daily_tasks']['Update']): Promise<Tables['daily_tasks']['Row']> {
+    const { data, error } = await supabase
+      .from('daily_tasks')
+      .update(taskData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
+
+  // Location Check-ins methods
+  async createLocationCheckIn(checkInData: Tables['location_check_ins']['Insert']): Promise<Tables['location_check_ins']['Row']> {
+    const { data, error } = await supabase
+      .from('location_check_ins')
+      .insert(checkInData)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
+
+  async getLocationCheckIns(internshipId?: number): Promise<Tables['location_check_ins']['Row'][]> {
+    let query = supabase
+      .from('location_check_ins')
+      .select('*')
+      .order('check_in_timestamp', { ascending: false });
+
+    if (internshipId) {
+      query = query.eq('internship_id', internshipId);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
+
+  // Lecturers methods
+  async getLecturers(): Promise<Tables['lecturers']['Row'][]> {
+    const { data, error } = await supabase
+      .from('lecturers')
+      .select(`
+        *,
+        users:user_id (*),
+        faculties (*),
+        departments (*)
+      `)
+      .order('id');
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
+
+  async createLecturer(lecturerData: Tables['lecturers']['Insert']): Promise<Tables['lecturers']['Row']> {
+    const { data, error } = await supabase
+      .from('lecturers')
+      .insert(lecturerData)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
+
+  // Company Supervisors methods
+  async getCompanySupervisors(): Promise<Tables['company_supervisors']['Row'][]> {
+    const { data, error } = await supabase
+      .from('company_supervisors')
+      .select(`
+        *,
+        companies (*),
+        users:user_id (*)
+      `)
+      .order('id');
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
+
+  async createCompanySupervisor(supervisorData: Tables['company_supervisors']['Insert']): Promise<Tables['company_supervisors']['Row']> {
+    const { data, error } = await supabase
+      .from('company_supervisors')
+      .insert(supervisorData)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
+
+  // Issues methods
+  async getIssues(): Promise<Tables['issues']['Row'][]> {
+    const { data, error } = await supabase
+      .from('issues')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
+
+  async createIssue(issueData: Tables['issues']['Insert']): Promise<Tables['issues']['Row']> {
+    const { data, error } = await supabase
+      .from('issues')
+      .insert(issueData)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
+
+  async updateIssue(id: number, issueData: Tables['issues']['Update']): Promise<Tables['issues']['Row']> {
+    const { data, error } = await supabase
+      .from('issues')
+      .update(issueData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
+
+  // Evaluations methods
+  async getEvaluations(): Promise<Tables['evaluations']['Row'][]> {
+    const { data, error } = await supabase
+      .from('evaluations')
+      .select(`
+        *,
+        evaluation_scores (*),
+        internships (*),
+        evaluator:evaluator_id (*)
+      `)
+      .order('evaluation_date', { ascending: false });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
+
+  async createEvaluation(evaluationData: Tables['evaluations']['Insert']): Promise<Tables['evaluations']['Row']> {
+    const { data, error } = await supabase
+      .from('evaluations')
+      .insert(evaluationData)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
+
+  async createEvaluationScore(scoreData: Tables['evaluation_scores']['Insert']): Promise<Tables['evaluation_scores']['Row']> {
+    const { data, error } = await supabase
+      .from('evaluation_scores')
+      .insert(scoreData)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
+
+  // Added helper: verify a student by student_id_number + email
+  async verifyStudent(student_id_number: string, email: string): Promise<{ first_name: string; last_name: string; faculty_id?: number; department_id?: number; }> {
+    const { data, error } = await supabase
+      .from('users')
+      .select('first_name,last_name,faculty_id,department_id')
+      .eq('student_id_number', student_id_number)
+      .eq('email', email)
+      .maybeSingle();
+
+    if (error) {
+      console.warn('verifyStudent error:', error.message);
+    }
+
+    if (data) {
+      return {
+        first_name: (data as any).first_name || '',
+        last_name: (data as any).last_name || '',
+        faculty_id: (data as any).faculty_id || undefined,
+        department_id: (data as any).department_id || undefined,
+      };
+    }
+    return { first_name: '', last_name: '' };
+  }
+}
+
+// Create a singleton instance
+export const apiClient = new SupabaseApiClient();
+export default apiClient;

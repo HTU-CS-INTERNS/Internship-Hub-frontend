@@ -14,7 +14,7 @@ import PageHeader from '@/components/shared/page-header';
 import { createCheckInForStudent, getCheckInsByStudentId } from '@/lib/services/checkInService';
 import type { CheckInCreatePayload } from '@/lib/services/checkInService'; 
 import { useRouter } from 'next/navigation';
-import { StudentApiService } from '@/lib/services/studentApi';
+import { StudentService } from '@/lib/services';
 
 type CheckinStep = 'initial' | 'gpsPrompt' | 'manualReason' | 'geofenceWarning' | 'success';
 

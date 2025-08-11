@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
-import { AdminApiService } from '@/lib/services/adminApi';
+import { AdminService } from '@/lib/services';
 import { toast } from 'sonner';
 
 type UserRole = 'student' | 'lecturer' | 'company_supervisor' | 'admin';

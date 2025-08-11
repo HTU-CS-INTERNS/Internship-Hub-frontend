@@ -17,7 +17,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import Link from 'next/link';
-import { LecturerApiService } from '@/lib/services/lecturerApi';
+import { LecturerService } from '@/lib/services';
 import { useToast } from '@/hooks/use-toast';
 
 interface StudentReport {
@@ -83,7 +83,7 @@ export default function LecturerReportsPage() {
   const fetchReports = async () => {
     try {
       setIsLoading(true);
-      const data = await LecturerApiService.getAllReports();
+      const data = await LecturerService.getAllReports();
       
       if (data && Array.isArray(data)) {
         setReports(data.map((report: any) => ({
@@ -123,7 +123,7 @@ export default function LecturerReportsPage() {
     
     try {
       setProcessingId(selectedReport.id);
-      await LecturerApiService.approveReport(selectedReport.id, feedback, rating);
+      await LecturerService.approveReport(selectedReport.id, feedback, rating);
       
       toast({
         title: "Success",
@@ -151,7 +151,7 @@ export default function LecturerReportsPage() {
     
     try {
       setProcessingId(selectedReport.id);
-      await LecturerApiService.rejectReport(selectedReport.id, rejectReason);
+      await LecturerService.rejectReport(selectedReport.id, rejectReason);
       
       toast({
         title: "Success",
@@ -178,7 +178,7 @@ export default function LecturerReportsPage() {
     
     try {
       setProcessingId(selectedReport.id);
-      await LecturerApiService.requestReportRevision(selectedReport.id, revisionFeedback);
+      await LecturerService.requestReportRevision(selectedReport.id, revisionFeedback);
       
       toast({
         title: "Success",

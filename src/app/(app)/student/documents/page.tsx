@@ -23,9 +23,9 @@ import {
   Clock,
   AlertCircle
 } from 'lucide-react';
-import { useAuth } from '@/contexts/auth-context';
+import { useAuth } from '@/contexts/supabase-auth-context';
 import { format, parseISO } from 'date-fns';
-import { StudentApiService } from '@/lib/services/studentApi';
+import { StudentService } from '@/lib/services';
 import EmptyState from '@/components/shared/empty-state';
 import { useToast } from '@/hooks/use-toast';
 
@@ -72,7 +72,7 @@ export default function StudentDocumentsPage() {
       setError(null);
       
       try {
-        const documentsData = await StudentApiService.getDocuments();
+        const documentsData = await StudentService.getDocuments();
         if (documentsData && Array.isArray(documentsData)) {
           setDocuments(documentsData);
         } else {
@@ -97,7 +97,7 @@ export default function StudentDocumentsPage() {
     
     setIsUploading(true);
     try {
-      await StudentApiService.uploadDocument(formData);
+      await StudentService.uploadDocument(formData);
       toast({
         title: "Document uploaded successfully",
         description: "Your document has been uploaded and is pending review.",

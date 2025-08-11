@@ -1,4 +1,3 @@
-
 'use client';
 import * as React from 'react';
 import PageHeader from '@/components/shared/page-header';
@@ -14,7 +13,7 @@ import EmptyState from '@/components/shared/empty-state';
 import Link from 'next/link';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
-import { SupervisorApiService } from '@/lib/services/supervisorApi';
+import { SupervisorService } from '@/lib/services';
 import { toast } from 'sonner';
 
 interface InternUnderSupervision {
@@ -48,7 +47,7 @@ export default function InternsPage() {
   const fetchInterns = async () => {
     try {
       setIsLoading(true);
-      const data = await SupervisorApiService.getMyInterns();
+      const data = await SupervisorService.getMyInterns();
       
       if (data && Array.isArray(data)) {
         setInterns(data.map((intern: any) => {

@@ -21,8 +21,8 @@ import {
   Edit,
   RefreshCw
 } from 'lucide-react';
-import { useAuth } from '@/contexts/auth-context';
-import { StudentApiService } from '@/lib/services/studentApi';
+import { useAuth } from '@/contexts/supabase-auth-context';
+import { StudentService } from '@/lib/services';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 
@@ -65,12 +65,12 @@ const InternshipSubmissionForm: React.FC = () => {
     const fetchSubmission = async () => {
       try {
         setIsLoading(true);
-        const existingSubmission = await StudentApiService.getMyInternshipSubmission();
+        const response = await StudentService.getMyInternshipApplication();
         
-        if (existingSubmission) {
-          setSubmission(existingSubmission as InternshipSubmission);
+        if (response.success && response.data) {
+          setSubmission(response.data as InternshipSubmission);
           // If there's an existing submission, populate the form
-          const submission = existingSubmission as InternshipSubmission;
+          const submission = response.data as InternshipSubmission;
           setFormData({
             company_name: submission.company_name || '',
             company_address: submission.company_address || '',
@@ -169,9 +169,9 @@ const InternshipSubmissionForm: React.FC = () => {
     setIsSubmitting(true);
     
     try {
-      const result = await StudentApiService.submitInternshipForApproval(formData);
+      const response = await StudentService.submitInternshipApplication(formData);
       
-      if (result) {
+      if (response.success) {
         setSubmission({
           ...formData,
           status: 'PENDING_APPROVAL',

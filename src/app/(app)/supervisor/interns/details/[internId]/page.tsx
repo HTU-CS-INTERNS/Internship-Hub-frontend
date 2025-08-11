@@ -1,4 +1,3 @@
-
 'use client';
 import * as React from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -17,7 +16,7 @@ import EmptyState from '@/components/shared/empty-state';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { SupervisorApiService } from '@/lib/services/supervisorApi';
+import { SupervisorService } from '@/lib/services';
 import { useToast } from '@/hooks/use-toast';
 
 const getInitials = (name: string) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase() : 'N/A';
@@ -104,7 +103,7 @@ export default function InternDetailPage() {
   const fetchInternDetails = async () => {
     try {
       setIsLoading(true);
-      const data = await SupervisorApiService.getInternDetails(internId);
+      const data = await SupervisorService.getInternDetails(internId);
       
       if (data && typeof data === 'object') {
         const student = (data as any).students;
@@ -162,7 +161,7 @@ export default function InternDetailPage() {
   const fetchInternAnalytics = async () => {
     try {
       setIsLoadingAnalytics(true);
-      const data = await SupervisorApiService.getInternAnalytics(internId) as AnalyticsResponse;
+      const data = await SupervisorService.getInternAnalytics(internId) as AnalyticsResponse;
       
       if (data) {
         setAnalytics({
@@ -182,7 +181,7 @@ export default function InternDetailPage() {
 
   const fetchActivityLog = async () => {
     try {
-      const data = await SupervisorApiService.getInternActivityLog(internId, { limit: 10 });
+      const data = await SupervisorService.getInternActivityLog(internId, { limit: 10 });
       
       if (data && Array.isArray(data)) {
         setActivityLog(data.map((activity: any) => ({

@@ -15,7 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import EmptyState from '@/components/shared/empty-state';
-import { LecturerApiService } from '@/lib/services/lecturerApi';
+import { LecturerService } from '@/lib/services';
 import { useToast } from '@/hooks/use-toast';
 
 const getInitials = (name: string) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase() : 'U';
@@ -147,21 +147,38 @@ export default function LecturerDashboardPage() {
       setIsLoading(true);
       setIsLoadingStudents(true);
       
-      const [statsData, studentsData] = await Promise.all([
-        LecturerApiService.getDashboardStats(),
-        LecturerApiService.getMyStudents({ limit: 10 })
-      ]);
-
-      if (statsData && typeof statsData === 'object') {
+      const dashboardResponse = await LecturerService.getDashboardData();
+      
+      if (dashboardResponse.success && dashboardResponse.data) {
+        const data = dashboardResponse.data;
         setLecturerStats({
-          totalStudents: (statsData as any).totalStudents || 0,
-          activeInternships: (statsData as any).activeInternships || 0,
-          pendingReports: (statsData as any).pendingReports || 0,
-          completedReports: (statsData as any).completedReports || 0,
-          pendingTasks: (statsData as any).pendingTasks || 0,
-          averageScore: (statsData as any).averageScore || 0,
-          messagesUnread: (statsData as any).messagesUnread || 0
+          totalStudents: data.totalStudents || 0,
+          activeInternships: data.activeInternships || 0,
+          pendingReports: data.pendingReports || 0,
+          completedReports: data.completedReports || 0,
+          pendingTasks: data.pendingTasks || 0,
+          averageScore: data.averageScore || 0,
+          messagesUnread: data.messagesUnread || 0
         });
+        
+        // Set students data from dashboard response
+        if (data.recentStudents && Array.isArray(data.recentStudents)) {
+          setAssignedStudents(data.recentStudents.map((student: any) => ({
+            id: student.id,
+            name: student.name || student.user?.name || 'Unknown',
+            email: student.email || student.user?.email || 'No email',
+            department: student.department || 'Unknown Department',
+            university: student.university || student.user?.university || 'Unknown University',
+            avatar: student.avatar || student.user?.avatar,
+            overdueTasks: student.overdueTasks || 0,
+            pendingReports: student.pendingReports || 0,
+            progress: student.progress || 0,
+            status: student.status || 'active',
+            lastActivity: student.lastActivity || 'No recent activity'
+          })));
+        } else {
+          setAssignedStudents([]);
+        }
       } else {
         // Fallback data if API fails
         setLecturerStats({
@@ -173,23 +190,6 @@ export default function LecturerDashboardPage() {
           averageScore: 0,
           messagesUnread: 0
         });
-      }
-
-      if (studentsData && Array.isArray(studentsData)) {
-        setAssignedStudents(studentsData.map((student: any) => ({
-          id: student.id,
-          name: student.name || student.user?.name || 'Unknown',
-          email: student.email || student.user?.email || 'No email',
-          department: student.department || 'Unknown Department',
-          university: student.university || student.user?.university || 'Unknown University',
-          avatar: student.avatar || student.user?.avatar,
-          overdueTasks: student.overdueTasks || 0,
-          pendingReports: student.pendingReports || 0,
-          progress: student.progress || 0,
-          status: student.status || 'active',
-          lastActivity: student.lastActivity || 'No recent activity'
-        })));
-      } else {
         setAssignedStudents([]);
       }
     } catch (error) {

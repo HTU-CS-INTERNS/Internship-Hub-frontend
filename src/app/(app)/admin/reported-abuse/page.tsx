@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import type { AbuseReport } from '@/types';
-import { AdminApiService } from '@/lib/services/adminApi';
+import { AdminService } from '@/lib/services';
 import EmptyState from '@/components/shared/empty-state';
 
 const statusColors: Record<AbuseReport['status'], string> = {

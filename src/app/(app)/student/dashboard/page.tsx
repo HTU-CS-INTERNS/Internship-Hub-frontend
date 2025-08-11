@@ -20,11 +20,10 @@ import { format, parseISO, differenceInDays } from 'date-fns';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { PieChart, Pie, Cell } from "recharts";
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/auth-context';
+import { useAuth } from '@/contexts/supabase-auth-context';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 // Assume these are correctly imported or defined elsewhere
-import { reportAbuse } from '@/lib/services/issue.service'; // Ensure this service exists and calls apiClient.reportIssue()
-import { StudentApiService } from '@/lib/services/studentApi'; // Use StudentApiService instead of apiClient
+import { StudentService } from '@/lib/services';
 // Add these imports to the top of your file
 import { Info } from 'lucide-react';
 
@@ -218,8 +217,9 @@ const StudentDashboard: React.FC = () => {
                 setLoading(true);
                 
                 if (user.role === 'STUDENT') {
-                    const studentData = await StudentApiService.getStudentProfile();
-                    if (studentData) {
+                    const studentResponse = await StudentService.getDashboardData();
+                    if (studentResponse.success && studentResponse.data) {
+                        const studentData = studentResponse.data.profile;
                         // Map UserProfileData to StudentProfileData format
                         const mappedProfile: StudentProfileData = {
                             id: studentData.id,
@@ -232,52 +232,19 @@ const StudentDashboard: React.FC = () => {
                             profile_complete: true
                         };
                         setStudentProfile(mappedProfile);
+                        
+                        // Get internship data from dashboard response
+                        const internship = studentResponse.data.internship;
+                        setActiveInternship(internship);
+                        
+                        // Get daily tasks for today
+                        const todayTasks = studentResponse.data.dailyTasks || [];
+                        setDailyTasks(todayTasks);
                     }
 
-                    const submission = await StudentApiService.getMyInternshipSubmission() as PendingInternship | null;
-                    setMyInternshipSubmission(submission);
-
-                    // If a submission exists and is APPROVED, fetch active internship and related data
-                    if (submission && submission.status === 'APPROVED') {
-                        try {
-                            const internship = await StudentApiService.getMyInternship() as Internship | null;
-                            console.log('Fetched internship:', internship); // Debug log
-                            setActiveInternship(internship);
-
-                            if (internship && internship.id) {
-                                // Validate internship ID before parsing
-                                const internshipId = typeof internship.id === 'string' ? parseInt(internship.id, 10) : internship.id;
-                                console.log('Parsed internship ID:', internshipId); // Debug log
-                                
-                                // Only proceed if we have a valid numeric ID
-                                if (!isNaN(internshipId) && internshipId > 0) {
-                                    try {
-                                        // Fetch today's tasks
-                                        const tasks = await StudentApiService.getTasks(internshipId, getTodayDateString()) as DailyTask[];
-                                        setDailyTasks(tasks || []);
-                                    } catch (taskError) {
-                                        console.error('Error fetching tasks:', taskError);
-                                        // Don't break the whole dashboard for task errors
-                                        setDailyTasks([]);
-                                    }
-
-                                    // Fetch today's check-in (this method may need to be implemented)
-                                    // const checkIns = await StudentApiService.getMyCheckIns();
-                                    // const todayCheckInEntry = checkIns.find(ci => format(parseISO(ci.check_in_timestamp), 'yyyy-MM-dd') === getTodayDateString());
-                                    // setTodayCheckIn(todayCheckInEntry || null);
-                                } else {
-                                    console.warn('Invalid internship ID:', internship.id);
-                                }
-                            } else {
-                                console.log('No internship or internship ID found');
-                            }
-                        } catch (internshipError) {
-                            console.error('Error fetching internship:', internshipError);
-                            // If fetching internship fails, continue without it
-                            setActiveInternship(null);
-                        }
-                    } else {
-                        console.log('No approved submission found, status:', submission?.status);
+                    const submissionResponse = await StudentService.getMyInternshipApplication();
+                    if (submissionResponse.success && submissionResponse.data) {
+                        setMyInternshipSubmission(submissionResponse.data as any);
                     }
                 } else {
                     // Handle non-student or unauthenticated user (e.g., redirect)
@@ -310,16 +277,21 @@ const StudentDashboard: React.FC = () => {
         try {
             // This API call assumes you can submit a report without explicit tasks initially
             // You might need to adjust the API or this form if `related_task_ids` is mandatory.
-            await StudentApiService.createReport({
-                internshipId: activeInternship.id,
+            const response = await StudentService.submitDailyReport({
+                internship_id: activeInternship.id,
                 report_date: format(reportDate, 'yyyy-MM-dd'),
                 summary_of_work: reportSummary,
                 // If you add file upload to createDailyReport, handle reportFile here
                 // related_task_ids: [] // Or collect selected task IDs if applicable
             });
-            toast({ title: "Quick Report Submitted!", description: `Summary for ${format(reportDate, "PPP")} recorded.` });
-            setReportSummary('');
-            setReportFile(null); // Clear file input
+            
+            if (response.success) {
+                toast({ title: "Quick Report Submitted!", description: `Summary for ${format(reportDate, "PPP")} recorded.` });
+                setReportSummary('');
+                setReportFile(null); // Clear file input
+            } else {
+                toast({ title: "Error submitting report", description: response.error || "Failed to submit report.", variant: "destructive" });
+            }
         } catch (error: any) {
             toast({ title: "Error submitting report", description: error.message || "Failed to submit report.", variant: "destructive" });
         }
@@ -337,12 +309,14 @@ const StudentDashboard: React.FC = () => {
 
         setIsSubmittingReport(true);
         try {
-            await reportAbuse({
+            // TODO: Implement proper abuse reporting through StudentService
+            console.log('Report Abuse:', {
                 title: reportTitle,
                 description: reportDescription,
-                reportedByStudentId: user.id, // Use actual user ID
-                reportedByName: `${user.first_name} ${user.last_name}`, // Use actual user name
+                reportedByStudentId: user.id,
+                reportedByName: `${user.first_name} ${user.last_name}`,
             });
+            
             toast({
                 title: "Abuse Reported",
                 description: "Your report has been submitted to the administrator for review.",

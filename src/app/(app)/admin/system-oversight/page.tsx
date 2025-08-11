@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { AdminApiService } from '@/lib/services/adminApi';
+import { AdminService } from '@/lib/services';
 import EmptyState from '@/components/shared/empty-state';
 import { useToast } from '@/hooks/use-toast';
 
@@ -44,15 +44,15 @@ export default function SystemOversightPage() {
         setError(null);
         
         const [healthData, logsData] = await Promise.all([
-          AdminApiService.getSystemHealth(),
-          AdminApiService.getSystemLogs()
+          AdminService.getSystemHealth(),
+          AdminService.getSystemLogs()
         ]);
         
-        if (healthData && typeof healthData === 'object') {
-          setSystemHealth(healthData as SystemHealth);
+        if (healthData && typeof healthData === 'object' && 'success' in healthData && healthData.success && healthData.data) {
+          setSystemHealth(healthData.data as SystemHealth);
         }
         
-        const logsArray = Array.isArray(logsData) ? logsData : [];
+        const logsArray = Array.isArray(logsData) ? (logsData as any).data || logsData : [];
         setSystemLogs(logsArray);
         
       } catch (err) {

@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/auth-context';
+import { useAuth } from '@/contexts/supabase-auth-context';
 import AppLoadingScreen from '@/components/shared/app-loading-screen';
 
 export default function DashboardRedirectPage() {

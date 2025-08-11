@@ -18,7 +18,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import type { UserProfileData, UserRole } from '@/types';
 import { Loader2 } from 'lucide-react';
-import api from '@/lib/api';
+import { apiClient } from '@/lib/supabase-api-client';
 
 // Role normalization function to handle backend/frontend role differences
 function normalizeRole(role: string): UserRole {
@@ -58,30 +58,18 @@ export function LoginForm() {
   async function onSubmit(values: LoginFormValues) {
     setIsLoading(true);
     try {
-      const response = await api<{ user: UserProfileData; session: { access_token: string; } }>('/auth/login', {
-        method: 'POST',
-        body: values,
-      });
-
-      const { user, session } = response;
+      const response = await apiClient.login(values);
+      const { user, access_token } = response;
       const normalizedRole = normalizeRole(user.role);
       const userWithNormalizedRole = { ...user, role: normalizedRole };
       
-      if (typeof window !== "undefined") {
-        localStorage.setItem('authToken', session.access_token);
-        localStorage.setItem('userRole', normalizedRole);
-        localStorage.setItem('userName', `${user.first_name} ${user.last_name}`);
-        localStorage.setItem('userEmail', user.email);
-        localStorage.setItem('user', JSON.stringify(userWithNormalizedRole));
-      }
-
       toast({
         title: "Login Successful!",
         description: `Welcome back, ${user.first_name || user.email}!`,
         variant: "default",
       });
 
-      // ALWAYS redirect to the generic dashboard. The redirector page will handle the rest.
+      // ALWAYS redirect to the generic dashboard. The auth context will handle user state
       router.push('/dashboard');
 
     } catch (error: any) {
