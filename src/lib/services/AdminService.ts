@@ -1,3 +1,4 @@
+
 import { apiClient } from '@/lib/supabase-api-client';
 import { BaseService } from './BaseService';
 import type { Database } from '@/types/database';
@@ -185,19 +186,20 @@ export class AdminService extends BaseService {
     company_id?: string;
   }) {
     try {
-      let internships = await apiClient.getInternships();
+      const internships = await apiClient.getInternships();
+      let filteredInternships = internships || [];
 
       if (filters?.status) {
-        internships = internships?.filter((i: any) => i.status === filters.status) || [];
+        filteredInternships = filteredInternships.filter((i: any) => i.status === filters.status);
       }
 
       if (filters?.company_id) {
-        internships = internships?.filter((i: any) => 
+        filteredInternships = filteredInternships.filter((i: any) => 
           i.company_id === parseInt(filters.company_id!)
-        ) || [];
+        );
       }
 
-      return this.handleSuccess(internships || []);
+      return this.handleSuccess(filteredInternships);
     } catch (error) {
       return this.handleError(error);
     }
@@ -243,13 +245,16 @@ export class AdminService extends BaseService {
         status: 'APPROVED' as const,
         admin_notes: notes
       };
-
+      
+      const result = await apiClient.updateInternship(internshipId, updateData);
+      
       if (lat && lng) {
-        updateData.company_latitude = lat;
-        updateData.company_longitude = lng;
+        const internship = await this.getInternshipById(internshipId);
+        if(internship.success && internship.data.company_id){
+             await this.updateCompany(internship.data.company_id, { latitude: lat, longitude: lng });
+        }
       }
 
-      const result = await apiClient.updateInternship(internshipId, updateData);
       return this.handleSuccess(result);
     } catch (error) {
       return this.handleError(error);
@@ -355,6 +360,16 @@ export class AdminService extends BaseService {
       return this.handleError(error);
     }
   }
+  
+  static async getDepartments() {
+    try {
+      const departments = await apiClient.getDepartments();
+      return this.handleSuccess(departments || []);
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
 
   static async createDepartment(departmentData: Tables['departments']['Insert']) {
     try {
@@ -384,6 +399,15 @@ export class AdminService extends BaseService {
   }
 
   // ==================== SYSTEM ANALYTICS & REPORTING ====================
+
+  static async getDashboardStats() {
+      try {
+          const stats = await apiClient.getAdminDashboardStats();
+          return this.handleSuccess(stats);
+      } catch (error) {
+          return this.handleError(error);
+      }
+  }
 
   static async getSystemAnalytics() {
     try {

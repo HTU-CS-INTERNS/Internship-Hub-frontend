@@ -1,3 +1,4 @@
+
 'use client';
 
 import { supabase } from './supabase';
@@ -356,23 +357,34 @@ class SupabaseApiClient {
   }
 
   // Internship methods
-  async getInternships(): Promise<Tables['internships']['Row'][]> {
+  async getInternships(): Promise<any[]> {
     const { data, error } = await supabase
       .from('internships')
       .select(`
         *,
         companies (*),
-        company_supervisors (*),
-        lecturers (*)
+        students:student_id (
+          *,
+          users:user_id (*),
+          faculties (*),
+          departments (*)
+        ),
+        company_supervisors:company_supervisor_id (
+          *,
+          users:user_id (*)
+        ),
+        lecturers:lecturer_id (*)
       `)
       .order('created_at', { ascending: false });
 
     if (error) {
+      console.error("Error fetching internships:", error);
       throw new Error(error.message);
     }
 
     return data;
   }
+
 
   async createInternship(internshipData: Tables['internships']['Insert']): Promise<Tables['internships']['Row']> {
     const { data, error } = await supabase
@@ -741,29 +753,14 @@ class SupabaseApiClient {
 
     return data;
   }
-
-  // Added helper: verify a student by student_id_number + email
-  async verifyStudent(student_id_number: string, email: string): Promise<{ first_name: string; last_name: string; faculty_id?: number; department_id?: number; }> {
-    const { data, error } = await supabase
-      .from('users')
-      .select('first_name,last_name,faculty_id,department_id')
-      .eq('student_id_number', student_id_number)
-      .eq('email', email)
-      .maybeSingle();
-
+  
+  async getAdminDashboardStats() {
+    const { data, error } = await supabase.rpc('get_admin_dashboard_stats');
     if (error) {
-      console.warn('verifyStudent error:', error.message);
+      console.error("Error fetching admin dashboard stats:", error);
+      throw new Error(error.message);
     }
-
-    if (data) {
-      return {
-        first_name: (data as any).first_name || '',
-        last_name: (data as any).last_name || '',
-        faculty_id: (data as any).faculty_id || undefined,
-        department_id: (data as any).department_id || undefined,
-      };
-    }
-    return { first_name: '', last_name: '' };
+    return data;
   }
 }
 

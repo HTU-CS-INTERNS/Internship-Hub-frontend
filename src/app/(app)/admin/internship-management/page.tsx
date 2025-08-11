@@ -1,9 +1,10 @@
+
 'use client';
 
 import * as React from 'react';
 import dynamic from 'next/dynamic';
 import PageHeader from '@/components/shared/page-header';
-import { Briefcase, Search, Eye, Edit, Archive, CheckCircle, XCircle } from 'lucide-react';
+import { Briefcase, Search, Eye, Edit, Archive, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,7 +35,7 @@ interface Internship {
   studentId: string;
   companyName: string;
   position: string;
-  status: 'Active' | 'Pending' | 'Completed' | 'Terminated' | 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED';
+  status: 'Active' | 'Pending' | 'Completed' | 'Terminated' | 'PENDING' | 'APPROVED' | 'REJECTED';
   startDate: string;
   endDate: string;
   faculty: string;
@@ -59,32 +60,29 @@ export default function InternshipManagementPage() {
     try {
       setIsLoading(true);
       setError(null);
-      // Fetch pending internship submissions
-      const [pendingData] = await Promise.all([
-        AdminService.getAllInternships(),
-      ]);
+      const response = await AdminService.getAllInternships();
       
-      const pending = (Array.isArray(pendingData) ? pendingData : []).map((p: any) => ({
-        id: p.id,
-        studentName: `${p.students.users.first_name} ${p.students.users.last_name}`,
-        studentId: p.students.student_id_number,
-        companyName: p.company_name,
-        position: 'N/A',
-        status: p.status,
-        startDate: p.start_date,
-        endDate: p.end_date,
-        faculty: p.students.faculties?.name || 'N/A',
-        department: p.students.departments?.name || 'N/A',
-        supervisorName: p.supervisor_name,
-        supervisorEmail: p.supervisor_email,
-        companyAddress: p.company_address,
-        location: p.location,
-      }));
+      if(response.success && Array.isArray(response.data)) {
+        const mappedInternships = response.data.map((p: any) => ({
+            id: p.id,
+            studentName: `${p.students?.users?.first_name || 'N/A'} ${p.students?.users?.last_name || ''}`,
+            studentId: p.students?.student_id_number || 'N/A',
+            companyName: p.companies?.name || 'N/A',
+            position: 'N/A', // Position info not in schema
+            status: p.status,
+            startDate: p.start_date,
+            endDate: p.end_date,
+            faculty: p.students?.faculties?.name || 'N/A',
+            department: p.students?.departments?.name || 'N/A',
+          }));
+        setInternships(mappedInternships);
+      } else {
+        throw new Error(response.error || "Failed to fetch internships");
+      }
 
-      setInternships(pending);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to fetch internships:', err);
-      setError('Failed to load internships');
+      setError(err.message || 'Failed to load internships');
       setInternships([]);
     } finally {
       setIsLoading(false);
@@ -96,8 +94,11 @@ export default function InternshipManagementPage() {
   }, []);
 
   const handleApproveClick = (internship: Internship) => {
-    setSelectedInternship(internship);
-    setIsPickerOpen(true);
+    // For now, we will directly approve without location picker for simplicity
+    // To re-enable location picker:
+    // setSelectedInternship(internship);
+    // setIsPickerOpen(true);
+    handleLocationSelect(0, 0, internship); // Pass dummy coordinates
   };
 
   const handleRejectClick = (internship: Internship) => {
@@ -105,14 +106,15 @@ export default function InternshipManagementPage() {
     setIsRejectDialogOpen(true);
   };
 
-  const handleLocationSelect = async (lat: number, lng: number) => {
-    if (!selectedInternship) return;
+  const handleLocationSelect = async (lat: number, lng: number, internshipToApprove?: Internship) => {
+    const internship = internshipToApprove || selectedInternship;
+    if (!internship) return;
 
     try {
-      await AdminService.approveInternship(selectedInternship.id, lat, lng);
+      await AdminService.approveInternship(Number(internship.id));
       toast({
         title: 'Internship Approved',
-        description: `The internship for ${selectedInternship.studentName} has been approved.`,
+        description: `The internship for ${internship.studentName} has been approved.`,
       });
       fetchInternships(); // Re-fetch to update the list
     } catch (error) {
@@ -137,7 +139,7 @@ export default function InternshipManagementPage() {
     }
 
     try {
-      await AdminService.rejectInternship(selectedInternship.id, rejectionReason);
+      await AdminService.rejectInternship(Number(selectedInternship.id), rejectionReason);
       toast({
         title: 'Internship Rejected',
         description: `The internship for ${selectedInternship.studentName} has been rejected.`,
@@ -159,8 +161,7 @@ export default function InternshipManagementPage() {
   const filteredInternships = internships.filter(internship => {
     const matchesSearch = 
       internship.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      internship.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      internship.position.toLowerCase().includes(searchTerm.toLowerCase());
+      internship.companyName.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === 'all' || internship.status.toLowerCase() === statusFilter.toLowerCase();
     
@@ -173,7 +174,7 @@ export default function InternshipManagementPage() {
       case 'APPROVED':
          return 'bg-green-100 text-green-700 border-green-300';
       case 'Pending': 
-      case 'PENDING_APPROVAL':
+      case 'PENDING':
         return 'bg-yellow-100 text-yellow-700 border-yellow-300';
       case 'Completed': return 'bg-blue-100 text-blue-700 border-blue-300';
       case 'Terminated': 
@@ -198,10 +199,8 @@ export default function InternshipManagementPage() {
         <Card className="shadow-lg rounded-xl">
           <CardContent className="p-6">
             <div className="flex items-center justify-center h-40">
-              <div className="text-center space-y-2">
-                <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
-                <p className="text-sm text-muted-foreground">Loading internships...</p>
-              </div>
+              <Loader2 className="w-8 h-8 text-primary animate-spin" />
+              <p className="ml-2 text-sm text-muted-foreground">Loading internships...</p>
             </div>
           </CardContent>
         </Card>
@@ -224,35 +223,9 @@ export default function InternshipManagementPage() {
         <EmptyState
           icon={Briefcase}
           title="Failed to Load Internships"
-          description="We couldn't load the internship data. Please try again."
+          description={error}
           actionLabel="Try Again"
-          onAction={() => window.location.reload()}
-        />
-      </div>
-    );
-  }
-
-  if (filteredInternships.length === 0 && !isLoading) {
-    return (
-      <div className="space-y-8 p-4 md:p-6">
-        <PageHeader
-          title="Internship Management"
-          description="Monitor and manage all student internships across the university."
-          icon={Briefcase}
-          breadcrumbs={[
-            { href: "/admin/dashboard", label: "Admin Dashboard" },
-            { label: "Internship Management" }
-          ]}
-        />
-        <EmptyState
-          icon={Briefcase}
-          title={internships.length === 0 ? "No Internships Found" : "No Matching Internships"}
-          description={internships.length === 0 ? "There are no internships registered yet." : "Try adjusting your search criteria or filters."}
-          actionLabel={internships.length === 0 ? undefined : "Clear Filters"}
-          onAction={internships.length === 0 ? undefined : () => {
-            setSearchTerm('');
-            setStatusFilter('all');
-          }}
+          onAction={() => fetchInternships()}
         />
       </div>
     );
@@ -282,7 +255,7 @@ export default function InternshipManagementPage() {
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search by student, company, or position..."
+                  placeholder="Search by student or company..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 rounded-lg"
@@ -294,92 +267,104 @@ export default function InternshipManagementPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="pending_approval">Pending</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="terminated">Terminated</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
+                  <SelectItem value="APPROVED">Approved</SelectItem>
+                  <SelectItem value="PENDING">Pending</SelectItem>
+                  <SelectItem value="REJECTED">Rejected</SelectItem>
+                  <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                  <SelectItem value="COMPLETED">Completed</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </CardHeader>
           
           <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Student</TableHead>
-                    <TableHead>Company & Position</TableHead>
-                    <TableHead>Faculty/Department</TableHead>
-                    <TableHead>Duration</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredInternships.map((internship) => (
-                    <TableRow key={internship.id}>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">{internship.studentName}</p>
-                          <p className="text-sm text-muted-foreground">ID: {internship.studentId}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">{internship.companyName}</p>
-                          <p className="text-sm text-muted-foreground">{internship.position}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <p className="text-sm">{internship.faculty}</p>
-                          <p className="text-xs text-muted-foreground">{internship.department}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm">
-                          <p>{new Date(internship.startDate).toLocaleDateString()}</p>
-                          <p className="text-muted-foreground">to {new Date(internship.endDate).toLocaleDateString()}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={getStatusColor(internship.status)}>
-                          {internship.status.replace('_', ' ')}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {internship.status === 'PENDING_APPROVAL' ? (
-                          <div className="flex justify-end gap-2">
-                            <Button variant="outline" size="sm" className="text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700" onClick={() => handleApproveClick(internship)}>
-                              <CheckCircle className="h-4 w-4 mr-2" />
-                              Approve
-                            </Button>
-                            <Button variant="outline" size="sm" className="text-red-600 border-red-600 hover:bg-red-50 hover:text-red-700" onClick={() => handleRejectClick(internship)}>
-                              <XCircle className="h-4 w-4 mr-2" />
-                              Reject
-                            </Button>
-                          </div>
-                        ) : (
-                          <div className="flex justify-end gap-2">
-                            <Button variant="ghost" size="sm">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm">
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm" className="text-destructive">
-                              <Archive className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        )}
-                      </TableCell>
+            {filteredInternships.length === 0 ? (
+                <EmptyState
+                    icon={Briefcase}
+                    title="No Matching Internships"
+                    description="Try adjusting your search criteria or filters."
+                    actionLabel="Clear Filters"
+                    onAction={() => {
+                        setSearchTerm('');
+                        setStatusFilter('all');
+                    }}
+                />
+            ) : (
+                <div className="overflow-x-auto">
+                <Table>
+                    <TableHeader>
+                    <TableRow>
+                        <TableHead>Student</TableHead>
+                        <TableHead>Company</TableHead>
+                        <TableHead>Faculty/Department</TableHead>
+                        <TableHead>Duration</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                    </TableHeader>
+                    <TableBody>
+                    {filteredInternships.map((internship) => (
+                        <TableRow key={internship.id}>
+                        <TableCell>
+                            <div>
+                            <p className="font-medium">{internship.studentName}</p>
+                            <p className="text-sm text-muted-foreground">ID: {internship.studentId}</p>
+                            </div>
+                        </TableCell>
+                        <TableCell>
+                            <div>
+                            <p className="font-medium">{internship.companyName}</p>
+                            </div>
+                        </TableCell>
+                        <TableCell>
+                            <div>
+                            <p className="text-sm">{internship.faculty}</p>
+                            <p className="text-xs text-muted-foreground">{internship.department}</p>
+                            </div>
+                        </TableCell>
+                        <TableCell>
+                            <div className="text-sm">
+                            <p>{new Date(internship.startDate).toLocaleDateString()}</p>
+                            <p className="text-muted-foreground">to {new Date(internship.endDate).toLocaleDateString()}</p>
+                            </div>
+                        </TableCell>
+                        <TableCell>
+                            <Badge className={getStatusColor(internship.status)}>
+                            {internship.status.replace('_', ' ')}
+                            </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                            {internship.status === 'PENDING' ? (
+                            <div className="flex justify-end gap-2">
+                                <Button variant="outline" size="sm" className="text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700" onClick={() => handleApproveClick(internship)}>
+                                <CheckCircle className="h-4 w-4 mr-2" />
+                                Approve
+                                </Button>
+                                <Button variant="outline" size="sm" className="text-red-600 border-red-600 hover:bg-red-50 hover:text-red-700" onClick={() => handleRejectClick(internship)}>
+                                <XCircle className="h-4 w-4 mr-2" />
+                                Reject
+                                </Button>
+                            </div>
+                            ) : (
+                            <div className="flex justify-end gap-2">
+                                <Button variant="ghost" size="sm">
+                                <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="sm">
+                                <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="sm" className="text-destructive">
+                                <Archive className="h-4 w-4" />
+                                </Button>
+                            </div>
+                            )}
+                        </TableCell>
+                        </TableRow>
+                    ))}
+                    </TableBody>
+                </Table>
+                </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -388,7 +373,7 @@ export default function InternshipManagementPage() {
       <LocationPicker
         isOpen={isPickerOpen}
         onClose={() => setIsPickerOpen(false)}
-        onLocationSelect={handleLocationSelect}
+        onLocationSelect={(lat, lng) => handleLocationSelect(lat, lng)}
       />
 
       <AlertDialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>

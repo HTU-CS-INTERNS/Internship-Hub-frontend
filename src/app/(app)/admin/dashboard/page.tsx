@@ -35,18 +35,8 @@ const AdminDashboardStatCard: React.FC<{ title: string; value: string | number; 
   </Card>
 );
 
-interface UniversityStats {
-  totalInterns: number;
-  activeInternships: number;
-  unassignedInterns: number;
-  totalLecturers: number;
-  avgLecturerWorkload: number;
-  totalCompanies: number;
-  totalFaculties: number;
-}
-
 export default function AdminDashboardPage() {
-  const [universityStats, setUniversityStats] = React.useState<UniversityStats | null>(null);
+  const [stats, setStats] = React.useState<any>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -55,16 +45,16 @@ export default function AdminDashboardPage() {
       setIsLoading(true);
       setError(null);
       try {
-        const dashboardResponse = await AdminService.getSystemAnalytics();
+        const dashboardResponse = await AdminService.getDashboardStats();
         if (dashboardResponse.success && dashboardResponse.data) {
-          setUniversityStats(dashboardResponse.data as UniversityStats);
+          setStats(dashboardResponse.data);
         } else {
-          setError("Failed to load dashboard statistics. Please try again later.");
+          setError(dashboardResponse.error || "Failed to load dashboard statistics.");
         }
       } catch (err) {
         console.error("Error fetching admin dashboard stats:", err);
-        setError("Failed to load dashboard statistics. Please try again later.");
-        setUniversityStats(null);
+        setError("An unexpected error occurred. Please try again later.");
+        setStats(null);
       } finally {
         setIsLoading(false);
       }
@@ -73,8 +63,8 @@ export default function AdminDashboardPage() {
     fetchStats();
   }, []);
 
-  const engagementPercentage = (universityStats?.activeInternships && universityStats?.totalInterns) 
-    ? ((universityStats.activeInternships / universityStats.totalInterns) * 100).toFixed(0) 
+  const engagementPercentage = (stats?.activeInternships && stats?.totalStudents) 
+    ? ((stats.activeInternships / stats.totalStudents) * 100).toFixed(0) 
     : '0';
 
   if (error) {
@@ -95,18 +85,6 @@ export default function AdminDashboardPage() {
     );
   }
 
-  if (!universityStats && !isLoading) {
-    return (
-      <EmptyState
-        icon={School}
-        title="No Dashboard Data"
-        description="Dashboard statistics could not be loaded. Please check your connection and try again."
-        actionLabel="Reload Dashboard"
-        onAction={() => window.location.reload()}
-      />
-    );
-  }
-
   return (
     <div className="space-y-8 p-4 md:p-6">
       <PageHeader
@@ -117,13 +95,13 @@ export default function AdminDashboardPage() {
       />
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <AdminDashboardStatCard title="Total Faculties" value={universityStats?.totalFaculties ?? '...'} icon={Landmark} description="University academic divisions" isLoading={isLoading} />
-        <AdminDashboardStatCard title="Total Interns" value={universityStats?.totalInterns ?? '...'} icon={Users} description="Across all faculties" isLoading={isLoading} />
-        <AdminDashboardStatCard title="Active Internships" value={universityStats?.activeInternships ?? '...'} icon={Building} description={!isLoading && universityStats ? `${engagementPercentage}% engagement` : undefined} isLoading={isLoading} />
-        <AdminDashboardStatCard title="Unassigned Interns" value={universityStats?.unassignedInterns ?? '...'} icon={UserCheck} description="Require lecturer assignment" actionLink="/admin/user-management" actionLabel="Assign Lecturers" isLoading={isLoading}/>
-        <AdminDashboardStatCard title="Total Lecturers" value={universityStats?.totalLecturers ?? '...'} icon={UserCog} description="Faculty members supervising interns" isLoading={isLoading} />
-        <AdminDashboardStatCard title="Avg. Lecturer Workload" value={universityStats?.avgLecturerWorkload ? `${universityStats.avgLecturerWorkload.toFixed(1)} interns` : '...'} icon={TrendingUp} description="University average" isLoading={isLoading} />
-        <AdminDashboardStatCard title="Partner Companies" value={universityStats?.totalCompanies ?? '...'} icon={Briefcase} description="Providing internship opportunities" isLoading={isLoading} />
+        <AdminDashboardStatCard title="Total Faculties" value={stats?.totalFaculties ?? '...'} icon={Landmark} description="University academic divisions" isLoading={isLoading} />
+        <AdminDashboardStatCard title="Total Students" value={stats?.totalStudents ?? '...'} icon={Users} description="Across all faculties" isLoading={isLoading} />
+        <AdminDashboardStatCard title="Active Internships" value={stats?.activeInternships ?? '...'} icon={Building} description={!isLoading && stats ? `${engagementPercentage}% engagement` : undefined} isLoading={isLoading} />
+        <AdminDashboardStatCard title="Unassigned Interns" value={stats?.unassignedInterns ?? '...'} icon={UserCheck} description="Require lecturer assignment" actionLink="/admin/user-management" actionLabel="Assign Lecturers" isLoading={isLoading}/>
+        <AdminDashboardStatCard title="Total Lecturers" value={stats?.totalLecturers ?? '...'} icon={UserCog} description="Faculty members supervising interns" isLoading={isLoading} />
+        <AdminDashboardStatCard title="Avg. Lecturer Workload" value={stats?.avgLecturerWorkload ? `${stats.avgLecturerWorkload.toFixed(1)} interns` : '...'} icon={TrendingUp} description="University average" isLoading={isLoading} />
+        <AdminDashboardStatCard title="Partner Companies" value={stats?.totalCompanies ?? '...'} icon={Briefcase} description="Providing internship opportunities" isLoading={isLoading} />
       </div>
 
       <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
