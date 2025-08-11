@@ -101,6 +101,20 @@ class SupabaseApiClient {
     }
   }
 
+  // User management
+  async getUsers(): Promise<Tables['users']['Row'][]> {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
+
   // Faculty methods
   async getFaculties(): Promise<Tables['faculties']['Row'][]> {
     const { data, error } = await supabase

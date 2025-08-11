@@ -6,6 +6,15 @@ import { BaseService } from './BaseService';
  * Handles user management, system analytics, and platform oversight
  */
 export class AdminService extends BaseService {
+  // User Management
+  static async getAllUsers() {
+    try {
+      const users = await apiClient.getUsers();
+      return this.handleSuccess(users || []);
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
 
   // System Analytics
   static async getSystemAnalytics() {
