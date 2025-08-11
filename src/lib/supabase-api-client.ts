@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { supabase } from './supabase';
@@ -84,7 +85,11 @@ class SupabaseApiClient {
 
     const { data: profile, error: profileError } = await supabase
       .from('users')
-      .select('*')
+      .select(`
+        *,
+        faculties (*),
+        departments (*)
+      `)
       .eq('id', user.id)
       .single();
 
@@ -755,15 +760,57 @@ class SupabaseApiClient {
   }
   
   async getAdminDashboardStats() {
-    const { data, error } = await supabase.rpc('get_admin_dashboard_stats');
-    if (error) {
+    try {
+      const [
+        { count: totalStudents },
+        { count: totalLecturers },
+        { data: internships },
+        { count: totalCompanies },
+        { count: totalFaculties }
+      ] = await Promise.all([
+        supabase.from('students').select('*', { count: 'exact', head: true }),
+        supabase.from('lecturers').select('*', { count: 'exact', head: true }),
+        supabase.from('internships').select('status, student_id, lecturer_id'),
+        supabase.from('companies').select('*', { count: 'exact', head: true }),
+        supabase.from('faculties').select('*', { count: 'exact', head: true })
+      ]);
+
+      const activeInternships = internships?.filter(i => i.status === 'APPROVED' || i.status === 'IN_PROGRESS').length || 0;
+      const unassignedInterns = internships?.filter(i => i.status === 'APPROVED' && !i.lecturer_id).length || 0;
+      
+      const lecturerWorkload: { [key: string]: number } = {};
+      internships?.forEach(internship => {
+        if (internship.lecturer_id) {
+          lecturerWorkload[internship.lecturer_id] = (lecturerWorkload[internship.lecturer_id] || 0) + 1;
+        }
+      });
+      
+      const workloadValues = Object.values(lecturerWorkload);
+      const avgLecturerWorkload = workloadValues.length > 0
+        ? workloadValues.reduce((sum, count) => sum + count, 0) / workloadValues.length
+        : 0;
+
+      return {
+        totalFaculties: totalFaculties ?? 0,
+        totalStudents: totalStudents ?? 0,
+        activeInternships,
+        unassignedInterns,
+        totalLecturers: totalLecturers ?? 0,
+        avgLecturerWorkload,
+        totalCompanies: totalCompanies ?? 0,
+      };
+
+    } catch (error) {
       console.error("Error fetching admin dashboard stats:", error);
-      throw new Error(error.message);
+      if (error instanceof Error) {
+        throw new Error(error.message);
+      }
+      throw new Error("An unknown error occurred while fetching dashboard stats.");
     }
-    return data;
   }
 }
 
 // Create a singleton instance
 export const apiClient = new SupabaseApiClient();
 export default apiClient;
+
