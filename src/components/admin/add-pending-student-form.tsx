@@ -78,7 +78,7 @@ export function AddPendingStudentForm() {
         last_name: formData.last_name,
         faculty_id: formData.faculty_id,
         department_id: formData.department_id,
-        program_of_study: formData.program_of_study || null,
+        program_of_study: formData.program_of_study || undefined,
         status: 'PENDING',
       });
 
@@ -127,12 +127,6 @@ export function AddPendingStudentForm() {
     return faculty ? faculty.id : null;
   };
 
-  const findDepartmentIdByName = (name: string, facultyId: number): number | null => {
-    const facultyDepartments = DEPARTMENTS.filter(d => d.faculty_id === facultyId);
-    const department = facultyDepartments.find(d => d.name.trim().toLowerCase() === name.trim().toLowerCase());
-    return department ? department.id : null;
-  };
-
   const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -177,7 +171,6 @@ export function AddPendingStudentForm() {
     const errors: string[] = [];
     
     // Create a temporary, full list of departments for validation, as the hook is filtered
-    // In a real-world scenario, you might want to pre-fetch all departments if memory allows
     const allDepartmentsResponse = await AdminService.getDepartments();
     const allDepartments = allDepartmentsResponse.data || [];
 
@@ -205,7 +198,7 @@ export function AddPendingStudentForm() {
         last_name: student.last_name,
         faculty_id: facultyId,
         department_id: department.id,
-        program_of_study: student.program_of_study || null,
+        program_of_study: student.program_of_study || undefined,
         status: 'PENDING' as const,
       });
     }

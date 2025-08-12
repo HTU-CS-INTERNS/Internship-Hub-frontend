@@ -105,7 +105,7 @@ export class AdminService extends BaseService {
     }
   }
 
-  static async createStudent(studentData: Omit<Tables['students']['Insert'], 'id' | 'user_id' | 'created_at' | 'updated_at' | 'is_verified' | 'profile_complete'>) {
+  static async createStudent(studentData: Omit<Tables['students']['Insert'], 'id' | 'created_at' | 'updated_at' | 'is_verified' | 'profile_complete'>) {
     try {
       const result = await apiClient.createPendingStudent(studentData);
       return this.handleSuccess(result);
@@ -177,17 +177,17 @@ export class AdminService extends BaseService {
   }
 
   static async updateStudentStatus(id: number, status: 'PENDING' | 'ACTIVE' | 'INACTIVE') {
-    try {
-      const updateData: Tables['students']['Update'] = {
-        status,
-        is_verified: status === 'ACTIVE'
-      };
-      
-      const result = await apiClient.updateStudent(id, updateData);
-      return this.handleSuccess(result);
-    } catch (error) {
-      return this.handleError(error);
-    }
+      try {
+        const updateData: Tables['students']['Update'] = {
+          status,
+          is_verified: status === 'ACTIVE'
+        };
+        
+        const result = await apiClient.updateStudent(id, updateData);
+        return this.handleSuccess(result);
+      } catch (error) {
+        return this.handleError(error);
+      }
   }
   
   static async bulkUpdateStudentStatus(ids: number[], status: 'PENDING' | 'ACTIVE' | 'INACTIVE') {
@@ -504,6 +504,3 @@ export class AdminService extends BaseService {
   static async getAbuseReports() { return this.handleSuccess([]); }
   static async updateAbuseReportStatus(reportId: string, status: string) { return this.handleSuccess({ id: reportId, status }); }
 }
-
-
-

@@ -1,7 +1,8 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AddPendingStudentForm } from '@/components/admin/add-pending-student-form';
@@ -17,8 +18,9 @@ import {
 } from '@/components/ui/table';
 import { AdminService } from '@/lib/services';
 import EmptyState from '@/components/shared/empty-state';
-import { Users, AlertCircle } from 'lucide-react';
+import { Users, AlertCircle, Loader2 } from 'lucide-react';
 
+// This interface now reflects that the user object can be optional for pending students
 interface PendingStudent {
   id: number;
   student_id_number: string;
@@ -30,6 +32,12 @@ interface PendingStudent {
   program_of_study?: string;
   is_verified: boolean;
   created_at: string;
+  status: string;
+  users?: {
+    first_name: string;
+    last_name: string;
+    email: string;
+  };
   faculties: {
     id: number;
     name: string;
@@ -37,12 +45,6 @@ interface PendingStudent {
   departments: {
     id: number;
     name: string;
-  };
-  admin: {
-    id: number;
-    first_name: string;
-    last_name: string;
-    email: string;
   };
 }
 
@@ -82,23 +84,39 @@ function PendingStudentsList() {
   if (loading) {
     return (
       <Card>
-        <CardContent className="p-6">
-          <div className="text-center">Loading pending students...</div>
+        <CardContent className="p-6 text-center flex items-center justify-center h-40">
+          <Loader2 className="w-8 h-8 text-primary animate-spin" />
+          <p className="ml-2 text-sm text-muted-foreground">Loading pending students...</p>
         </CardContent>
       </Card>
     );
+  }
+  
+  if (error) {
+    return (
+        <EmptyState
+            icon={AlertCircle}
+            title="Failed to Load Students"
+            description={error}
+            actionLabel="Try Again"
+            onAction={fetchPendingStudents}
+        />
+    )
   }
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Pending Students ({pendingStudents.length})</CardTitle>
+        <CardDescription>Students who have been added but have not yet verified their accounts.</CardDescription>
       </CardHeader>
       <CardContent>
         {pendingStudents.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            No pending students found
-          </div>
+          <EmptyState
+            icon={Users}
+            title="No Pending Students"
+            description="There are no students awaiting verification."
+          />
         ) : (
           <div className="overflow-x-auto">
             <Table>
@@ -112,18 +130,18 @@ function PendingStudentsList() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {pendingStudents.map((student: any) => (
+                {pendingStudents.map((student) => (
                   <TableRow key={student.id}>
                     <TableCell className="font-medium">
                       {student.student_id_number}
                     </TableCell>
                     <TableCell>
-                      {student.users?.first_name} {student.users?.last_name}
+                      {student.first_name} {student.last_name}
                     </TableCell>
-                    <TableCell>{student.users?.email}</TableCell>
+                    <TableCell>{student.email}</TableCell>
                     <TableCell>
-                      <Badge variant={student.is_verified ? 'default' : 'secondary'}>
-                        {student.is_verified ? 'Verified' : 'Pending'}
+                      <Badge variant={student.status === 'PENDING' ? 'secondary' : 'default'}>
+                        {student.status}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -136,7 +154,8 @@ function PendingStudentsList() {
           </div>
         )}
         <div className="mt-4">
-          <Button onClick={fetchPendingStudents} variant="outline">
+          <Button onClick={fetchPendingStudents} variant="outline" disabled={loading}>
+            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
             Refresh
           </Button>
         </div>
