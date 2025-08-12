@@ -172,7 +172,7 @@ CREATE TABLE public.daily_reports (
   supervisor_comments text,
   supervisor_rating integer CHECK (supervisor_rating >= 1 AND supervisor_rating <= 5),
   lecturer_comments text,
-  lecturer_rating integer CHECK (lecturer_rating >= 1 AND lecturer_rating <= 5),
+  lecturer_rating integer CHECK (lecturer_rating >= 1 AND supervisor_rating <= 5),
   status submission_status_enum DEFAULT 'PENDING',
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),

@@ -4,7 +4,7 @@ import { BaseService } from './BaseService';
 import type { Database } from '@/types/database';
 
 type Tables = Database['public']['Tables'];
-type StudentInsert = Omit<Tables['students']['Insert'], 'id' | 'user_id' | 'created_at' | 'updated_at'>;
+type StudentInsert = Omit<Tables['students']['Insert'], 'id' | 'created_at' | 'updated_at'>;
 
 /**
  * Admin Service - System administration operations
@@ -104,7 +104,7 @@ export class AdminService extends BaseService {
     }
   }
 
-  static async createStudent(studentData: StudentInsert) {
+  static async createStudent(studentData: Omit<Tables['students']['Insert'], 'id' | 'created_at' | 'updated_at' | 'user_id' | 'is_verified' | 'profile_complete'>) {
     try {
       const result = await apiClient.createPendingStudent(studentData);
       return this.handleSuccess(result);
@@ -113,7 +113,7 @@ export class AdminService extends BaseService {
     }
   }
   
-  static async bulkCreateStudents(studentsData: StudentInsert[]) {
+  static async bulkCreateStudents(studentsData: Omit<Tables['students']['Insert'], 'id' | 'created_at' | 'updated_at' | 'user_id' | 'is_verified' | 'profile_complete'>[]) {
     try {
       const result = await apiClient.bulkCreatePendingStudents(studentsData);
       return this.handleSuccess(result);
@@ -503,4 +503,5 @@ export class AdminService extends BaseService {
   static async getAbuseReports() { return this.handleSuccess([]); }
   static async updateAbuseReportStatus(reportId: string, status: string) { return this.handleSuccess({ id: reportId, status }); }
 }
+
 

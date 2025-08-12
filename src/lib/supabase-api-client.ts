@@ -331,10 +331,10 @@ class SupabaseApiClient {
     return data;
   }
   
-  async createPendingStudent(studentData: Omit<Tables['students']['Insert'], 'id' | 'user_id' | 'created_at' | 'updated_at'>): Promise<Tables['students']['Row']> {
+  async createPendingStudent(studentData: Omit<Tables['students']['Insert'], 'id' | 'user_id' | 'created_at' | 'updated_at' | 'is_verified' | 'profile_complete'>): Promise<Tables['students']['Row']> {
     const { data, error } = await supabase
       .from('students')
-      .insert(studentData)
+      .insert({ ...studentData, user_id: null }) // Explicitly set user_id to null
       .select()
       .single();
 
@@ -346,10 +346,11 @@ class SupabaseApiClient {
     return data;
   }
 
-  async bulkCreatePendingStudents(studentsData: Omit<Tables['students']['Insert'], 'id' | 'user_id' | 'created_at' | 'updated_at'>[]) {
+  async bulkCreatePendingStudents(studentsData: Omit<Tables['students']['Insert'], 'id' | 'user_id' | 'created_at' | 'updated_at' | 'is_verified' | 'profile_complete'>[]) {
+    const insertData = studentsData.map(s => ({ ...s, user_id: null }));
     const { data, error } = await supabase
       .from('students')
-      .insert(studentsData)
+      .insert(insertData)
       .select();
 
     if (error) {
@@ -359,6 +360,7 @@ class SupabaseApiClient {
 
     return data;
   }
+
 
   async updateStudent(id: number, studentData: Tables['students']['Update']): Promise<Tables['students']['Row']> {
     const { data, error } = await supabase
@@ -825,4 +827,5 @@ class SupabaseApiClient {
 // Create a singleton instance
 export const apiClient = new SupabaseApiClient();
 export default apiClient;
+
 
