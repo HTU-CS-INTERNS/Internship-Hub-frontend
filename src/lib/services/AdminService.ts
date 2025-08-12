@@ -4,6 +4,7 @@ import { BaseService } from './BaseService';
 import type { Database } from '@/types/database';
 
 type Tables = Database['public']['Tables'];
+type StudentInsert = Omit<Tables['students']['Insert'], 'id' | 'user_id' | 'created_at' | 'updated_at'>;
 
 /**
  * Admin Service - System administration operations
@@ -103,7 +104,7 @@ export class AdminService extends BaseService {
     }
   }
 
-  static async createStudent(studentData: Omit<Tables['students']['Insert'], 'user_id' | 'id'>) {
+  static async createStudent(studentData: StudentInsert) {
     try {
       const result = await apiClient.createPendingStudent(studentData);
       return this.handleSuccess(result);
@@ -112,7 +113,7 @@ export class AdminService extends BaseService {
     }
   }
   
-  static async bulkCreateStudents(studentsData: Omit<Tables['students']['Insert'], 'user_id' | 'id'>[]) {
+  static async bulkCreateStudents(studentsData: StudentInsert[]) {
     try {
       const result = await apiClient.bulkCreatePendingStudents(studentsData);
       return this.handleSuccess(result);
@@ -187,6 +188,24 @@ export class AdminService extends BaseService {
       return this.handleError(error);
     }
   }
+  
+  static async bulkUpdateStudentStatus(ids: number[], status: 'PENDING' | 'ACTIVE' | 'INACTIVE') {
+      try {
+        const results = await Promise.all(
+          ids.map(id => this.updateStudentStatus(id, status))
+        );
+        
+        const failed = results.filter(r => !r.success);
+        if (failed.length > 0) {
+          throw new Error(`Failed to update ${failed.length} students.`);
+        }
+
+        return this.handleSuccess({ updatedCount: results.length });
+      } catch(error) {
+          return this.handleError(error);
+      }
+  }
+
 
   // ==================== INTERNSHIP MANAGEMENT ====================
 
@@ -282,6 +301,23 @@ export class AdminService extends BaseService {
     } catch (error) {
       return this.handleError(error);
     }
+  }
+  
+  static async bulkApproveInternships(ids: number[]) {
+      try {
+          const results = await Promise.all(
+              ids.map(id => this.approveInternship(id))
+          );
+          
+          const failed = results.filter(r => !r.success);
+          if (failed.length > 0) {
+            throw new Error(`Failed to approve ${failed.length} internships.`);
+          }
+          
+          return this.handleSuccess({ approvedCount: results.length });
+      } catch(error) {
+          return this.handleError(error);
+      }
   }
 
   // ==================== COMPANY MANAGEMENT ====================
@@ -458,4 +494,13 @@ export class AdminService extends BaseService {
       return this.handleError(error);
     }
   }
+
+  // Placeholder methods for features not fully implemented in this commit
+  static async getSystemHealth() { return this.handleSuccess({ uptime: '99.9%', cpuUsage: 35, memoryUsage: 55 }); }
+  static async getSystemLogs() { return this.handleSuccess([]); }
+  static async getSystemSettings() { return this.handleSuccess({}); }
+  static async updateSystemSettings(settings: any) { return this.handleSuccess(settings); }
+  static async getAbuseReports() { return this.handleSuccess([]); }
+  static async updateAbuseReportStatus(reportId: string, status: string) { return this.handleSuccess({ id: reportId, status }); }
 }
+

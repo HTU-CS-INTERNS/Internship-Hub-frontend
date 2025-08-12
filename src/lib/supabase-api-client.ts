@@ -65,6 +65,8 @@ class SupabaseApiClient {
       });
 
     if (profileError) {
+      // Attempt to clean up the auth user if profile creation fails
+      await supabase.auth.admin.deleteUser(data.user.id);
       throw new Error(profileError.message);
     }
 
@@ -77,27 +79,25 @@ class SupabaseApiClient {
   }
 
   async getCurrentUser(): Promise<UserProfileData> {
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
-    if (authError || !user) {
-      throw new Error('User not authenticated');
-    }
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
-    const { data: profile, error: profileError } = await supabase
+    if (sessionError) throw new Error(sessionError.message);
+    if (!session) throw new Error("User not authenticated");
+
+    const { data, error } = await supabase
       .from('users')
       .select(`
         *,
         faculties (*),
         departments (*)
       `)
-      .eq('id', user.id)
+      .eq('id', session.user.id)
       .single();
 
-    if (profileError) {
-      throw new Error(profileError.message);
-    }
+    if (error) throw new Error(error.message);
+    if (!data) throw new Error("User profile not found.");
 
-    return profile as UserProfileData;
+    return data as UserProfileData;
   }
 
   async logout(): Promise<void> {
@@ -137,14 +137,11 @@ class SupabaseApiClient {
   }
 
   async deleteUser(id: string): Promise<void> {
-    // First delete the auth user
     const { error: authError } = await supabase.auth.admin.deleteUser(id);
     
     if (authError) {
       throw new Error(authError.message);
     }
-
-    // The users table record should be deleted automatically via cascade
   }
 
   // Faculty methods
@@ -316,12 +313,14 @@ class SupabaseApiClient {
   }
 
   // Student methods
-  async getStudents(): Promise<Tables['students']['Row'][]> {
+  async getStudents(): Promise<any[]> {
     const { data, error } = await supabase
       .from('students')
       .select(`
         *,
-        users:user_id (*)
+        users:user_id (*),
+        faculties (*),
+        departments (*)
       `)
       .order('created_at', { ascending: false });
 
@@ -332,7 +331,7 @@ class SupabaseApiClient {
     return data;
   }
   
-  async createPendingStudent(studentData: Omit<Tables['students']['Insert'], 'user_id' | 'id'>): Promise<Tables['students']['Row']> {
+  async createPendingStudent(studentData: Omit<Tables['students']['Insert'], 'id' | 'user_id' | 'created_at' | 'updated_at'>): Promise<Tables['students']['Row']> {
     const { data, error } = await supabase
       .from('students')
       .insert(studentData)
@@ -347,7 +346,7 @@ class SupabaseApiClient {
     return data;
   }
 
-  async bulkCreatePendingStudents(studentsData: Omit<Tables['students']['Insert'], 'user_id' | 'id'>[]) {
+  async bulkCreatePendingStudents(studentsData: Omit<Tables['students']['Insert'], 'id' | 'user_id' | 'created_at' | 'updated_at'>[]) {
     const { data, error } = await supabase
       .from('students')
       .insert(studentsData)
@@ -770,8 +769,6 @@ class SupabaseApiClient {
     if (error) {
       throw new Error(error.message);
     }
-
-    return data;
   }
   
   async getAdminDashboardStats() {
@@ -828,3 +825,4 @@ class SupabaseApiClient {
 // Create a singleton instance
 export const apiClient = new SupabaseApiClient();
 export default apiClient;
+
