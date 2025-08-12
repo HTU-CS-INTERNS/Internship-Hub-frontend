@@ -147,15 +147,15 @@ class EmailService {
   async sendReportNotificationEmail(
     recipientEmail: string,
     recipientName: string,
-    studentName: string,
     reportTitle: string,
     notificationType: 'submitted' | 'approved' | 'rejected',
+    studentName?: string, // studentName is optional here now
     feedback?: string
   ): Promise<{ success: boolean; error?: string }> {
     try {
       const emailTemplate = this.generateReportNotificationTemplate(
         recipientName,
-        studentName,
+        studentName || 'A student',
         reportTitle,
         notificationType,
         feedback
@@ -410,7 +410,6 @@ class EmailService {
     return this.sendTaskNotificationEmail(
       studentEmail,
       studentName,
-      studentName,
       'Daily Task',
       status.toLowerCase() as 'approved' | 'rejected',
       feedback
@@ -428,7 +427,6 @@ class EmailService {
   ): Promise<{ success: boolean; error?: string }> {
     return this.sendReportNotificationEmail(
       studentEmail,
-      studentName,
       studentName,
       'Daily Report',
       status.toLowerCase() as 'approved' | 'rejected',
@@ -456,8 +454,8 @@ class EmailService {
         to: notification.recipient_email,
         subject: notification.subject,
         html: notification.html_content,
-        templateType: notification.template_type,
-        metadata: notification.metadata
+        templateType: notification.template_type as any,
+        metadata: notification.metadata || undefined
       }));
     } catch (error) {
       console.error('Error getting email notifications:', error);
@@ -468,3 +466,5 @@ class EmailService {
 
 export const emailService = new EmailService();
 export default EmailService;
+
+    
