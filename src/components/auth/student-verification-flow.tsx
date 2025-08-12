@@ -6,15 +6,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { apiClient } from '@/lib/supabase-api-client';
 import { Eye, EyeOff } from 'lucide-react';
 
 interface VerificationStep1Props {
-  onOtpSent: (email: string) => void;
+  onOtpSent: (email: string, otp: string) => void;
 }
 
 interface VerificationStep2Props {
   email: string;
+  otp: string;
   onVerificationComplete: () => void;
 }
 
@@ -28,23 +28,34 @@ function VerificationStep1({ onOtpSent }: VerificationStep1Props) {
     setIsLoading(true);
 
     try {
-      const response = await apiClient.sendStudentOtp(email);
+      const response = await fetch('/api/auth/send-student-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send OTP');
+      }
 
       toast({
         title: 'OTP Sent',
-        description: response.message,
+        description: data.message,
       });
 
-      // For development, show the OTP
-      if (response.otp) {
+      if (data.otp) {
         toast({
           title: 'Development Mode',
-          description: `Your OTP is: ${response.otp}`,
+          description: `Your OTP is: ${data.otp}`,
           variant: 'default',
         });
+        onOtpSent(email, data.otp);
+      } else {
+        throw new Error("OTP was not returned from the server.");
       }
 
-      onOtpSent(email);
     } catch (error) {
       toast({
         title: 'Error',
@@ -86,7 +97,7 @@ function VerificationStep1({ onOtpSent }: VerificationStep1Props) {
   );
 }
 
-function VerificationStep2({ email, onVerificationComplete }: VerificationStep2Props) {
+function VerificationStep2({ email, otp: otpFromStep1, onVerificationComplete }: VerificationStep2Props) {
   const [otpCode, setOtpCode] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -96,6 +107,15 @@ function VerificationStep2({ email, onVerificationComplete }: VerificationStep2P
 
   const handleVerification = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (otpCode !== otpFromStep1) {
+      toast({
+        title: 'Error',
+        description: 'The OTP you entered is incorrect.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     if (password !== confirmPassword) {
       toast({
@@ -118,15 +138,21 @@ function VerificationStep2({ email, onVerificationComplete }: VerificationStep2P
     setIsLoading(true);
 
     try {
-      const response = await apiClient.verifyStudentOtp({
-        email,
-        otp_code: otpCode,
-        password,
+      const response = await fetch('/api/auth/verify-student-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
       });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to activate account');
+      }
 
       toast({
         title: 'Success',
-        description: response.message,
+        description: data.message,
       });
 
       onVerificationComplete();
@@ -221,9 +247,11 @@ function VerificationStep2({ email, onVerificationComplete }: VerificationStep2P
 export function StudentVerificationFlow() {
   const [step, setStep] = useState<'email' | 'verification' | 'complete'>('email');
   const [email, setEmail] = useState('');
+  const [otp, setOtp] = useState('');
 
-  const handleOtpSent = (sentEmail: string) => {
+  const handleOtpSent = (sentEmail: string, sentOtp: string) => {
     setEmail(sentEmail);
+    setOtp(sentOtp);
     setStep('verification');
   };
 
@@ -256,6 +284,7 @@ export function StudentVerificationFlow() {
       {step === 'verification' && (
         <VerificationStep2 
           email={email} 
+          otp={otp}
           onVerificationComplete={handleVerificationComplete} 
         />
       )}

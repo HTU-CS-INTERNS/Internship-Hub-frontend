@@ -107,6 +107,94 @@ class SupabaseApiClient {
     }
   }
 
+  async verifyStudentByEmail(email: string) {
+    const { data, error } = await supabase
+      .from('students')
+      .select('*')
+      .eq('email', email)
+      .eq('status', 'PENDING')
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+    return data;
+  }
+  
+  async activateStudentAccount(email: string, password: string): Promise<any> {
+    const { data: student, error: studentError } = await supabase
+      .from('students')
+      .select('*')
+      .eq('email', email)
+      .eq('status', 'PENDING')
+      .single();
+    
+    if (studentError || !student) {
+      throw new Error("Pending student record not found or already verified.");
+    }
+
+    // 1. Create user in auth.users
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          first_name: student.first_name,
+          last_name: student.last_name,
+          role: 'STUDENT',
+        },
+      },
+    });
+
+    if (authError || !authData.user) {
+      throw new Error(authError?.message || "Failed to create authentication user.");
+    }
+    
+    const newUserId = authData.user.id;
+
+    // 2. Create entry in public.users
+    const { error: publicUserError } = await supabase
+      .from('users')
+      .insert({
+        id: newUserId,
+        email: student.email,
+        role: 'STUDENT',
+        first_name: student.first_name,
+        last_name: student.last_name,
+        is_active: true,
+        student_id_number: student.student_id_number,
+        faculty_id: student.faculty_id,
+        department_id: student.department_id,
+      });
+
+    if (publicUserError) {
+      // Cleanup: delete the user from auth.users if public.users creation fails
+      await supabase.auth.admin.deleteUser(newUserId);
+      throw new Error(publicUserError.message);
+    }
+
+    // 3. Update the students table with the new user_id and set status to ACTIVE
+    const { data: updatedStudent, error: updateError } = await supabase
+      .from('students')
+      .update({
+        user_id: newUserId,
+        status: 'ACTIVE',
+        is_verified: true,
+        profile_complete: false, // They still need to complete their profile
+      })
+      .eq('id', student.id)
+      .select()
+      .single();
+
+    if (updateError) {
+      // More complex cleanup might be needed here, but for now, we log the error
+      console.error("Failed to update student record after user creation:", updateError);
+      throw new Error("Failed to finalize student activation.");
+    }
+
+    return updatedStudent;
+  }
+
   // User management
   async getUsers(): Promise<Tables['users']['Row'][]> {
     const { data, error } = await supabase
@@ -771,6 +859,8 @@ class SupabaseApiClient {
     if (error) {
       throw new Error(error.message);
     }
+    
+    return data;
   }
   
   async getAdminDashboardStats() {
@@ -827,6 +917,3 @@ class SupabaseApiClient {
 // Create a singleton instance
 export const apiClient = new SupabaseApiClient();
 export default apiClient;
-
-
-

@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview A Genkit flow to generate and 'send' an OTP for email verification.
@@ -31,15 +30,6 @@ const generateOtp = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-// In a real application, this prompt might be used to draft an email containing the OTP.
-// For this mock, it's not directly used by the flow logic but is good practice to define.
-const otpEmailPrompt = ai.definePrompt({
-  name: 'otpEmailPrompt',
-  input: { schema: z.object({ email: SendOtpInputSchema.shape.email, otp: SendOtpOutputSchema.shape.otp }) },
-  output: { schema: z.object({ emailBody: z.string() }) },
-  prompt: `Draft a short and friendly email to {{email}} containing the following One-Time Password (OTP): {{otp}}. The email should state that the OTP is for verifying their email address for InternHub and that it's valid for a short period (e.g., 10 minutes).`,
-});
-
 const sendOtpFlow = ai.defineFlow(
   {
     name: 'sendOtpFlow',
@@ -49,16 +39,8 @@ const sendOtpFlow = ai.defineFlow(
   async (input) => {
     const otp = generateOtp();
     
-    // Simulate sending the OTP. In a real app, you'd use an email service here.
-    // For example, you might call a service that uses the otpEmailPrompt to generate the email body.
+    // In a real application, you'd use an email service here.
     console.log(`Simulating OTP send to ${input.email}: OTP is ${otp}`);
-
-    // Example of how you might use the prompt (currently commented out):
-    // const { output: emailContent } = await otpEmailPrompt({email: input.email, otp });
-    // if (emailContent?.emailBody) {
-    //   // Call an email sending service with emailContent.emailBody
-    //   console.log("Simulated email body:", emailContent.emailBody);
-    // }
 
     return {
       otp: otp,
