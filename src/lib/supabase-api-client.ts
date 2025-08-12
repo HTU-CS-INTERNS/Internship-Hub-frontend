@@ -8,7 +8,7 @@ import type { UserProfileData } from '@/types';
 
 type Tables = Database['public']['Tables'];
 
-class SupabaseApiClient {
+const apiClient = {
   // Authentication methods
   async login(credentials: { email: string; password: string }) {
     const { data, error } = await supabase.auth.signInWithPassword(credentials);
@@ -24,7 +24,7 @@ class SupabaseApiClient {
       user,
       access_token: data.session?.access_token || '',
     };
-  }
+  },
 
   async signup(userData: {
     email: string;
@@ -76,7 +76,7 @@ class SupabaseApiClient {
       user,
       access_token: data.session?.access_token || '',
     };
-  }
+  },
 
   async getCurrentUser(): Promise<UserProfileData> {
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -98,14 +98,14 @@ class SupabaseApiClient {
     if (!data) throw new Error("User profile not found.");
 
     return data as UserProfileData;
-  }
+  },
 
   async logout(): Promise<void> {
     const { error } = await supabase.auth.signOut();
     if (error) {
       throw new Error(error.message);
     }
-  }
+  },
 
   async verifyStudentByEmail(email: string) {
     const { data, error } = await supabase
@@ -119,7 +119,7 @@ class SupabaseApiClient {
       throw new Error(error.message);
     }
     return data;
-  }
+  },
   
   async activateStudentAccount(email: string, password: string): Promise<any> {
     const { data: student, error: studentError } = await supabase
@@ -193,7 +193,7 @@ class SupabaseApiClient {
     }
 
     return updatedStudent;
-  }
+  },
 
   // User management
   async getUsers(): Promise<Tables['users']['Row'][]> {
@@ -207,7 +207,7 @@ class SupabaseApiClient {
     }
 
     return data;
-  }
+  },
 
   async updateUser(id: string, userData: Tables['users']['Update']): Promise<Tables['users']['Row']> {
     const { data, error } = await supabase
@@ -222,7 +222,7 @@ class SupabaseApiClient {
     }
 
     return data;
-  }
+  },
 
   async deleteUser(id: string): Promise<void> {
     const { error: authError } = await supabase.auth.admin.deleteUser(id);
@@ -230,7 +230,7 @@ class SupabaseApiClient {
     if (authError) {
       throw new Error(authError.message);
     }
-  }
+  },
 
   // Faculty methods
   async getFaculties(): Promise<Tables['faculties']['Row'][]> {
@@ -244,7 +244,7 @@ class SupabaseApiClient {
     }
 
     return data;
-  }
+  },
 
   async createFaculty(facultyData: Tables['faculties']['Insert']): Promise<Tables['faculties']['Row']> {
     const { data, error } = await supabase
@@ -258,7 +258,7 @@ class SupabaseApiClient {
     }
 
     return data;
-  }
+  },
 
   async updateFaculty(id: number, facultyData: Tables['faculties']['Update']): Promise<Tables['faculties']['Row']> {
     const { data, error } = await supabase
@@ -273,7 +273,7 @@ class SupabaseApiClient {
     }
 
     return data;
-  }
+  },
 
   async deleteFaculty(id: number): Promise<void> {
     const { error } = await supabase
@@ -284,7 +284,7 @@ class SupabaseApiClient {
     if (error) {
       throw new Error(error.message);
     }
-  }
+  },
 
   // Department methods
   async getDepartments(facultyId?: number): Promise<Tables['departments']['Row'][]> {
@@ -304,7 +304,7 @@ class SupabaseApiClient {
     }
 
     return data;
-  }
+  },
 
   async createDepartment(departmentData: Tables['departments']['Insert']): Promise<Tables['departments']['Row']> {
     const { data, error } = await supabase
@@ -318,7 +318,7 @@ class SupabaseApiClient {
     }
 
     return data;
-  }
+  },
 
   async updateDepartment(id: number, departmentData: Tables['departments']['Update']): Promise<Tables['departments']['Row']> {
     const { data, error } = await supabase
@@ -333,7 +333,7 @@ class SupabaseApiClient {
     }
 
     return data;
-  }
+  },
 
   async deleteDepartment(id: number): Promise<void> {
     const { error } = await supabase
@@ -344,7 +344,7 @@ class SupabaseApiClient {
     if (error) {
       throw new Error(error.message);
     }
-  }
+  },
 
   // Company methods
   async getCompanies(): Promise<Tables['companies']['Row'][]> {
@@ -358,7 +358,7 @@ class SupabaseApiClient {
     }
 
     return data;
-  }
+  },
 
   async createCompany(companyData: Tables['companies']['Insert']): Promise<Tables['companies']['Row']> {
     const { data, error } = await supabase
@@ -372,7 +372,7 @@ class SupabaseApiClient {
     }
 
     return data;
-  }
+  },
 
   async updateCompany(id: number, companyData: Tables['companies']['Update']): Promise<Tables['companies']['Row']> {
     const { data, error } = await supabase
@@ -387,7 +387,7 @@ class SupabaseApiClient {
     }
 
     return data;
-  }
+  },
 
   async deleteCompany(id: number): Promise<void> {
     const { error } = await supabase
@@ -398,7 +398,7 @@ class SupabaseApiClient {
     if (error) {
       throw new Error(error.message);
     }
-  }
+  },
 
   // Student methods
   async getStudents(): Promise<any[]> {
@@ -417,7 +417,7 @@ class SupabaseApiClient {
     }
 
     return data;
-  }
+  },
   
   async createPendingStudent(studentData: Omit<Tables['students']['Insert'], 'id' | 'user_id' | 'created_at' | 'updated_at' | 'is_verified' | 'profile_complete'>): Promise<Tables['students']['Row']> {
     const { data, error } = await supabase
@@ -432,7 +432,7 @@ class SupabaseApiClient {
     }
     
     return data;
-  }
+  },
 
   async bulkCreatePendingStudents(studentsData: Omit<Tables['students']['Insert'], 'id' | 'user_id' | 'created_at' | 'updated_at' | 'is_verified' | 'profile_complete'>[]) {
     const insertData = studentsData.map(s => ({ ...s, user_id: null }));
@@ -447,7 +447,7 @@ class SupabaseApiClient {
     }
 
     return data;
-  }
+  },
 
 
   async updateStudent(id: number, studentData: Tables['students']['Update']): Promise<Tables['students']['Row']> {
@@ -463,7 +463,7 @@ class SupabaseApiClient {
     }
 
     return data;
-  }
+  },
 
   // Internship methods
   async getInternships(): Promise<any[]> {
@@ -492,7 +492,7 @@ class SupabaseApiClient {
     }
 
     return data;
-  }
+  },
 
 
   async createInternship(internshipData: Tables['internships']['Insert']): Promise<Tables['internships']['Row']> {
@@ -507,7 +507,7 @@ class SupabaseApiClient {
     }
 
     return data;
-  }
+  },
 
   async updateInternship(id: number, internshipData: Tables['internships']['Update']): Promise<Tables['internships']['Row']> {
     const { data, error } = await supabase
@@ -522,7 +522,7 @@ class SupabaseApiClient {
     }
 
     return data;
-  }
+  },
 
   // Daily Reports methods
   async getDailyReports(internshipId?: number): Promise<Tables['daily_reports']['Row'][]> {
@@ -542,7 +542,7 @@ class SupabaseApiClient {
     }
 
     return data;
-  }
+  },
 
   async createDailyReport(reportData: Tables['daily_reports']['Insert']): Promise<Tables['daily_reports']['Row']> {
     const { data, error } = await supabase
@@ -556,7 +556,7 @@ class SupabaseApiClient {
     }
 
     return data;
-  }
+  },
 
   async updateDailyReport(id: number, reportData: Tables['daily_reports']['Update']): Promise<Tables['daily_reports']['Row']> {
     const { data, error } = await supabase
@@ -571,7 +571,7 @@ class SupabaseApiClient {
     }
 
     return data;
-  }
+  },
 
   // Daily Tasks methods
   async getDailyTasks(internshipId?: number): Promise<Tables['daily_tasks']['Row'][]> {
@@ -591,7 +591,7 @@ class SupabaseApiClient {
     }
 
     return data;
-  }
+  },
 
   async createDailyTask(taskData: Tables['daily_tasks']['Insert']): Promise<Tables['daily_tasks']['Row']> {
     const { data, error } = await supabase
@@ -605,7 +605,7 @@ class SupabaseApiClient {
     }
 
     return data;
-  }
+  },
 
   async updateDailyTask(id: number, taskData: Tables['daily_tasks']['Update']): Promise<Tables['daily_tasks']['Row']> {
     const { data, error } = await supabase
@@ -620,7 +620,7 @@ class SupabaseApiClient {
     }
 
     return data;
-  }
+  },
 
   // Location Check-ins methods
   async createLocationCheckIn(checkInData: Tables['location_check_ins']['Insert']): Promise<Tables['location_check_ins']['Row']> {
@@ -635,7 +635,7 @@ class SupabaseApiClient {
     }
 
     return data;
-  }
+  },
 
   async getLocationCheckIns(internshipId?: number): Promise<Tables['location_check_ins']['Row'][]> {
     let query = supabase
@@ -654,7 +654,7 @@ class SupabaseApiClient {
     }
 
     return data;
-  }
+  },
 
   // Lecturers methods
   async getLecturers(): Promise<Tables['lecturers']['Row'][]> {
@@ -673,7 +673,7 @@ class SupabaseApiClient {
     }
 
     return data;
-  }
+  },
 
   async createLecturer(lecturerData: Tables['lecturers']['Insert']): Promise<Tables['lecturers']['Row']> {
     const { data, error } = await supabase
@@ -687,7 +687,7 @@ class SupabaseApiClient {
     }
 
     return data;
-  }
+  },
 
   async updateLecturer(id: number, lecturerData: Tables['lecturers']['Update']): Promise<Tables['lecturers']['Row']> {
     const { data, error } = await supabase
@@ -702,7 +702,7 @@ class SupabaseApiClient {
     }
 
     return data;
-  }
+  },
 
   async deleteLecturer(id: number): Promise<void> {
     const { error } = await supabase
@@ -713,7 +713,7 @@ class SupabaseApiClient {
     if (error) {
       throw new Error(error.message);
     }
-  }
+  },
 
   // Company Supervisors methods
   async getCompanySupervisors(): Promise<Tables['company_supervisors']['Row'][]> {
@@ -731,7 +731,7 @@ class SupabaseApiClient {
     }
 
     return data;
-  }
+  },
 
   async createCompanySupervisor(supervisorData: Tables['company_supervisors']['Insert']): Promise<Tables['company_supervisors']['Row']> {
     const { data, error } = await supabase
@@ -745,7 +745,7 @@ class SupabaseApiClient {
     }
 
     return data;
-  }
+  },
 
   async updateCompanySupervisor(id: number, supervisorData: Tables['company_supervisors']['Update']): Promise<Tables['company_supervisors']['Row']> {
     const { data, error } = await supabase
@@ -760,7 +760,7 @@ class SupabaseApiClient {
     }
 
     return data;
-  }
+  },
 
   async deleteCompanySupervisor(id: number): Promise<void> {
     const { error } = await supabase
@@ -771,7 +771,7 @@ class SupabaseApiClient {
     if (error) {
       throw new Error(error.message);
     }
-  }
+  },
 
   // Issues methods
   async getIssues(): Promise<Tables['issues']['Row'][]> {
@@ -785,7 +785,7 @@ class SupabaseApiClient {
     }
 
     return data;
-  }
+  },
 
   async createIssue(issueData: Tables['issues']['Insert']): Promise<Tables['issues']['Row']> {
     const { data, error } = await supabase
@@ -799,7 +799,7 @@ class SupabaseApiClient {
     }
 
     return data;
-  }
+  },
 
   async updateIssue(id: number, issueData: Tables['issues']['Update']): Promise<Tables['issues']['Row']> {
     const { data, error } = await supabase
@@ -814,7 +814,7 @@ class SupabaseApiClient {
     }
 
     return data;
-  }
+  },
 
   // Evaluations methods
   async getEvaluations(): Promise<Tables['evaluations']['Row'][]> {
@@ -833,7 +833,7 @@ class SupabaseApiClient {
     }
 
     return data;
-  }
+  },
 
   async createEvaluation(evaluationData: Tables['evaluations']['Insert']): Promise<Tables['evaluations']['Row']> {
     const { data, error } = await supabase
@@ -847,7 +847,7 @@ class SupabaseApiClient {
     }
 
     return data;
-  }
+  },
 
   async createEvaluationScore(scoreData: Tables['evaluation_scores']['Insert']): Promise<Tables['evaluation_scores']['Row']> {
     const { data, error } = await supabase
@@ -861,7 +861,7 @@ class SupabaseApiClient {
     }
     
     return data;
-  }
+  },
   
   async getAdminDashboardStats() {
     try {
@@ -912,8 +912,8 @@ class SupabaseApiClient {
       throw new Error("An unknown error occurred while fetching dashboard stats.");
     }
   }
-}
+};
 
-// Create a singleton instance
-export const apiClient = new SupabaseApiClient();
+// Export the singleton instance
+export { apiClient };
 export default apiClient;
