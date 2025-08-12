@@ -120,7 +120,7 @@ CREATE TABLE public.lecturers (
 -- Students table
 CREATE TABLE public.students (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  user_id uuid,
+  user_id uuid, -- Made nullable to allow for pending students
   email text NOT NULL,
   first_name text NOT NULL,
   last_name text NOT NULL,
@@ -428,4 +428,5 @@ INSERT INTO public.companies (name, address, city, region, industry) VALUES
 ```
 
 Once you've run these scripts, your database will be ready to use with your application!
+
 

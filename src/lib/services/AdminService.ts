@@ -1,4 +1,5 @@
 
+
 import { apiClient } from '@/lib/supabase-api-client';
 import { BaseService } from './BaseService';
 import type { Database } from '@/types/database';
@@ -104,7 +105,7 @@ export class AdminService extends BaseService {
     }
   }
 
-  static async createStudent(studentData: Omit<Tables['students']['Insert'], 'id' | 'created_at' | 'updated_at' | 'user_id' | 'is_verified' | 'profile_complete'>) {
+  static async createStudent(studentData: Omit<Tables['students']['Insert'], 'id' | 'user_id' | 'created_at' | 'updated_at' | 'is_verified' | 'profile_complete'>) {
     try {
       const result = await apiClient.createPendingStudent(studentData);
       return this.handleSuccess(result);
@@ -113,7 +114,7 @@ export class AdminService extends BaseService {
     }
   }
   
-  static async bulkCreateStudents(studentsData: Omit<Tables['students']['Insert'], 'id' | 'created_at' | 'updated_at' | 'user_id' | 'is_verified' | 'profile_complete'>[]) {
+  static async bulkCreateStudents(studentsData: Omit<Tables['students']['Insert'], 'id' | 'user_id' | 'created_at' | 'updated_at' | 'is_verified' | 'profile_complete'>[]) {
     try {
       const result = await apiClient.bulkCreatePendingStudents(studentsData);
       return this.handleSuccess(result);
@@ -503,5 +504,6 @@ export class AdminService extends BaseService {
   static async getAbuseReports() { return this.handleSuccess([]); }
   static async updateAbuseReportStatus(reportId: string, status: string) { return this.handleSuccess({ id: reportId, status }); }
 }
+
 
 
