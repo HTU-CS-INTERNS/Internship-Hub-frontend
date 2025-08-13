@@ -10,6 +10,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Email and password are required' }, { status: 400 });
     }
 
+    // This now correctly calls the method on the apiClient object
     const result = await apiClient.activateStudentAccount(email, password);
 
     return NextResponse.json({ success: true, message: 'Account activated successfully', data: result });

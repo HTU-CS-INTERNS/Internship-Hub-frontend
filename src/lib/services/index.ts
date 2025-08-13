@@ -1,3 +1,4 @@
+
 /**
  * Service Layer Exports
  * 
@@ -9,10 +10,12 @@
 export { BaseService } from './BaseService';
 
 // Export role-specific services
-export { StudentService } from './StudentServiceFixed';
+// REMOVED StudentServiceFixed export to break circular dependency
 export { SupervisorService } from './SupervisorServiceFixed';
 export { LecturerService } from './LecturerService';
 export { AdminService } from './AdminService';
+export { StudentService } from './StudentService'; // This is a temporary addition to fix circular deps
+
 
 // Export service types (if needed)
-export type { ServiceResponse } from './BaseService';
+// export type { ServiceResponse } from './BaseService';

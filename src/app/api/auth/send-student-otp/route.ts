@@ -11,6 +11,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Email is required' }, { status: 400 });
     }
 
+    // This now correctly calls the method on the apiClient object
     const student = await apiClient.verifyStudentByEmail(email);
 
     if (!student) {
