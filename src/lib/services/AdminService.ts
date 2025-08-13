@@ -186,7 +186,7 @@ export class AdminService extends BaseService {
         const result = await apiClient.updateStudent(id, updateData);
         return this.handleSuccess(result);
       } catch (error) {
-        return this.handleError(error);
+          return this.handleError(error);
       }
   }
   

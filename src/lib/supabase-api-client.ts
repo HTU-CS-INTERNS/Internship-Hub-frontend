@@ -15,12 +15,27 @@ export async function login(credentials: { email: string; password: string }) {
     console.error('[apiClient.login] Supabase auth error:', error);
     throw new Error(error.message);
   }
-  console.log('[apiClient.login] Supabase auth successful. Fetching profile...');
-  const user = await getCurrentUser();
+  if (!data.session || !data.user) {
+    throw new Error('Authentication failed, no session returned.');
+  }
+
+  console.log('[apiClient.login] Supabase auth successful. Fetching profile for user ID:', data.user.id);
+  const { data: userProfile, error: profileError } = await supabase
+    .from('users')
+    .select(`*, faculties (*), departments (*)`)
+    .eq('id', data.user.id)
+    .single();
+    
+  if (profileError || !userProfile) {
+    console.error('[apiClient.login] Profile fetch error:', profileError);
+    // If profile doesn't exist, something is wrong. We should sign out to be safe.
+    await supabase.auth.signOut();
+    throw new Error('User authenticated but profile not found.');
+  }
   
   return {
-    user,
-    access_token: data.session?.access_token || '',
+    user: userProfile as UserProfileData,
+    access_token: data.session.access_token,
   };
 }
 
@@ -55,7 +70,7 @@ export async function signup(userData: {
   }
 
   console.log('[apiClient.signup] Creating user profile in public.users table...');
-  const { error: profileError } = await supabase
+  const { data: userProfile, error: profileError } = await supabase
     .from('users')
     .insert({
       id: data.user.id,
@@ -63,7 +78,9 @@ export async function signup(userData: {
       role: userData.role as any,
       first_name: userData.first_name,
       last_name: userData.last_name,
-    });
+    })
+    .select()
+    .single();
 
   if (profileError) {
     console.error('[apiClient.signup] Profile creation error, cleaning up auth user:', profileError);
@@ -71,11 +88,8 @@ export async function signup(userData: {
     throw new Error(profileError.message);
   }
 
-  console.log('[apiClient.signup] Signup successful, fetching final user profile.');
-  const user = await getCurrentUser();
-  
   return {
-    user,
+    user: userProfile as UserProfileData,
     access_token: data.session?.access_token || '',
   };
 }
@@ -451,3 +465,43 @@ export async function getAdminDashboardStats() {
       throw new Error("An unknown error occurred while fetching dashboard stats.");
     }
   }
+
+export const apiClient = {
+  login,
+  signup,
+  logout,
+  getCurrentUser,
+  verifyStudentByEmail,
+  activateStudentAccount,
+  getUsers,
+  updateUser,
+  deleteUser,
+  getStudents,
+  createPendingStudent,
+  bulkCreatePendingStudents,
+  updateStudent,
+  getFaculties,
+  createFaculty,
+  updateFaculty,
+  deleteFaculty,
+  getDepartments,
+  createDepartment,
+  updateDepartment,
+  deleteDepartment,
+  getCompanies,
+  createCompany,
+  updateCompany,
+  deleteCompany,
+  getInternships,
+  updateInternship,
+  getDailyReports,
+  getDailyTasks,
+  getLecturers,
+  getCompanySupervisors,
+  getIssues,
+  getEvaluations,
+  createEvaluation,
+  createEvaluationScore,
+  getAdminDashboardStats
+  // ... add all other methods here
+};
