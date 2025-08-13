@@ -1,6 +1,4 @@
 
-'use client';
-
 import { supabase } from './supabase';
 import type { Database } from '@/types/database';
 import type { UserProfileData } from '@/types';
