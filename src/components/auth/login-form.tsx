@@ -18,7 +18,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import type { UserProfileData, UserRole } from '@/types';
 import { Loader2 } from 'lucide-react';
-import { apiClient } from '@/lib/supabase-api-client';
+import { login } from '@/lib/supabase-api-client';
 
 // Role normalization function to handle backend/frontend role differences
 function normalizeRole(role: string): UserRole {
@@ -58,7 +58,7 @@ export function LoginForm() {
   async function onSubmit(values: LoginFormValues) {
     setIsLoading(true);
     try {
-      const response = await apiClient.login(values);
+      const response = await login(values);
       const { user, access_token } = response;
       const normalizedRole = normalizeRole(user.role);
       const userWithNormalizedRole = { ...user, role: normalizedRole };

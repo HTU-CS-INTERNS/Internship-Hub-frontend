@@ -1,6 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { apiClient } from '@/lib/supabase-api-client';
+import { verifyStudentByEmail } from '@/lib/supabase-api-client';
 import { sendOtp } from '@/ai/flows/send-otp-flow';
 
 export async function POST(request: NextRequest) {
@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Email is required' }, { status: 400 });
     }
 
-    const student = await apiClient.verifyStudentByEmail(email);
+    const student = await verifyStudentByEmail(email);
     console.log(`[API /send-student-otp] Student verification result:`, student);
 
     if (!student) {

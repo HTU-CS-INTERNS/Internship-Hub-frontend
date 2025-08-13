@@ -1,6 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { apiClient } from '@/lib/supabase-api-client';
+import { activateStudentAccount } from '@/lib/supabase-api-client';
 
 export async function POST(request: NextRequest) {
   console.log('[API /verify-student-otp] Received request.');
@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(`[API /verify-student-otp] Activating account for: ${email}`);
-    const result = await apiClient.activateStudentAccount(email, password);
+    const result = await activateStudentAccount(email, password);
     console.log(`[API /verify-student-otp] Account activation result:`, result);
 
     return NextResponse.json({ success: true, message: 'Account activated successfully', data: result });
