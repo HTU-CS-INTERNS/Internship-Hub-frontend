@@ -953,6 +953,4 @@ const apiClient = {
   }
 };
 
-// Export the singleton instance
 export { apiClient };
-export default apiClient;
