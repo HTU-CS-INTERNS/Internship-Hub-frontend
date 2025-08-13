@@ -2,12 +2,13 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, CheckCircle, Loader2 } from 'lucide-react';
+import Link from 'next/link';
 
 interface VerificationStep1Props {
   onOtpSent: (email: string, otp: string) => void;
@@ -27,6 +28,7 @@ function VerificationStep1({ onOtpSent }: VerificationStep1Props) {
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    console.log(`[VerificationStep1] handleSendOtp called for email: ${email}`);
 
     try {
       const response = await fetch('/api/auth/send-student-otp', {
@@ -34,8 +36,10 @@ function VerificationStep1({ onOtpSent }: VerificationStep1Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
+      console.log(`[VerificationStep1] API response status: ${response.status}`);
 
       const data = await response.json();
+      console.log(`[VerificationStep1] API response data:`, data);
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to send OTP');
@@ -56,8 +60,8 @@ function VerificationStep1({ onOtpSent }: VerificationStep1Props) {
       } else {
         throw new Error("OTP was not returned from the server.");
       }
-
     } catch (error) {
+      console.error('[VerificationStep1] CATCH BLOCK: Error sending OTP.', error);
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Failed to send OTP',
@@ -71,7 +75,7 @@ function VerificationStep1({ onOtpSent }: VerificationStep1Props) {
   return (
     <Card className="max-w-md mx-auto">
       <CardHeader>
-        <CardTitle>Student Verification</CardTitle>
+        <CardTitle>Student Account Verification</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSendOtp} className="space-y-4">
@@ -86,11 +90,11 @@ function VerificationStep1({ onOtpSent }: VerificationStep1Props) {
               required
             />
             <p className="text-sm text-muted-foreground mt-1">
-              Enter your school email address to receive verification code
+              Enter your school email address to receive verification code.
             </p>
           </div>
           <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? 'Sending OTP...' : 'Send Verification Code'}
+            {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending OTP...</> : 'Send Verification Code'}
           </Button>
         </form>
       </CardContent>
@@ -108,6 +112,7 @@ function VerificationStep2({ email, otp: otpFromStep1, onVerificationComplete }:
 
   const handleVerification = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log(`[VerificationStep2] handleVerification called for email: ${email}`);
     
     if (otpCode !== otpFromStep1) {
       toast({
@@ -144,8 +149,10 @@ function VerificationStep2({ email, otp: otpFromStep1, onVerificationComplete }:
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
+      console.log(`[VerificationStep2] API response status: ${response.status}`);
       
       const data = await response.json();
+      console.log(`[VerificationStep2] API response data:`, data);
       
       if (!response.ok) {
         throw new Error(data.error || 'Failed to activate account');
@@ -158,6 +165,7 @@ function VerificationStep2({ email, otp: otpFromStep1, onVerificationComplete }:
 
       onVerificationComplete();
     } catch (error) {
+      console.error('[VerificationStep2] CATCH BLOCK: Error verifying account.', error);
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Verification failed',
@@ -172,6 +180,7 @@ function VerificationStep2({ email, otp: otpFromStep1, onVerificationComplete }:
     <Card className="max-w-md mx-auto">
       <CardHeader>
         <CardTitle>Complete Registration</CardTitle>
+        <CardDescription>Enter the code sent to your email and set your password.</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleVerification} className="space-y-4">
@@ -237,7 +246,7 @@ function VerificationStep2({ email, otp: otpFromStep1, onVerificationComplete }:
           </div>
 
           <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? 'Creating Account...' : 'Complete Registration'}
+            {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating Account...</> : 'Complete Registration'}
           </Button>
         </form>
       </CardContent>
@@ -262,17 +271,18 @@ export function StudentVerificationFlow() {
 
   if (step === 'complete') {
     return (
-      <Card className="max-w-md mx-auto">
+      <Card className="max-w-md mx-auto text-center">
         <CardHeader>
           <CardTitle>Registration Complete!</CardTitle>
         </CardHeader>
-        <CardContent className="text-center">
+        <CardContent>
+          <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
           <p className="mb-4">Your account has been created successfully.</p>
           <Button 
-            onClick={() => window.location.href = '/login'}
+            asChild
             className="w-full"
           >
-            Continue to Login
+            <Link href="/login">Continue to Login</Link>
           </Button>
         </CardContent>
       </Card>
