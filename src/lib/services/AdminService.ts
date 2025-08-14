@@ -1,5 +1,4 @@
 
-
 import { apiClient } from '@/lib/supabase-api-client';
 import { BaseService } from './BaseService';
 import type { Database } from '@/types/database';

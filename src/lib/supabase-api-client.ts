@@ -1,4 +1,5 @@
 
+
 import { supabase } from './supabase';
 import type { Database } from '@/types/database';
 import type { UserProfileData } from '@/types';
@@ -8,7 +9,6 @@ type Tables = Database['public']['Tables'];
 // --- Authentication Methods ---
 
 export async function login(credentials: { email: string; password: string }) {
-  console.log('[apiClient.login] Attempting login for:', credentials.email);
   const { data, error } = await supabase.auth.signInWithPassword(credentials);
   
   if (error) {
@@ -19,7 +19,6 @@ export async function login(credentials: { email: string; password: string }) {
     throw new Error('Authentication failed, no session returned.');
   }
 
-  console.log('[apiClient.login] Supabase auth successful. Fetching profile for user ID:', data.user.id);
   const { data: userProfile, error: profileError } = await supabase
     .from('users')
     .select(`*, faculties (*), departments (*)`)
@@ -27,8 +26,6 @@ export async function login(credentials: { email: string; password: string }) {
     .single();
     
   if (profileError || !userProfile) {
-    console.error('[apiClient.login] Profile fetch error:', profileError);
-    // If profile doesn't exist, something is wrong. We should sign out to be safe.
     await supabase.auth.signOut();
     throw new Error('User authenticated but profile not found.');
   }
@@ -46,7 +43,6 @@ export async function signup(userData: {
   first_name: string;
   last_name: string;
 }) {
-  console.log('[apiClient.signup] Attempting signup for:', userData.email);
   const { data, error } = await supabase.auth.signUp({
     email: userData.email,
     password: userData.password,
@@ -60,16 +56,13 @@ export async function signup(userData: {
   });
 
   if (error) {
-    console.error('[apiClient.signup] Supabase auth signup error:', error);
     throw new Error(error.message);
   }
 
   if (!data.user) {
-    console.error('[apiClient.signup] User creation failed, no user object returned.');
     throw new Error('User creation failed');
   }
 
-  console.log('[apiClient.signup] Creating user profile in public.users table...');
   const { data: userProfile, error: profileError } = await supabase
     .from('users')
     .insert({
@@ -83,7 +76,6 @@ export async function signup(userData: {
     .single();
 
   if (profileError) {
-    console.error('[apiClient.signup] Profile creation error, cleaning up auth user:', profileError);
     await supabase.auth.admin.deleteUser(data.user.id);
     throw new Error(profileError.message);
   }
@@ -95,19 +87,11 @@ export async function signup(userData: {
 }
 
 export async function getCurrentUser(): Promise<UserProfileData> {
-  console.log('[apiClient.getCurrentUser] Fetching session...');
   const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
-  if (sessionError) {
-    console.error('[apiClient.getCurrentUser] Session error:', sessionError);
-    throw new Error(sessionError.message);
-  }
-  if (!session) {
-    console.error('[apiClient.getCurrentUser] No active session.');
-    throw new Error("User not authenticated");
-  }
+  if (sessionError) throw new Error(sessionError.message);
+  if (!session) throw new Error("User not authenticated");
 
-  console.log('[apiClient.getCurrentUser] Session found. Fetching profile for user:', session.user.id);
   const { data, error } = await supabase
     .from('users')
     .select(`
@@ -118,32 +102,20 @@ export async function getCurrentUser(): Promise<UserProfileData> {
     .eq('id', session.user.id)
     .single();
 
-  if (error) {
-    console.error('[apiClient.getCurrentUser] Profile fetch error:', error);
-    throw new Error(error.message);
-  }
-  if (!data) {
-    console.error('[apiClient.getCurrentUser] Profile not found for user:', session.user.id);
-    throw new Error("User profile not found.");
-  }
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("User profile not found.");
 
   return data as UserProfileData;
 }
 
 export async function logout(): Promise<void> {
-  console.log('[apiClient.logout] Signing out...');
   const { error } = await supabase.auth.signOut();
-  if (error) {
-    console.error('[apiClient.logout] Error signing out:', error);
-    throw new Error(error.message);
-  }
-  console.log('[apiClient.logout] Sign out successful.');
+  if (error) throw new Error(error.message);
 }
 
 // --- Verification Methods ---
 
 export async function verifyStudentByEmail(email: string) {
-  console.log(`[apiClient.verifyStudentByEmail] Verifying student with email: ${email}`);
   const { data, error } = await supabase
     .from('students')
     .select('*')
@@ -152,15 +124,12 @@ export async function verifyStudentByEmail(email: string) {
     .maybeSingle();
 
   if (error) {
-    console.error(`[apiClient.verifyStudentByEmail] Supabase error:`, error);
     throw new Error(error.message);
   }
-  console.log(`[apiClient.verifyStudentByEmail] Student found:`, data);
   return data;
 }
 
 export async function activateStudentAccount(email: string, password: string): Promise<any> {
-  console.log(`[apiClient.activateStudentAccount] Activating student with email: ${email}`);
   const { data: student, error: studentError } = await supabase
     .from('students')
     .select('*')
@@ -169,13 +138,9 @@ export async function activateStudentAccount(email: string, password: string): P
     .single();
   
   if (studentError || !student) {
-    console.error(`[apiClient.activateStudentAccount] Pending student not found or already verified for email ${email}:`, studentError);
     throw new Error("Pending student record not found or already verified.");
   }
-  console.log(`[apiClient.activateStudentAccount] Found pending student record:`, student);
 
-  // 1. Create user in auth.users
-  console.log(`[apiClient.activateStudentAccount] Creating auth user...`);
   const { data: authData, error: authError } = await supabase.auth.signUp({
     email,
     password,
@@ -189,15 +154,11 @@ export async function activateStudentAccount(email: string, password: string): P
   });
 
   if (authError || !authData.user) {
-    console.error(`[apiClient.activateStudentAccount] Failed to create auth user:`, authError);
     throw new Error(authError?.message || "Failed to create authentication user.");
   }
   
   const newUserId = authData.user.id;
-  console.log(`[apiClient.activateStudentAccount] Auth user created with ID: ${newUserId}`);
 
-  // 2. Create entry in public.users
-  console.log(`[apiClient.activateStudentAccount] Creating public.users profile...`);
   const { error: publicUserError } = await supabase
     .from('users')
     .insert({
@@ -213,14 +174,10 @@ export async function activateStudentAccount(email: string, password: string): P
     });
 
   if (publicUserError) {
-    console.error(`[apiClient.activateStudentAccount] Failed to create public.users profile. Cleaning up auth user...`, publicUserError);
     await supabase.auth.admin.deleteUser(newUserId);
     throw new Error(publicUserError.message);
   }
-  console.log(`[apiClient.activateStudentAccount] public.users profile created.`);
 
-  // 3. Update the students table with the new user_id and set status to ACTIVE
-  console.log(`[apiClient.activateStudentAccount] Updating students table record ID ${student.id}...`);
   const { data: updatedStudent, error: updateError } = await supabase
     .from('students')
     .update({
@@ -234,10 +191,8 @@ export async function activateStudentAccount(email: string, password: string): P
     .single();
 
   if (updateError) {
-    console.error(`[apiClient.activateStudentAccount] Failed to update student record after user creation. Complex cleanup may be needed.`, updateError);
     throw new Error("Failed to finalize student activation.");
   }
-  console.log(`[apiClient.activateStudentAccount] Student record updated successfully.`);
 
   return updatedStudent;
 }
@@ -358,29 +313,23 @@ export async function getStudents(): Promise<any[]> {
 }
 
 export async function createPendingStudent(studentData: Omit<Tables['students']['Insert'], 'id' | 'user_id' | 'created_at' | 'updated_at' | 'is_verified' | 'profile_complete'>): Promise<Tables['students']['Row']> {
-  console.log("[apiClient.createPendingStudent] Creating student with data:", studentData);
   const { data, error } = await supabase
     .from('students')
     .insert({ ...studentData, user_id: null })
     .select()
     .single();
   if (error) {
-    console.error("[apiClient.createPendingStudent] Supabase error:", error);
     throw new Error(error.message);
   }
-  console.log("[apiClient.createPendingStudent] Student created successfully:", data);
   return data;
 }
 
 export async function bulkCreatePendingStudents(studentsData: Omit<Tables['students']['Insert'], 'id' | 'user_id' | 'created_at' | 'updated_at' | 'is_verified' | 'profile_complete'>[]) {
-  console.log(`[apiClient.bulkCreatePendingStudents] Creating ${studentsData.length} students.`);
   const insertData = studentsData.map(s => ({ ...s, user_id: null }));
   const { data, error } = await supabase.from('students').insert(insertData).select();
   if (error) {
-    console.error("[apiClient.bulkCreatePendingStudents] Supabase error:", error);
     throw new Error(error.message);
   }
-  console.log(`[apiClient.bulkCreatePendingStudents] ${data?.length || 0} students created.`);
   return data;
 }
 
@@ -412,7 +361,6 @@ export async function createEvaluationScore(scoreData: any) { /* ... */ return {
 
 export async function getAdminDashboardStats() {
     try {
-      console.log("[apiClient.getAdminDashboardStats] Fetching stats...");
       const [
         { count: totalStudents },
         { count: totalLecturers },
@@ -428,7 +376,6 @@ export async function getAdminDashboardStats() {
       ]);
       
       if (internshipsError) throw internshipsError;
-      console.log("[apiClient.getAdminDashboardStats] Fetched counts and internship data.");
 
       const activeInternships = internships?.filter(i => i.status === 'APPROVED' || i.status === 'IN_PROGRESS').length || 0;
       const unassignedInterns = internships?.filter(i => i.status === 'APPROVED' && !i.lecturer_id).length || 0;
@@ -454,11 +401,9 @@ export async function getAdminDashboardStats() {
         avgLecturerWorkload,
         totalCompanies: totalCompanies ?? 0,
       };
-      console.log("[apiClient.getAdminDashboardStats] Calculated stats:", stats);
       return stats;
 
     } catch (error) {
-      console.error("[apiClient.getAdminDashboardStats] Error fetching stats:", error);
       if (error instanceof Error) {
         throw new Error(error.message);
       }
