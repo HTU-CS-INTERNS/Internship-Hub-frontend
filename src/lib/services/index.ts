@@ -12,7 +12,7 @@ export { BaseService } from './BaseService';
 
 // Export role-specific services
 export { AdminService } from './AdminService';
-export { StudentService } from './StudentService';
+export { StudentService } from './StudentServiceFixed'; // Using the fixed version
 export { LecturerService } from './LecturerService';
 export { SupervisorService } from './SupervisorServiceFixed'; // Using the fixed version
 
