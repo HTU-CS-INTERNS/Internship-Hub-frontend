@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -15,20 +14,30 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from '@/components/ui/label';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import type { UserRole } from '@/types';
-import { USER_ROLES } from '@/lib/constants';
+import type { UserProfileData, UserRole } from '@/types';
 import { Loader2 } from 'lucide-react';
+import api from '@/lib/api';
+
+// Role normalization function to handle backend/frontend role differences
+function normalizeRole(role: string): UserRole {
+  const roleMap: Record<string, UserRole> = {
+    'admin': 'ADMIN',
+    'student': 'STUDENT', 
+    'lecturer': 'LECTURER',
+    'company_supervisor': 'SUPERVISOR',
+    'supervisor': 'SUPERVISOR',
+    'hod': 'HOD'
+  };
+  
+  // Return normalized role or fallback to uppercase version
+  return roleMap[role.toLowerCase()] || role.toUpperCase() as UserRole;
+}
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
-  role: z.enum(['STUDENT', 'LECTURER', 'SUPERVISOR', 'HOD', 'ADMIN'], { // Added ADMIN
-    required_error: "You need to select a role."
-  }),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -43,44 +52,50 @@ export function LoginForm() {
     defaultValues: {
       email: '',
       password: '',
-      role: 'STUDENT', 
     },
   });
 
   async function onSubmit(values: LoginFormValues) {
     setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setIsLoading(false);
+    try {
+      const response = await api<{ user: UserProfileData; session: { access_token: string; } }>('/auth/login', {
+        method: 'POST',
+        body: values,
+      });
 
-    toast({
-      title: "Login Successful!",
-      description: `Welcome back! You are logged in as a ${USER_ROLES[values.role as UserRole]}.`,
-      variant: "default",
-    });
-    
-    if (typeof window !== "undefined") {
-      localStorage.setItem('userRole', values.role);
-      localStorage.setItem('userEmail', values.email);
-
-      let currentUserName = localStorage.getItem('userName');
-      const defaultNameForRole = values.role === 'STUDENT' ? 'New Student' 
-                                : values.role === 'SUPERVISOR' ? 'New Supervisor'
-                                : values.role === 'ADMIN' ? 'Admin User' 
-                                : USER_ROLES[values.role as UserRole];
-
-      if (!currentUserName || currentUserName === 'New User' || currentUserName === 'User' || currentUserName === 'New Supervisor' || currentUserName === 'New Student') {
-        const nameFromEmail = values.email.split('@')[0];
-        const capitalizedName = nameFromEmail.charAt(0).toUpperCase() + nameFromEmail.slice(1);
-        localStorage.setItem('userName', capitalizedName || defaultNameForRole);
+      const { user, session } = response;
+      const normalizedRole = normalizeRole(user.role);
+      const userWithNormalizedRole = { ...user, role: normalizedRole };
+      
+      if (typeof window !== "undefined") {
+        localStorage.setItem('authToken', session.access_token);
+        localStorage.setItem('userRole', normalizedRole);
+        localStorage.setItem('userName', `${user.first_name} ${user.last_name}`);
+        localStorage.setItem('userEmail', user.email);
+        localStorage.setItem('user', JSON.stringify(userWithNormalizedRole));
       }
-    }
-    
-    if (values.role === 'ADMIN') {
-      router.push('/admin/dashboard');
-    } else {
+
+      toast({
+        title: "Login Successful!",
+        description: `Welcome back, ${user.first_name || user.email}!`,
+        variant: "default",
+      });
+
+      // ALWAYS redirect to the generic dashboard. The redirector page will handle the rest.
       router.push('/dashboard');
+
+    } catch (error: any) {
+      toast({
+        title: 'Login Failed',
+        description: error.message || 'An unknown error occurred. Please check your credentials and try again.',
+        variant: 'destructive'
+      });
+    } finally {
+        setIsLoading(false);
     }
   }
+
+  const inputStyles = "bg-white dark:bg-gray-50 text-gray-900 dark:text-gray-900 placeholder:text-gray-500 dark:placeholder:text-gray-500 border-gray-300 dark:border-gray-400 rounded-lg focus:ring-primary focus:border-primary";
 
   return (
     <Form {...form}>
@@ -92,7 +107,12 @@ export function LoginForm() {
             <FormItem>
               <FormLabel>Email Address</FormLabel>
               <FormControl>
-                <Input type="email" placeholder="your.email@example.com" {...field} />
+                <Input 
+                  type="email" 
+                  placeholder="your.email@example.com" 
+                  {...field} 
+                  className={inputStyles}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -105,41 +125,22 @@ export function LoginForm() {
             <FormItem>
               <FormLabel>Password</FormLabel>
               <FormControl>
-                <Input type="password" placeholder="••••••••" {...field} />
+                <Input 
+                  type="password" 
+                  placeholder="••••••••" 
+                  {...field} 
+                  className={inputStyles}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="role"
-          render={({ field }) => (
-            <FormItem className="space-y-3">
-              <FormLabel>Login as:</FormLabel>
-              <FormControl>
-                <RadioGroup
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                  className="flex flex-col space-y-2 sm:flex-row sm:flex-wrap sm:space-y-0 sm:gap-x-4 sm:gap-y-2" // Adjusted for better wrapping
-                >
-                  {(Object.keys(USER_ROLES) as UserRole[]).map((roleKey) => (
-                    <FormItem key={roleKey} className="flex items-center space-x-2 space-y-0">
-                      <FormControl>
-                        <RadioGroupItem value={roleKey} id={`role-${roleKey.toLowerCase()}`} />
-                      </FormControl>
-                      <Label htmlFor={`role-${roleKey.toLowerCase()}`} className="font-normal cursor-pointer">
-                        {USER_ROLES[roleKey]}
-                      </Label>
-                    </FormItem>
-                  ))}
-                </RadioGroup>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isLoading}>
+        <Button 
+          type="submit" 
+          className="w-full bg-primary-foreground hover:bg-primary-foreground/90 text-primary shadow-md text-base py-3 rounded-lg" 
+          disabled={isLoading}
+        >
           {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Login'}
         </Button>
       </form>

@@ -16,6 +16,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/auth-context';
 
 const getInitials = (name: string) => {
     if (!name) return 'U';
@@ -26,37 +27,21 @@ interface MobileHeaderProps {
   userRole: UserRole | null;
 }
 
-export default function MobileHeader({ userRole }: MobileHeaderProps) {
+const MobileHeaderComponent: React.FC<MobileHeaderProps> = ({ userRole }) => {
   const router = useRouter();
-  const [userName, setUserName] = React.useState('User');
-
-  React.useEffect(() => {
-    if (typeof window !== "undefined") {
-      setUserName(localStorage.getItem('userName') || 'User');
-    }
-  }, []);
+  const { user, logout } = useAuth();
   
-  const DUMMY_USER = {
-    name: userName,
-    avatarUrl: `https://placehold.co/100x100.png?text=${getInitials(userName)}`,
-  };
-
-  const handleLogout = () => {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem('userRole');
-      localStorage.removeItem('theme');
-      localStorage.removeItem('userName');
-      localStorage.removeItem('userEmail');
-    }
-    document.documentElement.classList.remove('dark');
-    router.push('/login');
-  };
+  if (!user || !userRole) {
+    return null;
+  }
   
+  const userName = `${user.first_name} ${user.last_name}`;
+
   return (
     <header className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between h-[var(--mobile-header-height)] px-4 bg-primary text-primary-foreground shadow-md">
       <Link href="/dashboard" className="flex items-center space-x-2">
         <Briefcase className="h-6 w-6" />
-        <h1 className="font-bold text-xl font-headline">InternshipTrack</h1>
+        <h1 className="font-bold text-xl font-headline">InternHub</h1>
       </Link>
       <div className="flex items-center space-x-1">
         <Link href="/schedule" passHref>
@@ -79,8 +64,8 @@ export default function MobileHeader({ userRole }: MobileHeaderProps) {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 p-0 hover:bg-primary/80">
                <Avatar className="h-8 w-8">
-                  <AvatarImage src={DUMMY_USER.avatarUrl} alt={DUMMY_USER.name} data-ai-hint="person portrait"/>
-                  <AvatarFallback className="bg-primary-foreground text-primary">{getInitials(DUMMY_USER.name)}</AvatarFallback>
+                  <AvatarImage src={user.avatar_url || `https://placehold.co/100x100.png?text=${getInitials(userName)}`} alt={userName} data-ai-hint="person portrait"/>
+                  <AvatarFallback className="bg-primary-foreground text-primary">{getInitials(userName)}</AvatarFallback>
                 </Avatar>
             </Button>
           </DropdownMenuTrigger>
@@ -96,7 +81,7 @@ export default function MobileHeader({ userRole }: MobileHeaderProps) {
               <span>Settings</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive hover:bg-destructive/10 focus:bg-destructive/10 cursor-pointer">
+            <DropdownMenuItem onClick={logout} className="text-destructive focus:text-destructive hover:bg-destructive/10 focus:bg-destructive/10 cursor-pointer">
               <LogOut className="mr-2 h-4 w-4" />
               <span>Logout</span>
             </DropdownMenuItem>
@@ -107,4 +92,7 @@ export default function MobileHeader({ userRole }: MobileHeaderProps) {
   );
 }
 
-    
+const MobileHeader = React.memo(MobileHeaderComponent);
+MobileHeader.displayName = 'MobileHeader';
+
+export default MobileHeader;

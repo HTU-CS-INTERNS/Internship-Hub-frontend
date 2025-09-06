@@ -13,20 +13,16 @@ import type { DailyTask } from '@/types';
 import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { DUMMY_TASKS } from '@/app/(app)/student/tasks/page'; // Updated import
 import { DUMMY_STUDENTS_DATA } from '@/lib/constants';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { getTaskById, updateTaskStatus } from '@/lib/services/task.service'; // Updated service import
 
 const taskStatusColors: Record<DailyTask['status'], string> = {
   PENDING: 'bg-yellow-100 text-yellow-700 border-yellow-500/30 dark:bg-yellow-900/50 dark:text-yellow-300 dark:border-yellow-700/50',
   SUBMITTED: 'bg-blue-100 text-blue-700 border-blue-500/30 dark:bg-blue-900/50 dark:text-blue-300 dark:border-blue-700/50',
   APPROVED: 'bg-green-100 text-green-700 border-green-500/30 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700/50',
   REJECTED: 'bg-red-100 text-red-700 border-red-500/30 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700/50',
-};
-
-type ExtendedDailyTask = DailyTask & {
-  lecturerComments?: string;
 };
 
 export default function LecturerTaskReviewPage() {
@@ -38,7 +34,7 @@ export default function LecturerTaskReviewPage() {
   const taskId = params.taskId as string;
   const studentIdQuery = searchParams.get('studentId');
 
-  const [task, setTask] = React.useState<ExtendedDailyTask | null>(null);
+  const [task, setTask] = React.useState<DailyTask | null>(null);
   const [student, setStudent] = React.useState<(typeof DUMMY_STUDENTS_DATA[0]) | null>(null);
   const [feedbackComment, setFeedbackComment] = React.useState('');
   const [initialComment, setInitialComment] = React.useState('');
@@ -46,75 +42,70 @@ export default function LecturerTaskReviewPage() {
   const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
-    const foundTask = DUMMY_TASKS.find(t => t.id === taskId) as ExtendedDailyTask | undefined;
-    const foundStudent = DUMMY_STUDENTS_DATA.find(s => s.id === studentIdQuery);
+    async function loadData() {
+      if (!taskId || !studentIdQuery) {
+        setIsLoading(false);
+        return;
+      }
+      setIsLoading(true);
+      const foundTask = await getTaskById(taskId);
+      const foundStudent = DUMMY_STUDENTS_DATA.find(s => s.id === studentIdQuery);
 
-    if (foundTask && foundStudent) {
-      const feedbackStorageKey = `lecturerTaskFeedback_${studentIdQuery}_${taskId}`;
-      const storedFeedback = typeof window !== "undefined" ? JSON.parse(localStorage.getItem(feedbackStorageKey) || '{}') : {};
-      
-      const initialLecturerComment = storedFeedback?.comment || foundTask.lecturerComments || '';
-      
-      setTask({
-        ...foundTask,
-        status: storedFeedback?.status || foundTask.status,
-        lecturerComments: initialLecturerComment,
-      });
-      setStudent(foundStudent);
-      setFeedbackComment(initialLecturerComment);
-      setInitialComment(initialLecturerComment);
+      if (foundTask && foundStudent) {
+        setTask(foundTask);
+        setStudent(foundStudent);
+        const initialLecturerComment = foundTask.lecturerComments || '';
+        setFeedbackComment(initialLecturerComment);
+        setInitialComment(initialLecturerComment);
+      }
+      setIsLoading(false);
     }
-    setIsLoading(false);
+    loadData();
   }, [taskId, studentIdQuery]);
 
   const handleSubmitFeedback = async (newStatus: 'APPROVED' | 'REJECTED') => {
     if (!task || !student) return;
     setIsSubmitting(true);
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    const updatedTask = await updateTaskStatus(task.id, newStatus, feedbackComment, 'lecturer');
 
-    const updatedTaskData = { ...task, status: newStatus, lecturerComments: feedbackComment };
-    setTask(updatedTaskData);
-    setInitialComment(feedbackComment);
-
-    const feedbackStorageKey = `lecturerTaskFeedback_${student.id}_${task.id}`;
-    localStorage.setItem(feedbackStorageKey, JSON.stringify({ status: newStatus, comment: feedbackComment }));
-
-    const taskIndex = DUMMY_TASKS.findIndex(t => t.id === task.id);
-    if (taskIndex !== -1) {
-        DUMMY_TASKS[taskIndex] = { ...DUMMY_TASKS[taskIndex], status: newStatus, lecturerComments: feedbackComment } as DailyTask & { lecturerComments?: string };
+    if (updatedTask) {
+      setTask(updatedTask);
+      setInitialComment(feedbackComment);
+      toast({
+        title: `Task ${newStatus === 'APPROVED' ? 'Approved' : 'Rejected'} by Lecturer`,
+        description: `The task has been updated with your feedback for ${student.name}.`,
+      });
+      router.push(`/assignments/student/${student.id}`);
+    } else {
+      toast({ title: "Error", description: "Failed to update task status.", variant: "destructive" });
     }
-
     setIsSubmitting(false);
-    toast({
-      title: `Task ${newStatus === 'APPROVED' ? 'Approved' : 'Rejected'} by Lecturer`,
-      description: `The task has been updated with your feedback for ${student.name}.`,
-    });
-    router.push(`/assignments/student/${student.id}`);
   };
 
   const handleSaveComments = async () => {
     if (!task || !student || feedbackComment === initialComment) return;
     setIsSubmitting(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    const updatedTaskData = { ...task, lecturerComments: feedbackComment };
-    setTask(updatedTaskData);
-    setInitialComment(feedbackComment);
-
-    const feedbackStorageKey = `lecturerTaskFeedback_${student.id}_${task.id}`;
-    const currentStored = JSON.parse(localStorage.getItem(feedbackStorageKey) || '{}');
-    localStorage.setItem(feedbackStorageKey, JSON.stringify({ status: currentStored.status || task.status, comment: feedbackComment }));
     
-    const taskIndex = DUMMY_TASKS.findIndex(t => t.id === task.id);
-    if (taskIndex !== -1) {
-        (DUMMY_TASKS[taskIndex] as ExtendedDailyTask).lecturerComments = feedbackComment;
-    }
+    // For "Save Comments", we're just updating the comments without changing status.
+    // The updateTaskStatus can be adapted, or a new service method could be made.
+    // For simplicity, let's assume updateTaskStatus can handle this if newStatus is the same as current.
+    // Or, better, a dedicated service method `updateTaskComments` would be ideal.
+    // For now, we'll re-use updateTaskStatus, which will persist the comment.
+    
+    const updatedTask = await updateTaskStatus(task.id, task.status, feedbackComment, 'lecturer');
 
+    if (updatedTask) {
+      setTask(updatedTask);
+      setInitialComment(feedbackComment);
+      toast({
+        title: "Comments Saved by Lecturer",
+        description: "Your comments for the task have been saved.",
+      });
+    } else {
+      toast({ title: "Error", description: "Failed to save comments.", variant: "destructive" });
+    }
     setIsSubmitting(false);
-    toast({
-      title: "Comments Saved by Lecturer",
-      description: "Your comments for the task have been saved.",
-    });
   };
 
   if (isLoading) {
@@ -159,7 +150,22 @@ export default function LecturerTaskReviewPage() {
                     <div><h3 className="text-base font-semibold text-foreground mb-2 flex items-center"><ThumbsUp className="mr-2 h-5 w-5 text-primary" />Outcomes/Results</h3><p className="text-muted-foreground whitespace-pre-line leading-relaxed">{task.outcomes}</p></div>
                     <div><h3 className="text-base font-semibold text-foreground mb-2 flex items-center"><GraduationCap className="mr-2 h-5 w-5 text-primary" />Learning Objectives</h3><p className="text-muted-foreground whitespace-pre-line leading-relaxed">{task.learningObjectives}</p></div>
                     {task.departmentOutcomeLink && (<div><h3 className="text-base font-semibold text-foreground mb-2 flex items-center"><LinkIcon className="mr-2 h-5 w-5 text-primary" />Department Outcome Link</h3><p className="text-muted-foreground">{task.departmentOutcomeLink}</p></div>)}
-                    {task.attachments && task.attachments.length > 0 && (<div><h3 className="text-base font-semibold text-foreground mb-2 flex items-center"><Paperclip className="mr-2 h-5 w-5 text-primary" />Attachments</h3><ul className="list-none space-y-2">{task.attachments.map((file, index) => (<li key={index}><Button variant="link" className="p-0 h-auto text-base text-accent hover:text-accent/80 font-normal" asChild><a href={`/placeholder-download/${file}`} target="_blank" rel="noopener noreferrer" data-ai-hint="document file"><Paperclip className="mr-1 h-4 w-4" /> {file}</a></Button></li>))}</ul></div>)}
+                    {task.attachments && task.attachments.length > 0 && (
+                        <div>
+                        <h3 className="text-base font-semibold text-foreground mb-2 flex items-center"><Paperclip className="mr-2 h-5 w-5 text-primary" />Attachments</h3>
+                        <ul className="list-none space-y-2">
+                            {task.attachments.map((att, index) => (
+                            <li key={index}>
+                                <Button variant="link" className="p-0 h-auto text-base text-accent hover:text-accent/80 font-normal" asChild>
+                                <a href={att.dataUri} target="_blank" rel="noopener noreferrer" download={att.name} data-ai-hint="document file">
+                                    <Paperclip className="mr-1 h-4 w-4" /> {att.name} ({(att.size / 1024).toFixed(1)} KB)
+                                </a>
+                                </Button>
+                            </li>
+                            ))}
+                        </ul>
+                        </div>
+                    )}
                     {task.supervisorComments && !task.lecturerComments && (<><Separator /><div className="pt-4"><h3 className="text-base font-semibold text-foreground mb-2 flex items-center"><Briefcase className="mr-2 h-5 w-5 text-primary" />Company Supervisor Comments</h3><Card className="bg-muted/30 p-3 border-l-4 border-primary/50 shadow-inner"><p className="text-sm text-foreground italic">"{task.supervisorComments}"</p></Card></div></>)}
                 </CardContent>
             </Card>
@@ -179,3 +185,4 @@ export default function LecturerTaskReviewPage() {
     </div>
   );
 }
+    

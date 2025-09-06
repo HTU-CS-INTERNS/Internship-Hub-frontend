@@ -1,16 +1,25 @@
 
 export type UserRole = 'STUDENT' | 'LECTURER' | 'SUPERVISOR' | 'HOD' | 'ADMIN';
+export type UserStatus = 'PENDING_ACTIVATION' | 'ACTIVE' | 'INACTIVE';
 
-export interface User {
-  id: string;
-  name: string;
+export interface UserProfileData {
+  id: string; // From Supabase Auth, is a UUID
   email: string;
   role: UserRole;
-  avatarUrl?: string;
-  faculty?: Faculty;
-  department?: Department;
-  companyName?: string;
-  companyAddress?: string;
+  first_name: string;
+  last_name: string;
+  phone_number?: string;
+  status: UserStatus;
+  
+  // Denormalized/joined data for convenience in the frontend
+  faculty_id?: string; 
+  department_id?: string;
+  company_name?: string; 
+  
+  // For display purposes, not in the `users` table directly
+  avatar_url?: string;
+  faculty_name?: string;
+  department_name?: string;
 }
 
 export interface Faculty {
@@ -20,8 +29,8 @@ export interface Faculty {
 
 export interface Department {
   id: string;
-  name: string;
   facultyId: string;
+  name: string;
 }
 
 export type InternshipStatus = 'NOT_SUBMITTED' | 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED';
@@ -31,46 +40,52 @@ export interface InternshipDetails {
   companyAddress?: string;
   supervisorName: string;
   supervisorEmail: string;
-  startDate: string; // Store as YYYY-MM-DD string
-  endDate: string;   // Store as YYYY-MM-DD string
+  startDate: string; 
+  endDate: string;   
   location: string;
   status: InternshipStatus;
   rejectionReason?: string;
-  hodComments?: string; // For HOD to add comments if needed during approval
+  hodComments?: string; 
 }
 
+
 export interface HODApprovalQueueItem {
-  studentId: string; // Using email for now as ID
+  studentId: string; 
   studentName: string;
   companyName: string;
   supervisorName: string;
   supervisorEmail: string;
   submissionDate: string; // ISO string
-  status: 'PENDING_APPROVAL'; // Only pending items are in this queue
-  // Potentially add facultyId and departmentId if HODs are scoped
+  status: 'PENDING_APPROVAL'; 
 }
 
+export interface AttachmentData {
+  name: string;
+  type: string;
+  size: number;
+  dataUri: string; // For mock storage; in real app, this would be a URL
+}
 
 export interface DailyTask {
   id: string;
-  date: string;
+  date: string; // YYYY-MM-DD
   description: string;
   outcomes: string;
   learningObjectives: string;
   studentId: string;
   departmentOutcomeLink?: string;
   status: 'PENDING' | 'SUBMITTED' | 'APPROVED' | 'REJECTED';
-  attachments?: string[];
+  attachments?: AttachmentData[];
   supervisorComments?: string;
   lecturerComments?: string;
 }
 
-export interface DailyReport extends DailyTask {
+export interface DailyReport extends DailyTask { 
   title?: string;
   challengesFaced?: string;
-  learnings?: string;
   securePhotoUrl?: string;
 }
+
 
 export interface CommunicationMessage {
   id: string;
@@ -94,9 +109,9 @@ export interface ScoringMetric {
 }
 
 export interface InternEvaluation {
-  scores: Record<string, number | undefined>;
+  scores: Record<string, number | undefined>; // metric_key: score
   overallComments: string;
-  evaluationDate?: string;
+  evaluationDate?: string; // YYYY-MM-DD
 }
 
 export interface ProfileFormValues {
@@ -107,4 +122,30 @@ export interface ProfileFormValues {
   contactNumber?: string;
   supervisorCompanyName?: string;
   supervisorCompanyAddress?: string;
+}
+
+export interface CheckIn {
+  id: string;
+  student_id: string;
+  check_in_timestamp: string; // ISO string
+  latitude?: number;
+  longitude?: number;
+  address_resolved?: string;
+  manual_reason?: string;
+  is_gps_verified: boolean;
+  is_outside_geofence: boolean;
+  photo_url?: string;
+  supervisor_verification_status?: 'PENDING' | 'VERIFIED' | 'FLAGGED';
+  supervisor_comments?: string;
+  created_at: string; // ISO string
+}
+
+export interface AbuseReport {
+    id: string;
+    title: string;
+    description: string;
+    reportedByStudentId: string;
+    reportedByName: string;
+    dateReported: string; // ISO String
+    status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED';
 }

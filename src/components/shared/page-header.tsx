@@ -1,3 +1,4 @@
+
 import * as React from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
@@ -35,8 +36,8 @@ export default function PageHeader({ title, description, icon: Icon, actions, br
         </Breadcrumb>
       )}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          {Icon && <Icon className="h-8 w-8 text-primary hidden sm:block" />}
+        <div className="flex items-center gap-3 flex-grow">
+          {Icon && <Icon className="h-8 w-8 text-primary hidden sm:block shrink-0" />}
           <div>
             <h1 className="text-2xl md:text-3xl font-headline font-semibold text-foreground">
               {title}
@@ -48,8 +49,9 @@ export default function PageHeader({ title, description, icon: Icon, actions, br
             )}
           </div>
         </div>
-        {actions && <div className="flex-shrink-0 w-full md:w-auto">{actions}</div>}
+        {actions && <div className="flex-shrink-0 w-full md:w-auto mt-4 md:mt-0">{actions}</div>}
       </div>
     </div>
   );
 }
+

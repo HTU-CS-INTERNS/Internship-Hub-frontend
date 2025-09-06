@@ -2,7 +2,7 @@
 'use client';
 import * as React from 'react';
 import PageHeader from '@/components/shared/page-header';
-import { FileText, PlusCircle, Filter, Eye, Archive } from 'lucide-react'; 
+import { FileText, PlusCircle, Filter, Eye, Archive, Edit3 } from 'lucide-react'; 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import Link from 'next/link';
@@ -13,60 +13,10 @@ import type { DailyReport } from '@/types';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile'; 
 import { useToast } from '@/hooks/use-toast';
-
-export const DUMMY_REPORTS: (DailyReport & { title?: string; challengesFaced?: string; securePhotoUrl?: string; attachments?: string[]; supervisorComments?: string })[] = [
-  { 
-    id: 'report1', 
-    date: '2024-07-26', 
-    title: 'Weekly Auth Module Summary',
-    description: 'Weekly summary of authentication module progress. Focused on JWT implementation and secure endpoint testing. Reviewed security protocols and updated documentation.', 
-    outcomes: 'Module 70% complete. Security review passed.', 
-    learningObjectives: 'Advanced JWT, security best practices, technical documentation.', 
-    studentId: 'stu1', 
-    status: 'APPROVED',
-    challengesFaced: "Minor issues with token refresh logic, resolved by adjusting expiration strategy.",
-    attachments: ['auth_architecture.pdf', 'security_review_notes.txt'],
-    securePhotoUrl: 'https://placehold.co/600x400.png',
-    supervisorComments: "Good progress this week, Alice. The JWT implementation looks solid. Keep up the great work!"
-  },
-  { 
-    id: 'report2', 
-    date: '2024-07-27', 
-    title: 'Mid-Internship Presentation Prep',
-    description: 'Mid-internship review presentation preparation and content finalization for all key sections. Practiced delivery and timing.', 
-    outcomes: 'Presentation draft ready. Confident in delivery.', 
-    learningObjectives: 'Presentation skills, summarizing technical work for diverse audiences.', 
-    studentId: 'stu1', 
-    status: 'SUBMITTED',
-    challengesFaced: "Condensing all work into a short presentation was challenging.",
-    attachments: ['mid_term_presentation.pptx'],
-    supervisorComments: "Looking forward to seeing the presentation."
-  },
-  { 
-    id: 'report3', 
-    date: '2024-07-25', 
-    title: 'New Feature X Planning',
-    description: 'Initial setup and planning for the new feature X, including requirement gathering, user story creation, and timeline estimation.', 
-    outcomes: 'Project plan created. User stories documented.', 
-    learningObjectives: 'Agile planning, requirement elicitation techniques.', 
-    studentId: 'stu1', 
-    status: 'PENDING',
-    challengesFaced: "Ambiguity in initial requirements, clarified with product manager.",
-    securePhotoUrl: 'https://placehold.co/600x400.png'
-  },
-  { 
-    id: 'report4', 
-    date: '2024-07-24', 
-    title: 'Bug Fixing Sprint v1.2',
-    description: 'Bug fixing for version 1.2 release, addressing critical issues reported by QA. Focused on payment module bugs.', 
-    outcomes: 'Critical bugs in payment module resolved. Test coverage improved.', 
-    learningObjectives: 'Advanced debugging techniques, payment gateway integration nuances.', 
-    studentId: 'stu1', 
-    status: 'REJECTED',
-    challengesFaced: "One particularly elusive bug took significant time to trace and fix.",
-    supervisorComments: "Some non-critical bugs remain. Please address them and resubmit the affected module for testing."
-  },
-];
+import { format, parseISO } from 'date-fns';
+import { useAuth } from '@/contexts/auth-context';
+import { StudentApiService } from '@/lib/services/studentApi';
+import EmptyState from '@/components/shared/empty-state';
 
 const statusColors: Record<DailyReport['status'], string> = {
   PENDING: 'bg-[hsl(var(--accent)/0.1)] text-[hsl(var(--accent))] border-[hsl(var(--accent)/0.2)]',
@@ -76,7 +26,11 @@ const statusColors: Record<DailyReport['status'], string> = {
 };
 
 export default function ReportsPage() {
-  const [filteredReports, setFilteredReports] = React.useState<DailyReport[]>(DUMMY_REPORTS);
+  const { user } = useAuth();
+  const [allReports, setAllReports] = React.useState<DailyReport[]>([]);
+  const [filteredReports, setFilteredReports] = React.useState<DailyReport[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
   const [statusFilter, setStatusFilter] = React.useState<Record<DailyReport['status'], boolean>>({
     PENDING: true,
     SUBMITTED: true,
@@ -86,9 +40,37 @@ export default function ReportsPage() {
   const isMobile = useIsMobile();
   const { toast } = useToast();
 
+  // Fetch reports data from API
   React.useEffect(() => {
-    setFilteredReports(DUMMY_REPORTS.filter(report => statusFilter[report.status]));
-  }, [statusFilter]);
+    const fetchReports = async () => {
+      if (!user) return;
+      
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        const reportsData = await StudentApiService.getReports();
+        const reports = Array.isArray(reportsData) ? reportsData : [];
+        setAllReports(reports);
+        setFilteredReports(reports.filter(report => 
+          report.status && statusFilter[report.status as DailyReport['status']]
+        ));
+      } catch (err) {
+        console.error('Failed to fetch reports:', err);
+        setError('Failed to load reports');
+        setAllReports([]);
+        setFilteredReports([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchReports();
+  }, [user]);
+
+  React.useEffect(() => {
+    setFilteredReports(allReports.filter(report => statusFilter[report.status]));
+  }, [statusFilter, allReports]);
   
   const handleStatusFilterChange = (status: DailyReport['status']) => {
     setStatusFilter(prev => ({ ...prev, [status]: !prev[status] }));
@@ -102,32 +84,66 @@ export default function ReportsPage() {
     });
   };
 
-  const ReportCardMobile: React.FC<{ report: DailyReport }> = ({ report }) => (
+  const ReportCardMobile: React.FC<{ report: DailyReport & { title?: string} }> = ({ report }) => (
     <Card className="shadow-lg rounded-xl overflow-hidden border-l-4" style={{borderColor: `hsl(var(--${report.status === 'APPROVED' ? 'chart-3' : report.status === 'SUBMITTED' ? 'primary' : report.status === 'REJECTED' ? 'destructive' : 'accent'}))`}}>
-      <CardContent className="p-4 space-y-2">
+      <CardHeader className="p-3 bg-muted/30">
         <div className="flex justify-between items-start">
-          <div>
-            <p className="text-xs text-muted-foreground">Report Date</p>
-            <p className="font-semibold text-foreground">{new Date(report.date).toLocaleDateString()}</p>
-          </div>
+          <CardTitle className="text-sm font-semibold text-foreground">{report.title || `Report: ${format(parseISO(report.date), "PPP")}`}</CardTitle>
           <Badge variant="outline" className={cn("text-xs px-2 py-0.5", statusColors[report.status])}>
             {report.status}
           </Badge>
         </div>
-        <div>
-          <p className="text-xs text-muted-foreground">Summary</p>
-          <p className="text-sm text-foreground line-clamp-2">{report.description}</p>
-        </div>
-        <div className="pt-2">
-          <Link href={`/student/reports/${report.id}`} passHref>
-            <Button variant="outline" size="sm" className="w-full rounded-md">
-              <Eye className="mr-2 h-4 w-4" /> View Details
+        <CardDescription className="text-xs text-muted-foreground">{format(parseISO(report.date), "EEEE, MMMM d, yyyy")}</CardDescription>
+      </CardHeader>
+      <CardContent className="p-3 text-xs">
+        <p className="text-muted-foreground mb-1">Summary:</p>
+        <p className="text-foreground line-clamp-3">{report.description}</p>
+      </CardContent>
+      <CardFooter className="p-3 border-t bg-muted/20 flex gap-2">
+          <Link href={`/student/reports/${report.id}`} passHref className="flex-1">
+            <Button variant="outline" size="sm" className="w-full rounded-lg text-xs">
+              <Eye className="mr-1.5 h-3.5 w-3.5" /> View Details
             </Button>
           </Link>
-        </div>
-      </CardContent>
+          {report.status === 'PENDING' && (
+             <Link href={`/student/reports/edit/${report.id}`} passHref className="flex-1">
+                <Button variant="default" size="sm" className="w-full rounded-lg text-xs bg-primary hover:bg-primary/90 text-primary-foreground">
+                    <Edit3 className="mr-1.5 h-3.5 w-3.5" /> Edit
+                </Button>
+            </Link>
+          )}
+      </CardFooter>
     </Card>
   );
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading reports...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <FileText className="h-8 w-8 text-destructive mx-auto mb-4" />
+          <p className="text-destructive">{error}</p>
+          <Button 
+            variant="outline" 
+            onClick={() => window.location.reload()} 
+            className="mt-4"
+          >
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 p-4 md:p-6">
@@ -180,18 +196,16 @@ export default function ReportsPage() {
             <CardDescription>A log of all your submitted work reports.</CardDescription>
             </CardHeader>
         )}
-        <CardContent className={cn(isMobile ? "p-0" : "p-0")}>
+        <CardContent className={cn(isMobile && filteredReports.length > 0 ? "p-0 space-y-4" : "p-0")}>
           {filteredReports.length > 0 ? (
             isMobile ? (
-              <div className="space-y-4">
-                {filteredReports.map((report) => <ReportCardMobile key={report.id} report={report} />)}
-              </div>
+                filteredReports.map((report) => <ReportCardMobile key={report.id} report={report} />)
             ) : (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Date</TableHead>
-                  <TableHead>Summary</TableHead>
+                  <TableHead>Title/Summary</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -199,17 +213,25 @@ export default function ReportsPage() {
               <TableBody>
                 {filteredReports.map((report) => (
                   <TableRow key={report.id}>
-                    <TableCell>{new Date(report.date).toLocaleDateString()}</TableCell>
-                    <TableCell className="max-w-xs truncate">{report.description}</TableCell>
+                    <TableCell>{format(parseISO(report.date), "PPP")}</TableCell>
+                    <TableCell className="max-w-sm truncate">
+                      <span className="font-medium">{(report as any).title || 'Daily Report'}</span>
+                      <p className="text-xs text-muted-foreground truncate">{(report as any).description}</p>
+                    </TableCell>
                     <TableCell>
                       <Badge variant="outline" className={cn("text-xs", statusColors[report.status])}>
                         {report.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right space-x-1">
                        <Link href={`/student/reports/${report.id}`} passHref>
-                        <Button variant="ghost" size="sm">View</Button>
+                        <Button variant="ghost" size="sm" className="rounded-md"><Eye className="mr-1 h-4 w-4"/>View</Button>
                       </Link>
+                      {report.status === 'PENDING' && (
+                        <Link href={`/student/reports/edit/${report.id}`} passHref>
+                            <Button variant="ghost" size="sm" className="rounded-md"><Edit3 className="mr-1 h-4 w-4"/>Edit</Button>
+                        </Link>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -217,19 +239,25 @@ export default function ReportsPage() {
             </Table>
             )
           ) : (
-             <div className={cn("text-center py-12 text-muted-foreground", isMobile ? "p-0 pt-8" : "p-6")}>
-              <FileText className="mx-auto h-12 w-12 mb-4" />
-              <p className="text-lg font-semibold">No reports found.</p>
-              <p>Submit a new report or adjust your filters.</p>
+            <div className={cn("py-12", isMobile ? "p-4" : "p-6")}>
+              <EmptyState
+                icon={FileText}
+                title="No Reports Found"
+                description="You haven't submitted any reports yet or none match your current filters."
+                actionLabel="Submit New Report"
+                onAction={() => window.location.href = '/student/reports/new'}
+              />
             </div>
           )}
         </CardContent>
         {!isMobile && filteredReports.length > 0 && (
           <CardFooter className="justify-end p-4 border-t">
-             <p className="text-sm text-muted-foreground">Showing {filteredReports.length} of {DUMMY_REPORTS.length} reports</p>
+             <p className="text-sm text-muted-foreground">Showing {filteredReports.length} of {allReports.length} reports</p>
           </CardFooter>
         )}
       </Card>
     </div>
   );
 }
+
+    

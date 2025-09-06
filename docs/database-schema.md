@@ -1,7 +1,7 @@
 
-# InternshipTrack - Relational Database Schema (PostgreSQL/MySQL)
+# InternHub - Relational Database Schema (PostgreSQL/MySQL)
 
-This document outlines a conceptual relational database schema for the InternshipTrack application.
+This document outlines a conceptual relational database schema for the InternHub application.
 
 ## General Notes:
 
@@ -78,7 +78,7 @@ Join table for many-to-many relationship between students and assigned lecturers
 
 ### 5. `student_supervisor_assignments`
 
-Join table for students and their company supervisors (if supervisors are also `users`).
+Join table for students and their industrial supervisors (if supervisors are also `users`).
 
 *   `id` (SERIAL or INT) - PK
 *   `student_id` (INT) - Not Null, FK to `users.id`

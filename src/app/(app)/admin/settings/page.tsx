@@ -9,6 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { AdminApiService } from '@/lib/services/adminApi';
+import EmptyState from '@/components/shared/empty-state';
 
 export default function AdminSettingsPage() {
   const { toast } = useToast();
@@ -18,18 +20,82 @@ export default function AdminSettingsPage() {
     maxFileSizeUploadMb: 10,
     maintenanceMode: false,
   });
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [isSaving, setIsSaving] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
+  // Fetch settings on component mount
+  React.useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const settingsData = await AdminApiService.getSystemSettings();
+        if (settingsData && typeof settingsData === 'object') {
+          // Merge with default settings to ensure all required fields exist
+          setSettings(prev => ({...prev, ...settingsData}));
+        }
+      } catch (err) {
+        console.error('Failed to fetch settings:', err);
+        setError('Failed to load system settings');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSettings();
+  }, []);
 
   const handleSettingChange = (key: keyof typeof settings, value: any) => {
     setSettings(prev => ({ ...prev, [key]: value }));
   };
 
-  const handleSaveChanges = () => {
-    console.log("Saving admin settings:", settings);
-    toast({
+  const handleSaveChanges = async () => {
+    try {
+      setIsSaving(true);
+      await AdminApiService.updateSystemSettings(settings);
+      toast({
         title: "System Settings Saved!",
         description: "University-wide internship program settings have been updated.",
-    });
+      });
+    } catch (error) {
+      console.error('Failed to save settings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save settings. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
+
+  // Handle loading state
+  if (isLoading) {
+    return (
+      <div className="space-y-8 p-4 md:p-6">
+        <PageHeader
+          title="System Settings"
+          description="Configure global parameters for the InternshipTrack platform."
+          icon={SettingsIcon}
+          breadcrumbs={[
+            { href: "/admin/dashboard", label: "Admin Dashboard" },
+            { label: "System Settings" }
+          ]}
+        />
+        <Card className="shadow-lg rounded-xl">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-center h-40">
+              <div className="text-center space-y-2">
+                <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+                <p className="text-sm text-muted-foreground">Loading settings...</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 p-4 md:p-6">
@@ -87,8 +153,19 @@ export default function AdminSettingsPage() {
             </div>
         </CardContent>
         <CardFooter className="border-t pt-6">
-            <Button onClick={handleSaveChanges} className="rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground">
-                Save System Settings
+            <Button 
+              onClick={handleSaveChanges} 
+              disabled={isSaving}
+              className="rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground"
+            >
+                {isSaving ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                    Saving...
+                  </>
+                ) : (
+                  'Save System Settings'
+                )}
             </Button>
         </CardFooter>
       </Card>

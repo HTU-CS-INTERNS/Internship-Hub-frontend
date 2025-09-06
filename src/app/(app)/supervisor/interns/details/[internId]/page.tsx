@@ -3,45 +3,79 @@
 import * as React from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import PageHeader from '@/components/shared/page-header';
-import { User, Briefcase, FileText, Eye, MessageSquare, ThumbsUp, ThumbsDown, Edit, CheckCircle, AlertCircle, Loader2, TrendingUp, Star, Save } from 'lucide-react';
+import { User, Briefcase, FileText, Eye, MessageSquare, ThumbsUp, ThumbsDown, Edit, CheckCircle, AlertCircle, Loader2, TrendingUp, Star, Save, BarChart3, Calendar, Clock } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import Link from 'next/link';
-import type { DailyReport, InternEvaluation } from '@/types';
-import { DUMMY_INTERNS } from '@/app/(app)/supervisor/interns/page'; 
-import { DUMMY_REPORTS as ALL_DUMMY_REPORTS } from '@/app/(app)/student/reports/page'; // Updated import
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
-import { format, parseISO } from 'date-fns';
+import { Progress } from '@/components/ui/progress';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
-import { SCORING_METRICS } from '@/lib/constants';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, FormProvider, Controller } from 'react-hook-form';
-import * as z from 'zod';
+import EmptyState from '@/components/shared/empty-state';
+import Link from 'next/link';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { SupervisorApiService } from '@/lib/services/supervisorApi';
+import { useToast } from '@/hooks/use-toast';
 
 const getInitials = (name: string) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase() : 'N/A';
 
-const reportStatusColors: Record<DailyReport['status'], string> = {
-  PENDING: 'bg-yellow-100 text-yellow-700 border-yellow-500/30 dark:bg-yellow-900/50 dark:text-yellow-300 dark:border-yellow-700/50',
-  SUBMITTED: 'bg-blue-100 text-blue-700 border-blue-500/30 dark:bg-blue-900/50 dark:text-blue-300 dark:border-blue-700/50',
-  APPROVED: 'bg-green-100 text-green-700 border-green-500/30 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700/50',
-  REJECTED: 'bg-red-100 text-red-700 border-red-500/30 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700/50',
-};
+interface InternDetails {
+  id: string;
+  name: string;
+  email: string;
+  avatar?: string;
+  university: string;
+  department: string;
+  progress: number;
+  status: string;
+  pendingTasks: number;
+  tasksCompleted: number;
+  lastActivity?: string;
+  startDate: string;
+  endDate: string;
+  phoneNumber?: string;
+  totalCheckIns: number;
+  students?: any;
+  companies?: any;
+  daily_tasks?: any[];
+  daily_reports?: any[];
+  location_check_ins?: any[];
+}
 
-const evaluationSchemaDefinition: z.ZodRawShape = {};
-SCORING_METRICS.forEach(metric => {
-  evaluationSchemaDefinition[metric.id] = z.coerce.number().min(1, "Score required").max(5, "Score between 1-5").optional();
-});
-evaluationSchemaDefinition.overallComments = z.string().min(10, "Comments must be at least 10 characters.").max(1000, "Comments too long.");
+interface ActivityLog {
+  id: string;
+  type: string;
+  message: string;
+  timestamp: string;
+}
 
-const evaluationSchema = z.object(evaluationSchemaDefinition);
-type EvaluationFormValues = z.infer<typeof evaluationSchema>;
+interface Analytics {
+  taskCompletionRate: number;
+  averageRating: number;
+  attendanceRate: number;
+  productivityScore: number;
+  weeklyProgress: number[];
+}
 
+interface AnalyticsResponse {
+  taskCompletionRate?: number;
+  averageRating?: number;
+  attendanceRate?: number;
+  productivityScore?: number;
+  weeklyProgress?: number[];
+}
+
+const SCORING_METRICS = [
+  { id: 'technical_skills', label: 'Technical Skills', description: 'Proficiency in technical requirements' },
+  { id: 'communication', label: 'Communication', description: 'Written and verbal communication' },
+  { id: 'teamwork', label: 'Teamwork', description: 'Collaboration and interpersonal skills' },
+  { id: 'initiative', label: 'Initiative', description: 'Proactive approach and problem-solving' },
+  { id: 'punctuality', label: 'Punctuality', description: 'Timeliness and reliability' },
+  { id: 'learning_ability', label: 'Learning Ability', description: 'Adaptability and willingness to learn' },
+];
 
 export default function InternDetailPage() {
   const params = useParams();
@@ -49,100 +83,148 @@ export default function InternDetailPage() {
   const { toast } = useToast();
   const internId = params.internId as string;
 
-  const [intern, setIntern] = React.useState<typeof DUMMY_INTERNS[0] | null>(null);
-  const [internReports, setInternReports] = React.useState<DailyReport[]>([]);
-  const [selectedReportForFeedback, setSelectedReportForFeedback] = React.useState<DailyReport | null>(null);
-  const [feedbackComment, setFeedbackComment] = React.useState('');
-  const [isSubmittingFeedback, setIsSubmittingFeedback] = React.useState(false);
+  const [intern, setIntern] = React.useState<InternDetails | null>(null);
+  const [analytics, setAnalytics] = React.useState<Analytics | null>(null);
+  const [activityLog, setActivityLog] = React.useState<ActivityLog[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [isLoadingAnalytics, setIsLoadingAnalytics] = React.useState(true);
   const [isSubmittingEvaluation, setIsSubmittingEvaluation] = React.useState(false);
   
-  const evaluationMethods = useForm<EvaluationFormValues>({
-    resolver: zodResolver(evaluationSchema),
-    defaultValues: {
-        scores: {},
-        overallComments: ''
-    }
-  });
+  // Evaluation form state
+  const [evaluationScores, setEvaluationScores] = React.useState<Record<string, number>>({});
+  const [overallComments, setOverallComments] = React.useState('');
+  const [overallRating, setOverallRating] = React.useState<number>(0);
 
   React.useEffect(() => {
-    const foundIntern = DUMMY_INTERNS.find(i => i.id === internId);
-    if (foundIntern) {
-      setIntern(foundIntern);
-      const reports = ALL_DUMMY_REPORTS.filter(report => {
-        if (internId === 'intern1') return report.studentId === 'stu1'; 
-        return false;
-      });
-      const storedReportsFeedback = JSON.parse(localStorage.getItem(`reportsFeedback_${internId}`) || '{}');
-      const reportsWithFeedback = reports.map(report => ({
-        ...report,
-        status: storedReportsFeedback[report.id]?.status || report.status,
-        supervisorComments: storedReportsFeedback[report.id]?.supervisorComments || report.supervisorComments,
-      }));
-      setInternReports(reportsWithFeedback);
+    fetchInternDetails();
+    fetchInternAnalytics();
+    fetchActivityLog();
+  }, [internId]);
 
-      const storedEvaluation = localStorage.getItem(`internEvaluation_${internId}`);
-      if (storedEvaluation) {
-          const parsedEval: InternEvaluation = JSON.parse(storedEvaluation);
-          const scoresForForm: Record<string, number | undefined> = {};
-          SCORING_METRICS.forEach(m => scoresForForm[m.id] = parsedEval.scores[m.id]);
-          evaluationMethods.reset({ scores: scoresForForm, overallComments: parsedEval.overallComments });
+  const fetchInternDetails = async () => {
+    try {
+      setIsLoading(true);
+      const data = await SupervisorApiService.getInternDetails(internId);
+      
+      if (data && typeof data === 'object') {
+        const student = (data as any).students;
+        const user = student?.users;
+        const userName = user ? `${user.first_name} ${user.last_name}` : 'Unknown';
+        
+        // Calculate task metrics
+        const tasks = (data as any).daily_tasks || [];
+        const completedTasks = tasks.filter((t: any) => t.status === 'completed').length;
+        const pendingTasks = tasks.filter((t: any) => t.status === 'pending').length;
+        const progress = tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0;
+        
+        setIntern({
+          id: (data as any).id.toString(),
+          name: userName,
+          email: user?.email || 'No email',
+          avatar: undefined, // Profile pictures not implemented yet
+          university: student?.faculties?.name || 'Unknown University',
+          department: student?.departments?.name || 'Unknown Department',
+          progress,
+          status: (data as any).status || 'active',
+          pendingTasks,
+          tasksCompleted: completedTasks,
+          lastActivity: 'Recent activity', // Calculate from check-ins or tasks
+          startDate: (data as any).start_date || new Date().toISOString(),
+          endDate: (data as any).end_date || new Date().toISOString(),
+          phoneNumber: user?.phone_number,
+          totalCheckIns: ((data as any).location_check_ins || []).length,
+          students: student,
+          companies: (data as any).companies,
+          daily_tasks: tasks,
+          daily_reports: (data as any).daily_reports || [],
+          location_check_ins: (data as any).location_check_ins || []
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Intern not found",
+          variant: "destructive"
+        });
+        router.push('/supervisor/interns');
       }
-
-    } else {
-      // router.push('/supervisor/interns'); 
-    }
-  }, [internId, router, evaluationMethods]);
-  
-  const handleOpenFeedback = (report: DailyReport) => {
-    setSelectedReportForFeedback(report);
-    setFeedbackComment(report.supervisorComments || '');
-  };
-
-  const handleFeedbackSubmit = (action: 'APPROVE' | 'REJECT') => {
-    if (!selectedReportForFeedback) return;
-    setIsSubmittingFeedback(true);
-    
-    setTimeout(() => {
-      const updatedReports = internReports.map(r => 
-        r.id === selectedReportForFeedback.id 
-        ? { ...r, status: action === 'APPROVE' ? 'APPROVED' : 'REJECTED', supervisorComments: feedbackComment } 
-        : r
-      );
-      setInternReports(updatedReports);
-      const storedReportsFeedback = JSON.parse(localStorage.getItem(`reportsFeedback_${internId}`) || '{}');
-      storedReportsFeedback[selectedReportForFeedback.id] = {
-        status: action === 'APPROVE' ? 'APPROVED' : 'REJECTED',
-        supervisorComments: feedbackComment,
-      };
-      localStorage.setItem(`reportsFeedback_${internId}`, JSON.stringify(storedReportsFeedback));
+    } catch (error) {
+      console.error('Failed to fetch intern details:', error);
       toast({
-        title: `Report ${action === 'APPROVE' ? 'Approved' : 'Rejected'}`,
-        description: `Feedback for "${selectedReportForFeedback.description.substring(0,30)}..." has been recorded.`,
+        title: "Error",
+        description: "Failed to load intern details",
+        variant: "destructive"
       });
-      setSelectedReportForFeedback(null);
-      setFeedbackComment('');
-      setIsSubmittingFeedback(false);
-    }, 1000);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const onEvaluationSubmit = async (data: EvaluationFormValues) => {
-    setIsSubmittingEvaluation(true);
-    const evaluationData: InternEvaluation = {
-        scores: data.scores as Record<string, number>, 
-        overallComments: data.overallComments,
-        evaluationDate: new Date().toISOString(),
-    };
-    localStorage.setItem(`internEvaluation_${internId}`, JSON.stringify(evaluationData));
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setIsSubmittingEvaluation(false);
-    toast({
-        title: "Evaluation Saved",
-        description: `Performance evaluation for ${intern?.name} has been recorded.`,
-    });
+  const fetchInternAnalytics = async () => {
+    try {
+      setIsLoadingAnalytics(true);
+      const data = await SupervisorApiService.getInternAnalytics(internId) as AnalyticsResponse;
+      
+      if (data) {
+        setAnalytics({
+          taskCompletionRate: data.taskCompletionRate || 0,
+          averageRating: data.averageRating || 0,
+          attendanceRate: data.attendanceRate || 0,
+          productivityScore: data.productivityScore || 0,
+          weeklyProgress: data.weeklyProgress || []
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch analytics:', error);
+    } finally {
+      setIsLoadingAnalytics(false);
+    }
   };
 
+  const fetchActivityLog = async () => {
+    try {
+      const data = await SupervisorApiService.getInternActivityLog(internId, { limit: 10 });
+      
+      if (data && Array.isArray(data)) {
+        setActivityLog(data.map((activity: any) => ({
+          id: activity.id,
+          type: activity.type || 'activity',
+          message: activity.message || activity.description || 'No description',
+          timestamp: activity.timestamp || activity.createdAt || new Date().toISOString()
+        })));
+      }
+    } catch (error) {
+      console.error('Failed to fetch activity log:', error);
+    }
+  };
 
-  if (!intern) {
+  const handleEvaluationSubmit = async () => {
+    try {
+      setIsSubmittingEvaluation(true);
+      
+      // This feature is not yet implemented in the backend
+      toast({
+        title: "Feature Not Available",
+        description: "Overall evaluations are not yet implemented. Please use task-specific evaluations instead.",
+        variant: "destructive"
+      });
+      
+    } catch (error) {
+      console.error('Failed to submit evaluation:', error);
+      toast({
+        title: "Error",
+        description: "Failed to submit evaluation",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmittingEvaluation(false);
+    }
+  };
+
+  const updateScore = (metricId: string, score: number) => {
+    setEvaluationScores(prev => ({ ...prev, [metricId]: score }));
+  };
+
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full p-6">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -150,199 +232,263 @@ export default function InternDetailPage() {
       </div>
     );
   }
+
+  if (!intern) {
+    return (
+      <EmptyState
+        icon={User}
+        title="Intern Not Found"
+        description="The intern you're looking for could not be found."
+        actionLabel="Back to Interns"
+        onAction={() => router.push('/supervisor/interns')}
+      />
+    );
+  }
   
   return (
     <div className="space-y-8 p-4 md:p-6">
       <PageHeader
         title={intern.name}
-        description={`Details, submissions, and evaluation for ${intern.university}.`}
+        description={`Task management and evaluation for ${intern.name} from ${intern.university}.`}
         icon={User}
         breadcrumbs={[
-          { href: "/dashboard", label: "Dashboard" },
+          { href: "/supervisor/dashboard", label: "Dashboard" },
           { href: "/supervisor/interns", label: "My Interns" },
           { label: intern.name }
         ]}
         actions={
-            <Link href={`/communication?chatWith=${intern.id}`} passHref>
-                 <Button variant="outline"><MessageSquare className="mr-2 h-4 w-4"/>Contact Intern</Button>
-            </Link>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => window.open(`mailto:${intern.email}`)}>
+              <MessageSquare className="mr-2 h-4 w-4"/>Contact Intern
+            </Button>
+            <Button variant="outline" onClick={fetchInternDetails}>
+              Refresh
+            </Button>
+          </div>
         }
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column - Intern Profile & Analytics */}
         <div className="lg:col-span-1 space-y-6">
+          {/* Profile Card */}
           <Card className="shadow-lg rounded-xl">
             <CardHeader className="p-6 border-b text-center bg-primary/10">
               <Avatar className="h-24 w-24 mx-auto mb-3 border-4 border-primary/30 shadow-lg">
-                <AvatarImage src={intern.avatar} alt={intern.name} data-ai-hint="person student"/>
+                <AvatarImage src={intern.avatar} alt={intern.name} />
                 <AvatarFallback className="text-3xl bg-muted text-muted-foreground">{getInitials(intern.name)}</AvatarFallback>
               </Avatar>
               <CardTitle className="font-headline text-xl text-primary">{intern.name}</CardTitle>
               <CardDescription className="text-muted-foreground">{intern.email}</CardDescription>
+              <Badge variant={intern.status === 'active' ? 'default' : 'secondary'} className="mt-2">
+                {intern.status}
+              </Badge>
             </CardHeader>
-            <CardContent className="p-6 text-sm space-y-2">
-              <p><strong className="text-foreground">University:</strong> {intern.university}</p>
-              <p><strong className="text-foreground">Pending Tasks:</strong> <Badge variant={intern.pendingTasks > 0 ? "destructive" : "secondary"}>{intern.pendingTasks}</Badge></p>
-              <p><strong className="text-foreground">Pending Reports:</strong> <Badge variant={intern.pendingReports > 0 ? "destructive" : "secondary"}>{intern.pendingReports}</Badge></p>
-              <p><strong className="text-foreground">Last Activity:</strong> {intern.lastActivity}</p>
+            <CardContent className="p-6 text-sm space-y-3">
+              <div className="space-y-2">
+                <p><strong className="text-foreground">University:</strong> {intern.university}</p>
+                <p><strong className="text-foreground">Department:</strong> {intern.department}</p>
+                <p><strong className="text-foreground">Progress:</strong> 
+                  <div className="mt-1">
+                    <Progress value={intern.progress} className="h-2" />
+                    <span className="text-xs text-muted-foreground">{intern.progress}% complete</span>
+                  </div>
+                </p>
+                <p><strong className="text-foreground">Start Date:</strong> {format(new Date(intern.startDate), 'PPP')}</p>
+                <p><strong className="text-foreground">End Date:</strong> {format(new Date(intern.endDate), 'PPP')}</p>
+                {intern.phoneNumber && (
+                  <p><strong className="text-foreground">Phone:</strong> {intern.phoneNumber}</p>
+                )}
+              </div>
+              
+              <Separator />
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-green-600">{intern.tasksCompleted}</p>
+                  <p className="text-xs text-muted-foreground">Tasks Completed</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-orange-600">{intern.totalCheckIns}</p>
+                  <p className="text-xs text-muted-foreground">Check-ins</p>
+                </div>
+              </div>
+              
+              <div className="text-center">
+                <Badge variant={intern.pendingTasks > 0 ? "destructive" : "secondary"}>
+                  {intern.pendingTasks} Tasks Need Review
+                </Badge>
+              </div>
+              
+              <p className="text-xs text-muted-foreground">
+                <strong>Last Activity:</strong> {intern.lastActivity}
+              </p>
             </CardContent>
           </Card>
-           <Card className="shadow-lg rounded-xl">
-            <CardHeader>
-                <CardTitle className="font-headline text-lg flex items-center">
-                    <TrendingUp className="mr-2 h-5 w-5 text-primary"/> Performance Analytics
-                </CardTitle>
-            </CardHeader>
-            <CardContent>
-                <p className="text-sm text-muted-foreground">
-                    Detailed analytics will provide insights into task completion, report submission trends, and more.
-                </p>
-            </CardContent>
-            <CardFooter>
-                <Link href={`/supervisor/interns/analytics/${internId}`} passHref className="w-full">
-                    <Button variant="outline" className="w-full rounded-lg">View Detailed Analytics</Button>
-                </Link>
-            </CardFooter>
-           </Card>
-        </div>
 
-        <div className="lg:col-span-2 space-y-6">
+          {/* Analytics Card */}
           <Card className="shadow-lg rounded-xl">
             <CardHeader>
-              <CardTitle className="font-headline text-lg flex items-center"><FileText className="mr-2 h-5 w-5 text-primary"/>Submitted Reports</CardTitle>
-              <CardDescription>Review reports submitted by {intern.name}.</CardDescription>
+              <CardTitle className="font-headline text-lg flex items-center">
+                <BarChart3 className="mr-2 h-5 w-5 text-primary"/> Performance Analytics
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              {internReports.length > 0 ? (
+              {isLoadingAnalytics ? (
+                <div className="flex items-center justify-center p-4">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                  <span className="ml-2 text-sm">Loading analytics...</span>
+                </div>
+              ) : analytics ? (
                 <div className="space-y-4">
-                  {internReports.map(report => (
-                    <Card key={report.id} className="bg-muted/30 shadow-sm rounded-lg">
-                      <CardHeader className="pb-3">
-                        <div className="flex justify-between items-start">
-                            <div>
-                                <h4 className="font-semibold text-foreground">Report: {format(parseISO(report.date), "PPP")}</h4>
-                                <p className="text-xs text-muted-foreground line-clamp-1">{report.description}</p>
-                            </div>
-                            <Badge variant="outline" className={cn("text-xs shrink-0", reportStatusColors[report.status])}>{report.status}</Badge>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="text-xs">
-                        {report.supervisorComments && (
-                            <blockquote className="border-l-2 border-primary pl-2 italic text-muted-foreground mb-2">"{report.supervisorComments}"</blockquote>
-                        )}
-                        <p className="line-clamp-2 mb-1"><strong className="text-foreground">Outcomes:</strong> {report.outcomes}</p>
-                        <p className="line-clamp-2"><strong className="text-foreground">Learnings:</strong> {report.learningObjectives}</p>
-                      </CardContent>
-                      <CardFooter className="justify-end gap-2 pt-2">
-                        <Link href={`/supervisor/interns/reports/${report.id}?internId=${intern.id}`} passHref>
-                            <Button variant="ghost" size="sm"><Eye className="mr-1 h-4 w-4"/> View Full Report</Button>
-                        </Link>
-                         <Button variant="outline" size="sm" onClick={() => handleOpenFeedback(report)} disabled={isSubmittingFeedback || report.status === 'APPROVED' || report.status === 'REJECTED'}>
-                           <Edit className="mr-1 h-4 w-4"/> {report.status === 'SUBMITTED' || report.status === 'PENDING' ? 'Provide Feedback' : 'View Feedback'}
-                         </Button>
-                      </CardFooter>
-                    </Card>
-                  ))}
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span>Task Completion Rate</span>
+                      <span>{analytics.taskCompletionRate}%</span>
+                    </div>
+                    <Progress value={analytics.taskCompletionRate} className="h-2" />
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span>Average Rating</span>
+                      <span>{analytics.averageRating}/5</span>
+                    </div>
+                    <Progress value={(analytics.averageRating / 5) * 100} className="h-2" />
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span>Attendance Rate</span>
+                      <span>{analytics.attendanceRate}%</span>
+                    </div>
+                    <Progress value={analytics.attendanceRate} className="h-2" />
+                  </div>
                 </div>
               ) : (
-                <div className="text-center py-10 text-muted-foreground">
-                  <FileText className="mx-auto h-10 w-10 mb-3 opacity-50" />
-                  <p>{intern.name} has not submitted any reports yet.</p>
-                </div>
+                <p className="text-sm text-muted-foreground">No analytics data available</p>
               )}
             </CardContent>
           </Card>
 
-          <FormProvider {...evaluationMethods}>
-            <form onSubmit={evaluationMethods.handleSubmit(onEvaluationSubmit)}>
-                <Card className="shadow-lg rounded-xl">
-                    <CardHeader>
-                        <CardTitle className="font-headline text-lg flex items-center"><Star className="mr-2 h-5 w-5 text-primary"/>Intern Performance Evaluation</CardTitle>
-                        <CardDescription>Provide scores and overall feedback for {intern.name}.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        {SCORING_METRICS.map(metric => (
-                            <div key={metric.id} className="grid grid-cols-3 items-center gap-4">
-                                <Label htmlFor={`score-${metric.id}`} className="col-span-1 text-sm font-medium">{metric.label}</Label>
-                                <Controller
-                                    name={`scores.${metric.id}` as any} 
-                                    control={evaluationMethods.control}
-                                    render={({ field, fieldState }) => (
-                                        <div className="col-span-2">
-                                            <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString() || ""}>
-                                                <SelectTrigger id={`score-${metric.id}`} className="rounded-lg">
-                                                    <SelectValue placeholder="Select score (1-5)" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {[1,2,3,4,5].map(s => <SelectItem key={s} value={s.toString()}>{s}</SelectItem>)}
-                                                </SelectContent>
-                                            </Select>
-                                            {fieldState.error && <p className="text-xs text-destructive mt-1">{fieldState.error.message}</p>}
-                                            {metric.description && <p className="text-xs text-muted-foreground mt-1">{metric.description}</p>}
-                                        </div>
-                                    )}
-                                />
-                            </div>
-                        ))}
-                        <Separator/>
-                        <div>
-                            <Label htmlFor="overallComments" className="text-sm font-medium">Overall Comments</Label>
-                             <Controller
-                                name="overallComments"
-                                control={evaluationMethods.control}
-                                render={({ field, fieldState }) => (
-                                    <>
-                                    <Textarea 
-                                        id="overallComments" 
-                                        placeholder={`Provide overall feedback for ${intern.name}...`} 
-                                        {...field} 
-                                        rows={5} 
-                                        className="mt-1 rounded-lg"
-                                    />
-                                    {fieldState.error && <p className="text-xs text-destructive mt-1">{fieldState.error.message}</p>}
-                                    </>
-                                )}
-                            />
-                        </div>
-                    </CardContent>
-                    <CardFooter>
-                        <Button type="submit" className="rounded-lg" disabled={isSubmittingEvaluation}>
-                            {isSubmittingEvaluation && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                            <Save className="mr-2 h-4 w-4"/> Save Evaluation
-                        </Button>
-                    </CardFooter>
-                </Card>
-            </form>
-          </FormProvider>
-        </div>
-      </div>
-      
-      {selectedReportForFeedback && (
-         <Card className="mt-6 shadow-lg rounded-xl fixed bottom-0 right-0 left-0 md:left-auto md:max-w-md m-4 border-t-4 border-primary z-50 bg-card animate-in slide-in-from-bottom-full duration-500">
+          {/* Recent Activity */}
+          <Card className="shadow-lg rounded-xl">
             <CardHeader>
-                <CardTitle className="font-headline text-lg">Feedback for Report: {format(parseISO(selectedReportForFeedback.date), "PPP")}</CardTitle>
-                <CardDescription className="line-clamp-2">{selectedReportForFeedback.description}</CardDescription>
+              <CardTitle className="font-headline text-lg flex items-center">
+                <Clock className="mr-2 h-5 w-5 text-primary"/> Recent Activity
+              </CardTitle>
             </CardHeader>
             <CardContent>
-                <Textarea 
-                    placeholder="Enter your feedback here..."
-                    value={feedbackComment}
-                    onChange={(e) => setFeedbackComment(e.target.value)}
-                    rows={4}
-                    className="rounded-lg"
-                />
+              {activityLog.length > 0 ? (
+                <div className="space-y-3">
+                  {activityLog.slice(0, 5).map((activity) => (
+                    <div key={activity.id} className="flex items-start space-x-2 text-sm">
+                      <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
+                      <div>
+                        <p className="text-foreground">{activity.message}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(activity.timestamp), 'PPp')}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No recent activity</p>
+              )}
             </CardContent>
-            <CardFooter className="flex flex-col sm:flex-row justify-end gap-2">
-                <Button variant="outline" onClick={() => setSelectedReportForFeedback(null)} disabled={isSubmittingFeedback} className="w-full sm:w-auto rounded-lg">Cancel</Button>
-                <Button onClick={() => handleFeedbackSubmit('REJECT')} variant="destructive" disabled={isSubmittingFeedback || !feedbackComment.trim()} className="w-full sm:w-auto rounded-lg">
-                    {isSubmittingFeedback ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <ThumbsDown className="mr-2 h-4 w-4"/>} Reject
-                </Button>
-                <Button onClick={() => handleFeedbackSubmit('APPROVE')} className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto rounded-lg" disabled={isSubmittingFeedback}>
-                    {isSubmittingFeedback ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <ThumbsUp className="mr-2 h-4 w-4"/>} Approve
-                </Button>
+          </Card>
+        </div>
+
+        {/* Right Column - Evaluation Form */}
+        <div className="lg:col-span-2 space-y-6">
+          <Card className="shadow-lg rounded-xl">
+            <CardHeader>
+              <CardTitle className="font-headline text-lg flex items-center">
+                <Star className="mr-2 h-5 w-5 text-primary"/>Performance Evaluation
+              </CardTitle>
+              <CardDescription>Provide scores and overall feedback for {intern.name}.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Overall Rating */}
+              <div>
+                <Label className="text-sm font-medium">Overall Rating</Label>
+                <Select value={overallRating.toString()} onValueChange={(value) => setOverallRating(parseInt(value))}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select overall rating (1-5)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5 - Excellent</SelectItem>
+                    <SelectItem value="4">4 - Good</SelectItem>
+                    <SelectItem value="3">3 - Satisfactory</SelectItem>
+                    <SelectItem value="2">2 - Needs Improvement</SelectItem>
+                    <SelectItem value="1">1 - Poor</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <Separator />
+
+              {/* Individual Metrics */}
+              <div className="space-y-4">
+                <h4 className="font-medium">Individual Metrics</h4>
+                {SCORING_METRICS.map(metric => (
+                  <div key={metric.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                    <div>
+                      <Label className="text-sm font-medium">{metric.label}</Label>
+                      {metric.description && (
+                        <p className="text-xs text-muted-foreground mt-1">{metric.description}</p>
+                      )}
+                    </div>
+                    <div className="md:col-span-2">
+                      <Select 
+                        value={evaluationScores[metric.id]?.toString() || ""} 
+                        onValueChange={(value) => updateScore(metric.id, parseInt(value))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select score (1-5)" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="5">5 - Excellent</SelectItem>
+                          <SelectItem value="4">4 - Good</SelectItem>
+                          <SelectItem value="3">3 - Satisfactory</SelectItem>
+                          <SelectItem value="2">2 - Needs Improvement</SelectItem>
+                          <SelectItem value="1">1 - Poor</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <Separator />
+
+              {/* Comments */}
+              <div>
+                <Label className="text-sm font-medium">Overall Comments</Label>
+                <Textarea 
+                  placeholder={`Provide detailed feedback for ${intern.name}...`}
+                  value={overallComments}
+                  onChange={(e) => setOverallComments(e.target.value)}
+                  rows={5} 
+                  className="mt-1"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Minimum 10 characters required
+                </p>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button 
+                onClick={handleEvaluationSubmit}
+                disabled={isSubmittingEvaluation || !overallRating || overallComments.length < 10}
+                className="w-full"
+              >
+                {isSubmittingEvaluation && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                <Save className="mr-2 h-4 w-4"/> Submit Evaluation
+              </Button>
             </CardFooter>
-         </Card>
-      )}
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }
